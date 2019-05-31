@@ -4,10 +4,14 @@ import compression from 'compression';
 import bodyParser from 'body-parser';
 import { Server } from 'http';
 import cors from 'cors';
+import { GameConfig } from './GameConfig';
 
-// get and configure logger
+// get  logger &  config instances
 const log = Logger.getInstance();
-log.LogLevel = LOG_LEVELS.DEBUG;
+const config = GameConfig.getInstance();
+
+// set logging level
+log.LogLevel = config.LOG_LEVEL;
 
 // create express app
 const app = express();
