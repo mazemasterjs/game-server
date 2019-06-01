@@ -37,29 +37,49 @@ class Cache {
         this.score = new Array();
         this.game = new Array();
         this.trophy = new Array();
-        this.loadCache(config.SERVICE_MAZE + '/get', 'maze')
-            .then(count => {
-            log.debug(__filename, 'constructor()', `${count} mazes cached.`);
-        })
-            .catch(error => {
-            log.error(__filename, 'constructor()', 'Error loading maze cache ->', error);
+    }
+    // intialization of singleton - promise-based to ensure cache loads before server starts
+    static getInstance() {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (this.instance === undefined) {
+                this.instance = new Cache();
+                yield this.instance.initialize().catch(initError => {
+                    log.error(__filename, 'getInstance()', 'Cache Initialization Error ->', initError);
+                    return Promise.reject(initError);
+                });
+            }
+            return Promise.resolve(this.instance);
         });
     }
-    // TODO: Need promise/callback to set ready state while caches are loading!!
-    // intialization of singleton
-    static getInstance() {
-        if (this.instance === undefined) {
-            this.instance = new Cache();
-        }
-        else {
-            return this.instance;
-        }
-    }
-    loadCache(url, arrayName) {
+    initialize() {
         return __awaiter(this, void 0, void 0, function* () {
-            const method = `loadCache(${funcs_1.trimUrl(url)}, ${arrayName})`;
-            // set a reference to the actuall array we're filling
-            const array = this.getArrayByName(arrayName);
+            // load the maze cache
+            yield this.loadCache(config.SERVICE_MAZE + '/get', 'maze').catch(error => {
+                log.error(__filename, 'constructor()', 'Error loading maze cache ->', error);
+                return Promise.reject(error);
+            });
+            // load the trophy cache
+            yield this.loadCache(config.SERVICE_TROPHY + '/get', 'trophy').catch(error => {
+                log.error(__filename, 'constructor()', 'Error loading trophy cache ->', error);
+                return Promise.reject(error);
+            });
+            // load the team cache
+            yield this.loadCache(config.SERVICE_TEAM + '/get', 'team').catch(error => {
+                log.error(__filename, 'constructor()', 'Error loading team cache ->', error);
+                return Promise.reject(error);
+            });
+            // log all cache status
+            this.logCacheStatus();
+            return Promise.resolve();
+        });
+    }
+    loadCache(url, cacheName) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const method = `loadCache(${funcs_1.trimUrl(url)}, ${cacheName.toUpperCase()})`;
+            const startTime = Date.now();
+            // set some cache-specific reference vars
+            const cache = this.getCacheArrayByName(cacheName);
+            const max = this.getCacheSizeByName(cacheName);
             // we'll use this to capture errors from arrow functions
             let error;
             // get the data we need to cache from the service passed via the url parameter
@@ -71,53 +91,151 @@ class Cache {
             if (error !== undefined) {
                 return Promise.reject(error);
             }
-            // iterate through the elements in the returned json data array
+            // iterate through the elements in the returned JSON object array
             for (const ele of data) {
-                let cacheable;
+                let jsonObj;
                 // api/maze/get only returns stubs, so we have to make a second request
                 // to get the full maze data that we need for the cache
-                if (arrayName === 'maze') {
-                    cacheable = yield this.doGet(url + `?id=${ele.id}`);
+                if (cacheName === 'maze') {
+                    jsonObj = yield this.doGet(url + `?id=${ele.id}`);
+                    // all /get calls return array (even for a single element), so we'll just grab the maze directly
+                    jsonObj = jsonObj[0];
+                }
+                else {
+                    jsonObj = ele;
                 }
                 try {
-                    array.push(this.coerceData(cacheable[0], arrayName));
+                    // pass the data through the coerce function to validate the data and get a fully functioning class object
+                    jsonObj = this.coerce(jsonObj, cacheName);
+                    // now attempt to push it onto the cache
+                    this.pushOnCache(jsonObj, cacheName);
+                    if (cache.length >= this.getCacheSizeByName(cacheName)) {
+                        log.warn(__filename, method, `${cacheName.toUpperCase()} cache capacity reached (${max}), aborting load.`);
+                        break;
+                    }
                 }
                 catch (coerceError) {
-                    log.warn(__filename, method, `Unable to coerce {${arrayName}.id:${ele.id}} into ${arrayName} class, skipping element.`);
+                    log.warn(__filename, method, `Unable to coerce {${cacheName.toUpperCase()}.id:${ele.id}} into ${cacheName.toUpperCase()} class, skipping element. Error -> ${coerceError.message}`);
                 }
             }
-            return Promise.resolve(array.length);
+            log.debug(__filename, method, `${cacheName.toUpperCase()} cache loaded with ${cache.length} (max: ${max}) elements in ${Date.now() - startTime}ms.`);
+            return Promise.resolve(cache.length);
         });
     }
     /**
-     * Attempts to load raw JSON data into a specific class according to the given data type name
+     * Pushes an object onto the bottom of the given cache array.
+     * If the cache is full (cache.length >= env.CACHE_SIZE_<NAME>), shift top element before pushing
      *
-     * @param data
-     * @param dataType
+     * @param object
+     * @param cacheName
      */
-    coerceData(data, dataType) {
-        log.debug(__filename, `coerceData([json data], ${dataType})`, 'Attempting to coerce JSON data into ' + dataType);
-        if (log.LogLevel === logger_1.LOG_LEVELS.TRACE) {
-            log.trace(__filename, `coerceData([json data], ${dataType})`, JSON.stringify(data));
+    pushOnCache(object, cacheName) {
+        const objId = object.Id !== undefined ? object.Id : object.id;
+        const method = `pushOnCache(Object: ${objId}, ${cacheName.toUpperCase()})`;
+        const cache = this.getCacheArrayByName(cacheName);
+        const max = this.getCacheSizeByName(cacheName);
+        if (cache.length >= max) {
+            const trash = cache.shift();
+            log.warn(__filename, method, `Cache is full, trashing ${cacheName.toUpperCase()} object: ${trash.Id !== undefined ? trash.Id : trash.id}`);
         }
-        switch (dataType) {
-            case 'maze': {
-                return new MazeBase_1.MazeBase(data);
-            }
-            case 'team': {
-                return new Team_1.Team(data);
-            }
-            case 'trophy': {
-                return new Trophy_1.Trophy(data);
-            }
-        }
+        cache.push(object);
     }
     /**
-     * Returns the requested array
+     * Attempts to load raw JSON object into a specific class according to the given data type name
+     *
+     * @param jsonObj
+     * @param dataType
+     */
+    coerce(jsonObj, dataType) {
+        const method = `coerce(Object: ${jsonObj.id}, ${dataType})`;
+        log.debug(__filename, method, `Attempting to load ${dataType} with JSON object.`);
+        // if trace logging, we'll dump the actual JSON object too
+        if (log.LogLevel === logger_1.LOG_LEVELS.TRACE) {
+            log.trace(__filename, method, JSON.stringify(jsonObj));
+        }
+        // when appropriate, try to instantiate specific class with the given data
+        try {
+            switch (dataType) {
+                case 'maze': {
+                    return new MazeBase_1.MazeBase(jsonObj);
+                }
+                case 'team': {
+                    return new Team_1.Team(jsonObj);
+                }
+                case 'trophy': {
+                    return new Trophy_1.Trophy(jsonObj);
+                }
+            }
+        }
+        catch (coerceError) {
+            log.error(__filename, method, 'Coercion Error ->', coerceError);
+            throw coerceError;
+        }
+        // if we get here with no errors, this dataType doesn't need to be coerced
+        log.debug(__filename, method, `${dataType} does not need to be coerced, returning JSON object.`);
+        return jsonObj;
+    }
+    /**
+     * Generates and info logs a simple cache status report
+     */
+    logCacheStatus() {
+        let msg = '\r\n';
+        msg += '==================================================\r\n';
+        msg += ': CACHE STATUS REPORT                            :\r\n';
+        msg += ':------------------------------------------------:\r\n';
+        msg += `: MAZE CACHE   -> ${this.getCacheStats('maze')} :\r\n`;
+        msg += `: TEAM CACHE   -> ${this.getCacheStats('team')} :\r\n`;
+        msg += `: GAME CACHE   -> ${this.getCacheStats('game')} :\r\n`;
+        msg += `: SCORE CACHE  -> ${this.getCacheStats('score')} :\r\n`;
+        msg += `: TROPHY CACHE -> ${this.getCacheStats('trophy')} :\r\n`;
+        msg += '==================================================\r\n';
+        log.info(__filename, `logCacheStatus()`, msg);
+    }
+    getCacheStats(cacheName) {
+        const stats = { len: '', max: '', pct: '' };
+        const cache = this.getCacheArrayByName(cacheName);
+        const cLen = cache.length;
+        const cMax = this.getCacheSizeByName(cacheName);
+        const cPct = (cache.length / cMax) * 100;
+        stats.len = cLen.toString().padStart(3, ' ');
+        stats.max = cMax.toString().padStart(3, ' ');
+        stats.pct = cPct.toString().padStart(3, ' ');
+        return `${stats.len} of ${stats.max} | UTILIZATION: ${stats.pct}%`;
+    }
+    /**
+     * Returns the requested cache's max size
      *
      * @param arrayName
      */
-    getArrayByName(arrayName) {
+    getCacheSizeByName(arrayName) {
+        switch (arrayName) {
+            case 'maze': {
+                return config.CACHE_SIZE_MAZES;
+            }
+            case 'team': {
+                return config.CACHE_SIZE_TEAMS;
+            }
+            case 'score': {
+                return config.CACHE_SIZE_SCORES;
+            }
+            case 'game': {
+                return config.CACHE_SIZE_GAMES;
+            }
+            case 'trophy': {
+                return config.CACHE_SIZE_TROPHIES;
+            }
+        }
+        // this is bad news...
+        const cacheError = new Error(`${arrayName} is not a valid cache array name.`);
+        log.error(__filename, `getCacheSizeByName(${arrayName})`, 'Invalid Cache Name', cacheError);
+        throw cacheError;
+    }
+    /**
+     * Returns the requested cache array
+     *
+     * @param arrayName
+     */
+    getCacheArrayByName(arrayName) {
         switch (arrayName) {
             case 'maze': {
                 return this.maze;
@@ -135,6 +253,10 @@ class Cache {
                 return this.trophy;
             }
         }
+        // this is bad news...
+        const cacheError = new Error(`${arrayName} is not a valid cache array name.`);
+        log.error(__filename, `getCacheArrayByName(${arrayName})`, 'Invalid Cache Name', cacheError);
+        throw cacheError;
     }
     /**
      * Returns data from the requested URL

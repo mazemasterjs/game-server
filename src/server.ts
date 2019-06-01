@@ -1,4 +1,4 @@
-import { LOG_LEVELS, Logger } from '@mazemasterjs/logger';
+import { Logger } from '@mazemasterjs/logger';
 import express from 'express';
 import compression from 'compression';
 import bodyParser from 'body-parser';
@@ -7,26 +7,52 @@ import cors from 'cors';
 import { GameConfig } from './GameConfig';
 import { Cache } from './Cache';
 
-// get  logger &  config instances
+// get logger &  config instances
 const log = Logger.getInstance();
 const config = GameConfig.getInstance();
-
-// get cache instance (triggers data preload for mazes, teams, and trophies)
-const cache = Cache.getInstance();
 
 // set logging level
 log.LogLevel = config.LOG_LEVEL;
 
 // create express app and an HTTPServer reference
 const app = express();
-let httpServer: Server;
 
-launchExpress();
+// declare cache and httpServer refs
+let httpServer: Server;
+let cache: Cache;
+
+startServer();
+
+async function startServer() {
+  // load caches first, then start the server
+  // get cache instance (triggers data preload for mazes, teams, and trophies)
+  await initCache()
+    .then(instance => {
+      cache = instance;
+      launchExpress();
+    })
+    .catch(initErr => {
+      log.error(__filename, 'initCache()', 'Unable to initialize cache, aborting startup. Error ->', initErr);
+      doShutdown();
+    });
+}
+
+/**
+ * Async wrapper around Cache.getInstance() - forces express start to wait
+ * until the data caches are ready
+ */
+async function initCache(): Promise<Cache> {
+  const cacheInstance = await Cache.getInstance().catch(initError => {
+    return Promise.reject(initError);
+  });
+
+  return Promise.resolve(cacheInstance);
+}
 
 /**
  * APPLICATION ENTRY POINT
  */
-async function launchExpress() {
+function launchExpress() {
   log.debug(__filename, 'launchExpress()', 'Configuring express HTTPServer...');
 
   // allow cross-origin-resource-sharing
