@@ -5,18 +5,20 @@ import bodyParser from 'body-parser';
 import { Server } from 'http';
 import cors from 'cors';
 import { GameConfig } from './GameConfig';
+import { Cache } from './Cache';
 
 // get  logger &  config instances
 const log = Logger.getInstance();
 const config = GameConfig.getInstance();
 
+// get cache instance (triggers data preload for mazes, teams, and trophies)
+const cache = Cache.getInstance();
+
 // set logging level
 log.LogLevel = config.LOG_LEVEL;
 
-// create express app
+// create express app and an HTTPServer reference
 const app = express();
-
-// prep reference for express server
 let httpServer: Server;
 
 launchExpress();

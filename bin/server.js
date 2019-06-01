@@ -16,12 +16,17 @@ const express_1 = __importDefault(require("express"));
 const compression_1 = __importDefault(require("compression"));
 const body_parser_1 = __importDefault(require("body-parser"));
 const cors_1 = __importDefault(require("cors"));
-// get and configure logger
+const GameConfig_1 = require("./GameConfig");
+const Cache_1 = require("./Cache");
+// get  logger &  config instances
 const log = logger_1.Logger.getInstance();
-log.LogLevel = logger_1.LOG_LEVELS.DEBUG;
-// create express app
+const config = GameConfig_1.GameConfig.getInstance();
+// get cache instance (triggers data preload for mazes, teams, and trophies)
+const cache = Cache_1.Cache.getInstance();
+// set logging level
+log.LogLevel = config.LOG_LEVEL;
+// create express app and an HTTPServer reference
 const app = express_1.default();
-// prep reference for express server
 let httpServer;
 launchExpress();
 /**

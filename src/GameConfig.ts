@@ -1,5 +1,4 @@
 import Logger from '@mazemasterjs/logger';
-import Service from '@mazemasterjs/shared-library/Service';
 
 const log = Logger.getInstance();
 
@@ -20,6 +19,7 @@ export class GameConfig {
 
   public readonly HTTP_PORT: number;
   public readonly LOG_LEVEL: number;
+  public readonly CACHE_SIZE_MAZES: number;
   public readonly CACHE_SIZE_GAMES: number;
   public readonly CACHE_SIZE_SCORES: number;
   public readonly CACHE_SIZE_TEAMS: number;
@@ -33,6 +33,7 @@ export class GameConfig {
   private constructor() {
     this.LOG_LEVEL = this.getVar('LOG_LEVEL', 'number');
     this.HTTP_PORT = this.getVar('HTTP_PORT', 'number');
+    this.CACHE_SIZE_MAZES = this.getVar('CACHE_SIZE_MAZES', 'number');
     this.CACHE_SIZE_GAMES = this.getVar('CACHE_SIZE_GAMES', 'number');
     this.CACHE_SIZE_SCORES = this.getVar('CACHE_SIZE_SCORES', 'number');
     this.CACHE_SIZE_TEAMS = this.getVar('CACHE_SIZE_TEAMS', 'number');
