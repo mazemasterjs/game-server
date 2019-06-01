@@ -19,9 +19,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const funcs_1 = require("./funcs");
-const MazeBase_1 = require("@mazemasterjs/shared-library/MazeBase");
-const Team_1 = require("@mazemasterjs/shared-library/Team");
-const Trophy_1 = require("@mazemasterjs/shared-library/Trophy");
+const CacheItem_1 = require("./CacheItem");
 const axios_1 = __importDefault(require("axios"));
 const GameConfig_1 = __importDefault(require("./GameConfig"));
 const logger_1 = __importStar(require("@mazemasterjs/logger"));
@@ -48,6 +46,9 @@ class Cache {
                     return Promise.reject(initError);
                 });
             }
+            // log all cache status
+            this.instance.logCacheStatus();
+            // all done!
             return Promise.resolve(this.instance);
         });
     }
@@ -68,10 +69,23 @@ class Cache {
                 log.error(__filename, 'constructor()', 'Error loading team cache ->', error);
                 return Promise.reject(error);
             });
-            // log all cache status
-            this.logCacheStatus();
             return Promise.resolve();
         });
+    }
+    /**
+     * Searches the given cache for matching object and returns if found
+     *
+     * @param cache
+     * @param objId
+     */
+    getFromCache(cache, objId) {
+        for (const entry of cache) {
+            if (entry.item.Id === objId) {
+                entry.hitCount++;
+                entry.lastHitTime = Date.now();
+                return entry.item;
+            }
+        }
     }
     loadCache(url, cacheName) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -98,19 +112,18 @@ class Cache {
                 // to get the full maze data that we need for the cache
                 if (cacheName === 'maze') {
                     jsonObj = yield this.doGet(url + `?id=${ele.id}`);
-                    // all /get calls return array (even for a single element), so we'll just grab the maze directly
-                    jsonObj = jsonObj[0];
+                    jsonObj = jsonObj[0]; // all /api/get calls return array, even for single-object responses
                 }
                 else {
                     jsonObj = ele;
                 }
                 try {
                     // pass the data through the coerce function to validate the data and get a fully functioning class object
-                    jsonObj = this.coerce(jsonObj, cacheName);
+                    const cacheItem = new CacheItem_1.CacheItem(jsonObj, cacheName);
                     // now attempt to push it onto the cache
-                    this.pushOnCache(jsonObj, cacheName);
+                    this.pushOnCache(cacheItem, cacheName);
                     if (cache.length >= this.getCacheSizeByName(cacheName)) {
-                        log.warn(__filename, method, `${cacheName.toUpperCase()} cache capacity reached (${max}), aborting load.`);
+                        log.warn(__filename, method, `${cacheName.toUpperCase()} cache capacity reached (${max} loaded, ${data.length - max} uncached), aborting cache load.`);
                         break;
                     }
                 }
@@ -141,66 +154,48 @@ class Cache {
         cache.push(object);
     }
     /**
-     * Attempts to load raw JSON object into a specific class according to the given data type name
-     *
-     * @param jsonObj
-     * @param dataType
-     */
-    coerce(jsonObj, dataType) {
-        const method = `coerce(Object: ${jsonObj.id}, ${dataType})`;
-        log.debug(__filename, method, `Attempting to load ${dataType} with JSON object.`);
-        // if trace logging, we'll dump the actual JSON object too
-        if (log.LogLevel === logger_1.LOG_LEVELS.TRACE) {
-            log.trace(__filename, method, JSON.stringify(jsonObj));
-        }
-        // when appropriate, try to instantiate specific class with the given data
-        try {
-            switch (dataType) {
-                case 'maze': {
-                    return new MazeBase_1.MazeBase(jsonObj);
-                }
-                case 'team': {
-                    return new Team_1.Team(jsonObj);
-                }
-                case 'trophy': {
-                    return new Trophy_1.Trophy(jsonObj);
-                }
-            }
-        }
-        catch (coerceError) {
-            log.error(__filename, method, 'Coercion Error ->', coerceError);
-            throw coerceError;
-        }
-        // if we get here with no errors, this dataType doesn't need to be coerced
-        log.debug(__filename, method, `${dataType} does not need to be coerced, returning JSON object.`);
-        return jsonObj;
-    }
-    /**
      * Generates and info logs a simple cache status report
      */
     logCacheStatus() {
         let msg = '\r\n';
-        msg += '==================================================\r\n';
-        msg += ': CACHE STATUS REPORT                            :\r\n';
-        msg += ':------------------------------------------------:\r\n';
-        msg += `: MAZE CACHE   -> ${this.getCacheStats('maze')} :\r\n`;
-        msg += `: TEAM CACHE   -> ${this.getCacheStats('team')} :\r\n`;
-        msg += `: GAME CACHE   -> ${this.getCacheStats('game')} :\r\n`;
-        msg += `: SCORE CACHE  -> ${this.getCacheStats('score')} :\r\n`;
-        msg += `: TROPHY CACHE -> ${this.getCacheStats('trophy')} :\r\n`;
-        msg += '==================================================\r\n';
+        msg += '========================================\r\n';
+        msg += ':         CACHE STATUS REPORT          :\r\n';
+        msg += ':--------------------------------------:\r\n';
+        msg += ':  type  | cnt | max | fill |   hits   :\r\n';
+        msg += ':--------------------------------------:\r\n';
+        msg += `:   MAZE | ${this.getCacheStats('maze')} :\r\n`;
+        msg += `:   TEAM | ${this.getCacheStats('team')} :\r\n`;
+        msg += `:   GAME | ${this.getCacheStats('game')} :\r\n`;
+        msg += `:  SCORE | ${this.getCacheStats('score')} :\r\n`;
+        msg += `: TROPHY | ${this.getCacheStats('trophy')} :\r\n`;
+        msg += '========================================\r\n';
         log.info(__filename, `logCacheStatus()`, msg);
     }
     getCacheStats(cacheName) {
-        const stats = { len: '', max: '', pct: '' };
+        const stats = { len: '', max: '', pct: '', hits: '' };
         const cache = this.getCacheArrayByName(cacheName);
         const cLen = cache.length;
         const cMax = this.getCacheSizeByName(cacheName);
         const cPct = (cache.length / cMax) * 100;
+        const cHits = this.countCacheHits(cache);
         stats.len = cLen.toString().padStart(3, ' ');
         stats.max = cMax.toString().padStart(3, ' ');
-        stats.pct = cPct.toString().padStart(3, ' ');
-        return `${stats.len} of ${stats.max} | UTILIZATION: ${stats.pct}%`;
+        stats.hits = cHits.toString().padStart(7, ' ');
+        stats.pct = cPct
+            .toFixed()
+            .toString()
+            .padStart(3, ' ');
+        return `${stats.len} | ${stats.max} | ${stats.pct}% | ${stats.hits} `;
+    }
+    /**
+     *  Returns the total number of cache hits for the given cache
+     */
+    countCacheHits(cache) {
+        let totalHits = 0;
+        for (const cItem of cache) {
+            totalHits += cItem.hitCount;
+        }
+        return totalHits;
     }
     /**
      * Returns the requested cache's max size
