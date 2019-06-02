@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const logger_1 = __importDefault(require("@mazemasterjs/logger"));
 const log = logger_1.default.getInstance();
-class GameConfig {
+class Config {
     // singleton pattern - constructor is private, use static Config.getInstance()
     constructor() {
         /**
@@ -55,7 +55,7 @@ class GameConfig {
      */
     static getInstance() {
         if (this.instance === undefined) {
-            this.instance = new GameConfig();
+            this.instance = new Config();
         }
         return this.instance;
     }
@@ -72,6 +72,6 @@ class GameConfig {
         throw err;
     }
 }
-exports.GameConfig = GameConfig;
-exports.default = GameConfig;
-//# sourceMappingURL=GameConfig.js.map
+exports.Config = Config;
+exports.default = Config;
+//# sourceMappingURL=Config.js.map

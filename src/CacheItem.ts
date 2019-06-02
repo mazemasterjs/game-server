@@ -4,33 +4,66 @@ import { Score } from '@mazemasterjs/shared-library/Score';
 import { Team } from '@mazemasterjs/shared-library/Team';
 import { Game } from '@mazemasterjs/shared-library/Game';
 import { Trophy } from '@mazemasterjs/shared-library/Trophy';
+import { CACHE_TYPES } from './Cache';
 
 const log = Logger.getInstance();
+const LAST_HIT_MODIFIER = 500;
 
 export class CacheItem {
-  public item: any;
-  public itemType: string;
-  public hitCount: number;
-  public lastHitTime: number;
-  public createTime: number;
+  private item: any;
+  private hitCount: number;
+  private createTime: number;
+  private lastHitTime: number;
+  private cacheValue: number;
 
-  constructor(item: any, itemType: string) {
-    this.item = this.coerce(item, itemType);
-    this.itemType = itemType;
+  constructor(item: any, cacheType: CACHE_TYPES) {
+    const now = Date.now();
+    this.item = this.coerce(item, cacheType);
     this.hitCount = 0;
-    this.lastHitTime = 0;
-    this.createTime = Date.now();
+    this.createTime = now;
+    this.lastHitTime = Math.floor(now / LAST_HIT_MODIFIER); // convert now to minutes
+    this.cacheValue = 0;
+  }
+
+  public get Item(): any {
+    return this.item;
+  }
+
+  public get HitCount(): number {
+    return this.hitCount;
+  }
+
+  public get LastHitTime(): number {
+    return this.lastHitTime;
+  }
+
+  public get CreateTime(): number {
+    return this.createTime;
+  }
+
+  public get SortKey(): number {
+    return this.cacheValue;
+  }
+
+  /**
+   * Adds to hit count and adjusts item's value in the cache based on
+   * the last hit time and the total hit count.
+   */
+  public addHit() {
+    this.hitCount++;
+    this.lastHitTime = Math.floor(Date.now() / LAST_HIT_MODIFIER);
+    this.cacheValue = this.lastHitTime + this.hitCount;
   }
 
   /**
    * Attempts to load raw JSON object into a specific class according to the given data type name
    *
    * @param jsonObj
-   * @param dataType
+   * @param cacheType
    */
-  private coerce(jsonObj: any, dataType: string): any {
-    const method = `coerce(Object: ${jsonObj.id}, ${dataType})`;
-    log.debug(__filename, method, `Attempting to load ${dataType} with JSON object.`);
+  private coerce(jsonObj: any, cacheType: CACHE_TYPES): any {
+    const method = `coerce(Object: ${jsonObj.id}, ${CACHE_TYPES[cacheType]})`;
+    log.debug(__filename, method, `Attempting to load ${CACHE_TYPES[cacheType]} with JSON object.`);
 
     // if trace logging, we'll dump the actual JSON object too
     if (log.LogLevel === LOG_LEVELS.TRACE) {
@@ -39,14 +72,14 @@ export class CacheItem {
 
     // when appropriate, try to instantiate specific class with the given data
     try {
-      switch (dataType) {
-        case 'maze': {
+      switch (cacheType) {
+        case CACHE_TYPES.MAZE: {
           return new MazeBase(jsonObj);
         }
-        case 'team': {
+        case CACHE_TYPES.TEAM: {
           return new Team(jsonObj);
         }
-        case 'trophy': {
+        case CACHE_TYPES.TROPHY: {
           return new Trophy(jsonObj);
         }
       }
@@ -56,7 +89,7 @@ export class CacheItem {
     }
 
     // if we get here with no errors, this dataType doesn't need to be coerced
-    log.debug(__filename, method, `${dataType} does not need to be coerced, returning unaltered object.`);
+    log.debug(__filename, method, `${CACHE_TYPES[cacheType]} does not need to be coerced, returning unaltered object.`);
     return jsonObj;
   }
 }

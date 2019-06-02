@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { GameConfig } from './GameConfig';
+import { Config } from './Config';
 import { Logger } from '@mazemasterjs/logger';
 
 // set constant utility references

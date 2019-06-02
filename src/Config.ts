@@ -2,22 +2,23 @@ import Logger from '@mazemasterjs/logger';
 
 const log = Logger.getInstance();
 
-export class GameConfig {
+export class Config {
   /**
    * Instantiate and/or returns class instance
    */
-  public static getInstance(): GameConfig {
+  public static getInstance(): Config {
     if (this.instance === undefined) {
-      this.instance = new GameConfig();
+      this.instance = new Config();
     }
 
     return this.instance;
   }
 
   // singleton instance reference
-  private static instance: GameConfig;
+  private static instance: Config;
 
-  public readonly HTTP_PORT: number;
+  public readonly HTTP_PORT_GAME: number;
+  public readonly BASE_URL_GAME: string;
   public readonly LOG_LEVEL: number;
   public readonly CACHE_SIZE_MAZES: number;
   public readonly CACHE_SIZE_GAMES: number;
@@ -32,7 +33,8 @@ export class GameConfig {
   // singleton pattern - constructor is private, use static Config.getInstance()
   private constructor() {
     this.LOG_LEVEL = this.getVar('LOG_LEVEL', 'number');
-    this.HTTP_PORT = this.getVar('HTTP_PORT', 'number');
+    this.BASE_URL_GAME = this.getVar('BASE_URL_GAME', 'string');
+    this.HTTP_PORT_GAME = this.getVar('HTTP_PORT_GAME', 'number');
     this.CACHE_SIZE_MAZES = this.getVar('CACHE_SIZE_MAZES', 'number');
     this.CACHE_SIZE_GAMES = this.getVar('CACHE_SIZE_GAMES', 'number');
     this.CACHE_SIZE_SCORES = this.getVar('CACHE_SIZE_SCORES', 'number');
@@ -91,4 +93,4 @@ export class GameConfig {
   }
 }
 
-export default GameConfig;
+export default Config;

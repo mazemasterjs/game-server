@@ -4,12 +4,15 @@ import compression from 'compression';
 import bodyParser from 'body-parser';
 import { Server } from 'http';
 import cors from 'cors';
-import { GameConfig } from './GameConfig';
-import { Cache } from './Cache';
+import { Config } from './Config';
+import { Cache, CACHE_TYPES } from './Cache';
+import MazeBase from '@mazemasterjs/shared-library/MazeBase';
+import Trophy from '@mazemasterjs/shared-library/Trophy';
+import { hostname } from 'os';
 
 // get logger &  config instances
 const log = Logger.getInstance();
-const config = GameConfig.getInstance();
+const config = Config.getInstance();
 
 // set logging level
 log.LogLevel = config.LOG_LEVEL;
@@ -81,8 +84,31 @@ function launchExpress() {
     });
   });
 
-  app.get('/test', (req, res) => {
-    res.status(200).json({ message: 'Howdy Pardner' });
+  // TODO: REMOVE THIS TEST ROUTE
+  app.get(config.BASE_URL_GAME + '/getTrophy/:objId', (req, res) => {
+    cache
+      .fetchItem(CACHE_TYPES.TROPHY, req.params.objId)
+      .then(trophy => {
+        res.status(200).json(trophy);
+      })
+      .catch(() => {
+        res.status(404).json({ status: 404, message: `Cache Miss: TrophyID=${req.params.objId}` });
+      });
+  });
+
+  // TODO: REMOVE THIS TEST ROUTE
+  app.get(config.BASE_URL_GAME + '/evictTrophy/:objId', (req, res) => {
+    cache
+      .evictItem(CACHE_TYPES.TROPHY, req.params.objId)
+      .then(count => {
+        if (count >= 0) {
+          cache.dumpCache(CACHE_TYPES.TROPHY);
+          res.status(200).json({ status: 200, message: 'OK', evictedCount: count });
+        }
+      })
+      .catch(count => {
+        res.status(500).json({ status: 400, message: 'Eviction Failed', evictedCount: count });
+      });
   });
 
   // catch-all for unhandled requests
@@ -96,9 +122,9 @@ function launchExpress() {
   });
 
   // and start the httpServer - starts the service
-  httpServer = app.listen(8080, () => {
+  httpServer = app.listen(config.HTTP_PORT_GAME, () => {
     // sever is now listening - live probe should be active, but ready probe must wait for routes to be mapped.
-    log.force(__filename, 'launchExpress()', `Express is listening -> http://localhost:8080/`);
+    log.force(__filename, 'launchExpress()', `Express is listening -> http://${hostname}:${config.HTTP_PORT_GAME}${config.BASE_URL_GAME}`);
     log.force(__filename, 'launchExpress()', `[ GAME-SERVER ] is now LIVE and READY!'`);
   });
 }

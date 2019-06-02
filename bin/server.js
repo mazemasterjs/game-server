@@ -16,11 +16,12 @@ const express_1 = __importDefault(require("express"));
 const compression_1 = __importDefault(require("compression"));
 const body_parser_1 = __importDefault(require("body-parser"));
 const cors_1 = __importDefault(require("cors"));
-const GameConfig_1 = require("./GameConfig");
+const Config_1 = require("./Config");
 const Cache_1 = require("./Cache");
+const os_1 = require("os");
 // get logger &  config instances
 const log = logger_1.Logger.getInstance();
-const config = GameConfig_1.GameConfig.getInstance();
+const config = Config_1.Config.getInstance();
 // set logging level
 log.LogLevel = config.LOG_LEVEL;
 // create express app and an HTTPServer reference
@@ -84,8 +85,30 @@ function launchExpress() {
             next();
         });
     });
-    app.get('/test', (req, res) => {
-        res.status(200).json({ message: 'Howdy Pardner' });
+    // TODO: REMOVE THIS TEST ROUTE
+    app.get(config.BASE_URL_GAME + '/getTrophy/:objId', (req, res) => {
+        cache
+            .fetchItem(Cache_1.CACHE_TYPES.TROPHY, req.params.objId)
+            .then(trophy => {
+            res.status(200).json(trophy);
+        })
+            .catch(() => {
+            res.status(404).json({ status: 404, message: `Cache Miss: TrophyID=${req.params.objId}` });
+        });
+    });
+    // TODO: REMOVE THIS TEST ROUTE
+    app.get(config.BASE_URL_GAME + '/evictTrophy/:objId', (req, res) => {
+        cache
+            .evictItem(Cache_1.CACHE_TYPES.TROPHY, req.params.objId)
+            .then(count => {
+            if (count >= 0) {
+                cache.dumpCache(Cache_1.CACHE_TYPES.TROPHY);
+                res.status(200).json({ status: 200, message: 'OK', evictedCount: count });
+            }
+        })
+            .catch(count => {
+            res.status(500).json({ status: 400, message: 'Eviction Failed', evictedCount: count });
+        });
     });
     // catch-all for unhandled requests
     app.get('/*', (req, res) => {
@@ -96,9 +119,9 @@ function launchExpress() {
         });
     });
     // and start the httpServer - starts the service
-    httpServer = app.listen(8080, () => {
+    httpServer = app.listen(config.HTTP_PORT_GAME, () => {
         // sever is now listening - live probe should be active, but ready probe must wait for routes to be mapped.
-        log.force(__filename, 'launchExpress()', `Express is listening -> http://localhost:8080/`);
+        log.force(__filename, 'launchExpress()', `Express is listening -> http://${os_1.hostname}:${config.HTTP_PORT_GAME}${config.BASE_URL_GAME}`);
         log.force(__filename, 'launchExpress()', `[ GAME-SERVER ] is now LIVE and READY!'`);
     });
 }
