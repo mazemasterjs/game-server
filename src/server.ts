@@ -5,25 +5,24 @@ import bodyParser from 'body-parser';
 import { Server } from 'http';
 import cors from 'cors';
 import { Config } from './Config';
-import { Cache, CACHE_TYPES } from './Cache';
-import MazeBase from '@mazemasterjs/shared-library/MazeBase';
-import Trophy from '@mazemasterjs/shared-library/Trophy';
+import { Cache } from './Cache';
 import { hostname } from 'os';
+import { router } from './router';
 
 // get logger &  config instances
 const log = Logger.getInstance();
 const config = Config.getInstance();
 
-// set logging level
-log.LogLevel = config.LOG_LEVEL;
+// declare the cache object - it'll be defined in startServer();
+let cache: Cache;
 
 // create express app and an HTTPServer reference
 const app = express();
 
 // declare cache and httpServer refs
 let httpServer: Server;
-let cache: Cache;
 
+// let's ROCK this joint!
 startServer();
 
 async function startServer() {
@@ -84,32 +83,8 @@ function launchExpress() {
     });
   });
 
-  // TODO: REMOVE THIS TEST ROUTE
-  app.get(config.BASE_URL_GAME + '/getTrophy/:objId', (req, res) => {
-    cache
-      .fetchItem(CACHE_TYPES.TROPHY, req.params.objId)
-      .then(trophy => {
-        res.status(200).json(trophy);
-      })
-      .catch(() => {
-        res.status(404).json({ status: 404, message: `Cache Miss: TrophyID=${req.params.objId}` });
-      });
-  });
-
-  // TODO: REMOVE THIS TEST ROUTE
-  app.get(config.BASE_URL_GAME + '/evictTrophy/:objId', (req, res) => {
-    cache
-      .evictItem(CACHE_TYPES.TROPHY, req.params.objId)
-      .then(count => {
-        if (count >= 0) {
-          cache.dumpCache(CACHE_TYPES.TROPHY);
-          res.status(200).json({ status: 200, message: 'OK', evictedCount: count });
-        }
-      })
-      .catch(count => {
-        res.status(500).json({ status: 400, message: 'Eviction Failed', evictedCount: count });
-      });
-  });
+  // set up the base /game router
+  app.use(config.BASE_URL_GAME, router);
 
   // catch-all for unhandled requests
   app.get('/*', (req, res) => {

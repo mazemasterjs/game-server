@@ -1,6 +1,5 @@
-import { genResMsg, trimUrl } from './funcs';
+import * as fns from './funcs';
 import { CacheItem } from './CacheItem';
-import axios from 'axios';
 import Config from './Config';
 import Logger, { LOG_LEVELS } from '@mazemasterjs/logger';
 
@@ -47,6 +46,22 @@ export class Cache {
     return Promise.resolve(this.instance);
   }
 
+  /**
+   * A non-promise based option for getting the static instance which useful for accessing the
+   * cache outside of async functions.  WARNING: getNewInstance() MUST be called first or this will throw an exception!
+   */
+  public static use(): Cache {
+    if (this.instance === undefined) {
+      const instanceError = new Error(
+        'Class not instantiated, use Cache.getInstance() BEFORE Cache.use()!  Tip: Avoid calling Cache.use() in a module/class global declaration.',
+      );
+      log.error(__filename, 'use()', 'Instance Error ->', instanceError);
+      throw instanceError;
+    }
+
+    return this.instance;
+  }
+
   // set instance variable
   private static instance: Cache;
 
@@ -73,24 +88,41 @@ export class Cache {
 
     // search the array for a matching item
     log.debug(__filename, method, 'Searching cache...');
-    const cacheItem: any = await cache.find(ci => {
+    let cacheItem: any = await cache.find(ci => {
       return ci.Item.Id === objId;
     });
 
     if (cacheItem === undefined) {
-      log.warn(__filename, method, 'Item not found in cache.');
+      // Cache miss - we'll try to pull it from the service
+      log.warn(__filename, method, 'Item not found in cache, attempting to pull from service...');
+
+      // make a call to the axios get wrapper
+      cacheItem = await fns
+        .doGet(`${fns.getSvcUrl(cacheType)}/get?id=${objId}`)
+        .then(itemArray => {
+          // we got a response - convert to cache item and give it a hit
+          // all /get calls return arrays - dealing with a single item, so go straight to element 0
+          const newCacheItem = new CacheItem(itemArray[0], cacheType);
+          newCacheItem.addHit();
+
+          // then store it in the cache
+          this.storeItem(cacheType, newCacheItem);
+
+          // and return so we can continue
+          return newCacheItem;
+        })
+        .catch(getError => {
+          log.warn(__filename, method, 'Item not returned from service -> ' + getError.message);
+        });
     }
 
     // return may be undefined
-    if (cacheItem) {
-      log.debug(__filename, method, 'Found item, returning objectId ' + cacheItem.item.Id);
+    if (cacheItem !== undefined) {
       cacheItem.addHit();
-      this.sortCache(cache);
-      this.dumpCache(cacheType);
-
+      log.debug(__filename, method, 'Returning objectId ' + cacheItem.item.Id);
       return Promise.resolve(cacheItem.item);
     } else {
-      return Promise.reject(undefined);
+      return Promise.reject(new Error(`${CACHE_TYPES[cacheType]} object ${objId} not found in cache or by service.`));
     }
   }
 
@@ -125,6 +157,29 @@ export class Cache {
   }
 
   /**
+   * Returns an array of all items in the requested cache
+   * @param cacheType
+   */
+  public fetchItems(cacheType: CACHE_TYPES): Array<any> {
+    const cache = this.getCacheArray(cacheType);
+    const retArray = new Array();
+
+    for (const cacheItem of cache) {
+      retArray.push(cacheItem.Item);
+    }
+    log.debug(__filename, `fetchItems(${CACHE_TYPES[cacheType]})`, `Returning array of ${retArray.length} items.`);
+    return retArray;
+  }
+
+  /**
+   * Returns count of elements in the given cache
+   * @param cacheType
+   */
+  public countItems(cacheType: CACHE_TYPES): number {
+    return this.getCacheArray(cacheType).length;
+  }
+
+  /**
    * Dumps the specified cache stats to log
    * @param cacheType
    */
@@ -146,25 +201,27 @@ export class Cache {
    * Pushes an object onto the bottom of the given cache array.
    * If the cache is full (cache.length >= env.CACHE_SIZE_<NAME>), shift top element before pushing
    *
-   * @param object
+   * @param newCacheItem
    * @param cacheType
    */
-  private storeItem(cacheType: CACHE_TYPES, object: any) {
-    const objId: string = object.Id !== undefined ? object.Id : object.id;
-    const method = `storeItem(${CACHE_TYPES[cacheType]}, Object: ${objId})`;
-    const cache: Array<any> = this.getCacheArray(cacheType);
+  public storeItem(cacheType: CACHE_TYPES, newCacheItem: CacheItem) {
+    const method = `storeItem(${CACHE_TYPES[cacheType]}, Object: ${newCacheItem.Item.Id})`;
+    const cache = this.getCacheArray(cacheType);
     const max: number = this.getCacheSize(cacheType);
 
+    // if the cache is full, sort it and pop off the bottom (lowest value) cached element
     if (cache.length >= max) {
-      const trash: any = cache.shift();
+      this.sortCache(cache);
+      const trash: any = cache.pop();
+      log.warn(__filename, method, `${CACHE_TYPES[cacheType]} full. ${trash ? trash.Item.Id : 'undefined'} removed from cache.`);
     }
 
-    cache.push(object);
+    // now we can push the new item onto the cache
+    cache.push(newCacheItem);
   }
 
   private async sortCache(cache: Array<CacheItem>) {
     log.debug(__filename, 'sortCache(Array<CacheItem>)', `Sorting cache of ${cache.length} items.`);
-    const now = Date.now();
     await cache.sort((first: CacheItem, second: CacheItem) => {
       return second.SortKey - first.SortKey;
     });
@@ -197,7 +254,7 @@ export class Cache {
   }
 
   private async loadCache(url: string, cacheType: CACHE_TYPES): Promise<number> {
-    const method = `loadCache(${trimUrl(url)}, ${CACHE_TYPES[cacheType]})`;
+    const method = `loadCache(${fns.trimUrl(url)}, ${CACHE_TYPES[cacheType]})`;
     const startTime = Date.now();
 
     // set some cache-specific reference vars
@@ -208,7 +265,7 @@ export class Cache {
     let error;
 
     // get the data we need to cache from the service passed via the url parameter
-    const data: any = await this.doGet(url).catch(getDataError => {
+    const data: any = await fns.doGet(url).catch(getDataError => {
       log.error(__filename, method, 'Error requesting data ->', getDataError);
       error = getDataError;
     });
@@ -225,7 +282,7 @@ export class Cache {
       // api/maze/get only returns stubs, so we have to make a second request
       // to get the full maze data that we need for the cache
       if (cacheType === CACHE_TYPES.MAZE) {
-        jsonObj = await this.doGet(url + `?id=${ele.id}`);
+        jsonObj = await fns.doGet(url + `?id=${ele.id}`);
         jsonObj = jsonObj[0]; // all /api/get calls return array, even for single-object responses
       } else {
         jsonObj = ele;
@@ -241,12 +298,8 @@ export class Cache {
           log.warn(__filename, method, `${CACHE_TYPES[cacheType]} cache capacity reached (${max} loaded, ${data.length - max} uncached), aborting cache load.`);
           break;
         }
-      } catch (coerceError) {
-        log.warn(
-          __filename,
-          method,
-          `Unable to coerce {${CACHE_TYPES[cacheType]}.id:${ele.id}} into ${CACHE_TYPES[cacheType]} class, skipping element. Error -> ${coerceError.message}`,
-        );
+      } catch (storeError) {
+        log.warn(__filename, method, `Unable to cache ${CACHE_TYPES[cacheType]} item -> ${storeError.message}`);
       }
     }
 
@@ -362,30 +415,6 @@ export class Cache {
     const cacheError = new Error(`${cacheType} is not a valid cache array name.`);
     log.error(__filename, `getCacheArrayByName(${cacheType})`, 'Invalid Cache Name', cacheError);
     throw cacheError;
-  }
-
-  /**
-   * Returns data from the requested URL
-   *
-   * @param url string - Service API to request data from
-   */
-  private async doGet(url: string): Promise<any> {
-    const method = `doGet(${trimUrl(url)})`;
-    log.debug(__filename, method, `Requesting ${url}`);
-
-    return await axios
-      .get(url)
-      .then(res => {
-        log.debug(__filename, method, genResMsg(url, res));
-        if (log.LogLevel === LOG_LEVELS.TRACE) {
-          log.trace(__filename, method, 'Response Data: \r\n' + JSON.stringify(res.data));
-        }
-        return Promise.resolve(res.data);
-      })
-      .catch(axiosErr => {
-        log.error(__filename, method, 'Error retrieving data ->', axiosErr);
-        return Promise.reject(axiosErr);
-      });
   }
 }
 

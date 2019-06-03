@@ -19,6 +19,7 @@ export class Config {
 
   public readonly HTTP_PORT_GAME: number;
   public readonly BASE_URL_GAME: string;
+  public readonly EXT_URL_GAME: string;
   public readonly LOG_LEVEL: number;
   public readonly CACHE_SIZE_MAZES: number;
   public readonly CACHE_SIZE_GAMES: number;
@@ -33,7 +34,9 @@ export class Config {
   // singleton pattern - constructor is private, use static Config.getInstance()
   private constructor() {
     this.LOG_LEVEL = this.getVar('LOG_LEVEL', 'number');
+    log.LogLevel = this.LOG_LEVEL;
     this.BASE_URL_GAME = this.getVar('BASE_URL_GAME', 'string');
+    this.EXT_URL_GAME = this.getVar('EXT_URL_GAME', 'string');
     this.HTTP_PORT_GAME = this.getVar('HTTP_PORT_GAME', 'number');
     this.CACHE_SIZE_MAZES = this.getVar('CACHE_SIZE_MAZES', 'number');
     this.CACHE_SIZE_GAMES = this.getVar('CACHE_SIZE_GAMES', 'number');

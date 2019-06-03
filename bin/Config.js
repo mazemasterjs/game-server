@@ -38,7 +38,9 @@ class Config {
             }
         };
         this.LOG_LEVEL = this.getVar('LOG_LEVEL', 'number');
+        log.LogLevel = this.LOG_LEVEL;
         this.BASE_URL_GAME = this.getVar('BASE_URL_GAME', 'string');
+        this.EXT_URL_GAME = this.getVar('EXT_URL_GAME', 'string');
         this.HTTP_PORT_GAME = this.getVar('HTTP_PORT_GAME', 'number');
         this.CACHE_SIZE_MAZES = this.getVar('CACHE_SIZE_MAZES', 'number');
         this.CACHE_SIZE_GAMES = this.getVar('CACHE_SIZE_GAMES', 'number');

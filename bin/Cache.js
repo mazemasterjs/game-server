@@ -7,9 +7,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
@@ -17,10 +14,12 @@ var __importStar = (this && this.__importStar) || function (mod) {
     result["default"] = mod;
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const funcs_1 = require("./funcs");
+const fns = __importStar(require("./funcs"));
 const CacheItem_1 = require("./CacheItem");
-const axios_1 = __importDefault(require("axios"));
 const Config_1 = __importDefault(require("./Config"));
 const logger_1 = __importStar(require("@mazemasterjs/logger"));
 // useful constants
@@ -74,6 +73,18 @@ class Cache {
         });
     }
     /**
+     * A non-promise based option for getting the static instance which useful for accessing the
+     * cache outside of async functions.  WARNING: getNewInstance() MUST be called first or this will throw an exception!
+     */
+    static use() {
+        if (this.instance === undefined) {
+            const instanceError = new Error('Class not instantiated, use Cache.getInstance() BEFORE Cache.use()!  Tip: Avoid calling Cache.use() in a module/class global declaration.');
+            log.error(__filename, 'use()', 'Instance Error ->', instanceError);
+            throw instanceError;
+        }
+        return this.instance;
+    }
+    /**
      * Searches the given cache for matching object and returns if found.
      *
      * @param cache
@@ -86,22 +97,37 @@ class Cache {
             const cache = this.getCacheArray(cacheType);
             // search the array for a matching item
             log.debug(__filename, method, 'Searching cache...');
-            const cacheItem = yield cache.find(ci => {
+            let cacheItem = yield cache.find(ci => {
                 return ci.Item.Id === objId;
             });
             if (cacheItem === undefined) {
-                log.warn(__filename, method, 'Item not found in cache.');
+                // Cache miss - we'll try to pull it from the service
+                log.warn(__filename, method, 'Item not found in cache, attempting to pull from service...');
+                // make a call to the axios get wrapper
+                cacheItem = yield fns
+                    .doGet(`${fns.getSvcUrl(cacheType)}/get?id=${objId}`)
+                    .then(itemArray => {
+                    // we got a response - convert to cache item and give it a hit
+                    // all /get calls return arrays - dealing with a single item, so go straight to element 0
+                    const newCacheItem = new CacheItem_1.CacheItem(itemArray[0], cacheType);
+                    newCacheItem.addHit();
+                    // then store it in the cache
+                    this.storeItem(cacheType, newCacheItem);
+                    // and return so we can continue
+                    return newCacheItem;
+                })
+                    .catch(getError => {
+                    log.warn(__filename, method, 'Item not returned from service -> ' + getError.message);
+                });
             }
             // return may be undefined
-            if (cacheItem) {
-                log.debug(__filename, method, 'Found item, returning objectId ' + cacheItem.item.Id);
+            if (cacheItem !== undefined) {
                 cacheItem.addHit();
-                this.sortCache(cache);
-                this.dumpCache(cacheType);
+                log.debug(__filename, method, 'Returning objectId ' + cacheItem.item.Id);
                 return Promise.resolve(cacheItem.item);
             }
             else {
-                return Promise.reject(undefined);
+                return Promise.reject(new Error(`${CACHE_TYPES[cacheType]} object ${objId} not found in cache or by service.`));
             }
         });
     }
@@ -133,6 +159,26 @@ class Cache {
         });
     }
     /**
+     * Returns an array of all items in the requested cache
+     * @param cacheType
+     */
+    fetchItems(cacheType) {
+        const cache = this.getCacheArray(cacheType);
+        const retArray = new Array();
+        for (const cacheItem of cache) {
+            retArray.push(cacheItem.Item);
+        }
+        log.debug(__filename, `fetchItems(${CACHE_TYPES[cacheType]})`, `Returning array of ${retArray.length} items.`);
+        return retArray;
+    }
+    /**
+     * Returns count of elements in the given cache
+     * @param cacheType
+     */
+    countItems(cacheType) {
+        return this.getCacheArray(cacheType).length;
+    }
+    /**
      * Dumps the specified cache stats to log
      * @param cacheType
      */
@@ -152,23 +198,25 @@ class Cache {
      * Pushes an object onto the bottom of the given cache array.
      * If the cache is full (cache.length >= env.CACHE_SIZE_<NAME>), shift top element before pushing
      *
-     * @param object
+     * @param newCacheItem
      * @param cacheType
      */
-    storeItem(cacheType, object) {
-        const objId = object.Id !== undefined ? object.Id : object.id;
-        const method = `storeItem(${CACHE_TYPES[cacheType]}, Object: ${objId})`;
+    storeItem(cacheType, newCacheItem) {
+        const method = `storeItem(${CACHE_TYPES[cacheType]}, Object: ${newCacheItem.Item.Id})`;
         const cache = this.getCacheArray(cacheType);
         const max = this.getCacheSize(cacheType);
+        // if the cache is full, sort it and pop off the bottom (lowest value) cached element
         if (cache.length >= max) {
-            const trash = cache.shift();
+            this.sortCache(cache);
+            const trash = cache.pop();
+            log.warn(__filename, method, `${CACHE_TYPES[cacheType]} full. ${trash ? trash.Item.Id : 'undefined'} removed from cache.`);
         }
-        cache.push(object);
+        // now we can push the new item onto the cache
+        cache.push(newCacheItem);
     }
     sortCache(cache) {
         return __awaiter(this, void 0, void 0, function* () {
             log.debug(__filename, 'sortCache(Array<CacheItem>)', `Sorting cache of ${cache.length} items.`);
-            const now = Date.now();
             yield cache.sort((first, second) => {
                 return second.SortKey - first.SortKey;
             });
@@ -200,7 +248,7 @@ class Cache {
     }
     loadCache(url, cacheType) {
         return __awaiter(this, void 0, void 0, function* () {
-            const method = `loadCache(${funcs_1.trimUrl(url)}, ${CACHE_TYPES[cacheType]})`;
+            const method = `loadCache(${fns.trimUrl(url)}, ${CACHE_TYPES[cacheType]})`;
             const startTime = Date.now();
             // set some cache-specific reference vars
             const cache = this.getCacheArray(cacheType);
@@ -208,7 +256,7 @@ class Cache {
             // we'll use this to capture errors from arrow functions
             let error;
             // get the data we need to cache from the service passed via the url parameter
-            const data = yield this.doGet(url).catch(getDataError => {
+            const data = yield fns.doGet(url).catch(getDataError => {
                 log.error(__filename, method, 'Error requesting data ->', getDataError);
                 error = getDataError;
             });
@@ -222,7 +270,7 @@ class Cache {
                 // api/maze/get only returns stubs, so we have to make a second request
                 // to get the full maze data that we need for the cache
                 if (cacheType === CACHE_TYPES.MAZE) {
-                    jsonObj = yield this.doGet(url + `?id=${ele.id}`);
+                    jsonObj = yield fns.doGet(url + `?id=${ele.id}`);
                     jsonObj = jsonObj[0]; // all /api/get calls return array, even for single-object responses
                 }
                 else {
@@ -238,8 +286,8 @@ class Cache {
                         break;
                     }
                 }
-                catch (coerceError) {
-                    log.warn(__filename, method, `Unable to coerce {${CACHE_TYPES[cacheType]}.id:${ele.id}} into ${CACHE_TYPES[cacheType]} class, skipping element. Error -> ${coerceError.message}`);
+                catch (storeError) {
+                    log.warn(__filename, method, `Unable to cache ${CACHE_TYPES[cacheType]} item -> ${storeError.message}`);
                 }
             }
             log.debug(__filename, method, `${CACHE_TYPES[cacheType]} cache loaded with ${cache.length} (max: ${max}) elements in ${Date.now() - startTime}ms.`);
@@ -345,30 +393,6 @@ class Cache {
         const cacheError = new Error(`${cacheType} is not a valid cache array name.`);
         log.error(__filename, `getCacheArrayByName(${cacheType})`, 'Invalid Cache Name', cacheError);
         throw cacheError;
-    }
-    /**
-     * Returns data from the requested URL
-     *
-     * @param url string - Service API to request data from
-     */
-    doGet(url) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const method = `doGet(${funcs_1.trimUrl(url)})`;
-            log.debug(__filename, method, `Requesting ${url}`);
-            return yield axios_1.default
-                .get(url)
-                .then(res => {
-                log.debug(__filename, method, funcs_1.genResMsg(url, res));
-                if (log.LogLevel === logger_1.LOG_LEVELS.TRACE) {
-                    log.trace(__filename, method, 'Response Data: \r\n' + JSON.stringify(res.data));
-                }
-                return Promise.resolve(res.data);
-            })
-                .catch(axiosErr => {
-                log.error(__filename, method, 'Error retrieving data ->', axiosErr);
-                return Promise.reject(axiosErr);
-            });
-        });
     }
 }
 exports.Cache = Cache;
