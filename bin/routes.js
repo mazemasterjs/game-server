@@ -26,7 +26,7 @@ const Game_1 = require("@mazemasterjs/shared-library/Game");
 const Player_1 = require("@mazemasterjs/shared-library/Player");
 const Enums_1 = require("@mazemasterjs/shared-library/Enums");
 const Score_1 = __importDefault(require("@mazemasterjs/shared-library/Score"));
-const CacheItem_1 = __importDefault(require("./CacheItem"));
+const CacheEntry_1 = __importDefault(require("./CacheEntry"));
 // set constant utility references
 const log = logger_1.Logger.getInstance();
 const config = Config_1.Config.getInstance();
@@ -62,10 +62,7 @@ exports.createSinglePlayerGame = (req, res) => __awaiter(this, void 0, void 0, f
         const player = new Player_1.Player(maze.StartCell, Enums_1.PLAYER_STATES.SITTING);
         const game = new Game_1.Game(maze, player, new Score_1.default(), 1, botId, teamId);
         // put the game on the game cache
-        Cache_1.Cache.use().storeItem(Cache_1.CACHE_TYPES.GAME, new CacheItem_1.default(game, Cache_1.CACHE_TYPES.GAME));
-        Cache_1.Cache.use().dumpCache(Cache_1.CACHE_TYPES.MAZE);
-        Cache_1.Cache.use().dumpCache(Cache_1.CACHE_TYPES.TEAM);
-        Cache_1.Cache.use().dumpCache(Cache_1.CACHE_TYPES.GAME);
+        Cache_1.Cache.use().storeItem(Cache_1.CACHE_TYPES.GAME, new CacheEntry_1.default(Cache_1.CACHE_TYPES.GAME, game));
         // and we're done!
         return res.status(200).json(game);
     }

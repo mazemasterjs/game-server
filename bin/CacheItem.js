@@ -7,8 +7,8 @@ const Trophy_1 = require("@mazemasterjs/shared-library/Trophy");
 const Cache_1 = require("./Cache");
 const log = logger_1.Logger.getInstance();
 const LAST_HIT_MODIFIER = 500;
-class CacheItem {
-    constructor(item, cacheType) {
+class CacheEntry {
+    constructor(cacheType, item) {
         const now = Date.now();
         this.item = this.coerce(item, cacheType);
         this.hitCount = 0;
@@ -76,6 +76,6 @@ class CacheItem {
         return jsonObj;
     }
 }
-exports.CacheItem = CacheItem;
-exports.default = CacheItem;
+exports.CacheEntry = CacheEntry;
+exports.default = CacheEntry;
 //# sourceMappingURL=CacheItem.js.map

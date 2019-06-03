@@ -31,6 +31,7 @@ exports.genResMsg = genResMsg;
  * Returns IGameStub versions of all games in the cache
  */
 function getGameStubs() {
+    log.debug(__filename, 'getGameStubs()', 'Building array of game stubs.');
     const games = Cache_1.Cache.use().fetchItems(Cache_1.CACHE_TYPES.GAME);
     const stubs = new Array();
     for (const game of games) {
@@ -108,4 +109,30 @@ function doGet(url) {
     });
 }
 exports.doGet = doGet;
+function getItem(cacheType, itemId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const method = `getItem(${Cache_1.CACHE_TYPES[cacheType]}, ${itemId})`;
+        let cacheEntry = yield Cache_1.Cache.use()
+            .fetchItem(cacheType, itemId)
+            .catch(fetchErr => {
+            log.error(__filename, method, 'Error fetching item ->', fetchErr);
+        });
+        // didn't find it in the cache
+        if (cacheEntry === undefined) {
+            log.debug(__filename, method, 'Item not in cache, retrieving...');
+            cacheEntry = yield doGet(`${getSvcUrl(cacheType)}/get?id=${itemId}`)
+                .then(itemArray => {
+                // got the item, lets cache it!
+                Cache_1.Cache.use().storeItem(cacheType, itemArray[0]);
+                // and return so we can continue
+                return cacheEntry;
+            })
+                .catch(getError => {
+                log.warn(__filename, method, `${getSvcUrl(cacheType)}/get?id=${itemId} failed -> ${getError.message}`);
+                throw getError();
+            });
+        }
+    });
+}
+exports.getItem = getItem;
 //# sourceMappingURL=funcs.js.map

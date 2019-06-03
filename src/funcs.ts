@@ -6,7 +6,6 @@ import { IGameStub } from '@mazemasterjs/shared-library/IGameStub';
 import { Config } from './Config';
 import axios from 'axios';
 import { Team } from '@mazemasterjs/shared-library/Team';
-import Bot from '@mazemasterjs/shared-library/Bot';
 
 const log = Logger.getInstance();
 const config = Config.getInstance();
@@ -25,6 +24,7 @@ export function genResMsg(url: string, res: AxiosResponse): string {
  * Returns IGameStub versions of all games in the cache
  */
 export function getGameStubs(): Array<IGameStub> {
+  log.debug(__filename, 'getGameStubs()', 'Building array of game stubs.');
   const games: Array<Game> = Cache.use().fetchItems(CACHE_TYPES.GAME);
   const stubs = new Array<IGameStub>();
 
@@ -101,4 +101,32 @@ export async function doGet(url: string): Promise<any> {
       log.error(__filename, method, 'Error retrieving data ->', axiosErr);
       return Promise.reject(axiosErr);
     });
+}
+
+export async function getItem(cacheType: CACHE_TYPES, itemId: string) {
+  const method = `getItem(${CACHE_TYPES[cacheType]}, ${itemId})`;
+
+  let cacheEntry = await Cache.use()
+    .fetchItem(cacheType, itemId)
+    .catch(fetchErr => {
+      log.error(__filename, method, 'Error fetching item ->', fetchErr);
+    });
+
+  // didn't find it in the cache
+  if (cacheEntry === undefined) {
+    log.debug(__filename, method, 'Item not in cache, retrieving...');
+
+    cacheEntry = await doGet(`${getSvcUrl(cacheType)}/get?id=${itemId}`)
+      .then(itemArray => {
+        // got the item, lets cache it!
+        Cache.use().storeItem(cacheType, itemArray[0]);
+
+        // and return so we can continue
+        return cacheEntry;
+      })
+      .catch(getError => {
+        log.warn(__filename, method, `${getSvcUrl(cacheType)}/get?id=${itemId} failed -> ${getError.message}`);
+        throw getError();
+      });
+  }
 }

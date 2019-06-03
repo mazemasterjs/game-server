@@ -26,6 +26,7 @@ export class Config {
   public readonly CACHE_SIZE_SCORES: number;
   public readonly CACHE_SIZE_TEAMS: number;
   public readonly CACHE_SIZE_TROPHIES: number;
+  public readonly CACHE_LOAD_MAX_FAIL_PERCENT: number;
   public readonly SERVICE_MAZE: string;
   public readonly SERVICE_SCORE: string;
   public readonly SERVICE_TEAM: string;
@@ -43,6 +44,7 @@ export class Config {
     this.CACHE_SIZE_SCORES = this.getVar('CACHE_SIZE_SCORES', 'number');
     this.CACHE_SIZE_TEAMS = this.getVar('CACHE_SIZE_TEAMS', 'number');
     this.CACHE_SIZE_TROPHIES = this.getVar('CACHE_SIZE_TROPHIES', 'number');
+    this.CACHE_LOAD_MAX_FAIL_PERCENT = this.getVar('CACHE_LOAD_MAX_FAIL_PERCENT', 'number');
     this.SERVICE_MAZE = this.getVar('SERVICE_MAZE', 'string');
     this.SERVICE_SCORE = this.getVar('SERVICE_SCORE', 'string');
     this.SERVICE_TEAM = this.getVar('SERVICE_TEAM', 'string');

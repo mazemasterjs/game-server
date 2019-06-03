@@ -1,5 +1,5 @@
 import * as fns from './funcs';
-import { CacheItem } from './CacheItem';
+import { CacheEntry } from './CacheEntry';
 import Config from './Config';
 import Logger, { LOG_LEVELS } from '@mazemasterjs/logger';
 
@@ -66,11 +66,11 @@ export class Cache {
   private static instance: Cache;
 
   // initialize cache arrays
-  private maze: Array<CacheItem> = new Array<CacheItem>();
-  private team: Array<CacheItem> = new Array<CacheItem>();
-  private score: Array<CacheItem> = new Array<CacheItem>();
-  private game: Array<CacheItem> = new Array<CacheItem>();
-  private trophy: Array<CacheItem> = new Array<CacheItem>();
+  private maze: Array<CacheEntry> = new Array<CacheEntry>();
+  private team: Array<CacheEntry> = new Array<CacheEntry>();
+  private score: Array<CacheEntry> = new Array<CacheEntry>();
+  private game: Array<CacheEntry> = new Array<CacheEntry>();
+  private trophy: Array<CacheEntry> = new Array<CacheEntry>();
 
   // private constructor
   private constructor() {}
@@ -80,49 +80,26 @@ export class Cache {
    *
    * @param cache
    * @param objId
-   * @returns CacheItem or undefined (if not found)
+   * @returns CacheEntry or undefined (if not found)
    */
   public async fetchItem(cacheType: CACHE_TYPES, objId: string): Promise<any> {
     const method = `fetchItem(${CACHE_TYPES[cacheType]}, ${objId})`;
-    const cache: Array<CacheItem> = this.getCacheArray(cacheType);
+    const cache: Array<CacheEntry> = this.getCacheArray(cacheType);
 
     // search the array for a matching item
     log.debug(__filename, method, 'Searching cache...');
-    let cacheItem: any = await cache.find(ci => {
+    const cacheEntry: any = await cache.find(ci => {
       return ci.Item.Id === objId;
     });
 
-    if (cacheItem === undefined) {
-      // Cache miss - we'll try to pull it from the service
-      log.warn(__filename, method, 'Item not found in cache, attempting to pull from service...');
-
-      // make a call to the axios get wrapper
-      cacheItem = await fns
-        .doGet(`${fns.getSvcUrl(cacheType)}/get?id=${objId}`)
-        .then(itemArray => {
-          // we got a response - convert to cache item and give it a hit
-          // all /get calls return arrays - dealing with a single item, so go straight to element 0
-          const newCacheItem = new CacheItem(itemArray[0], cacheType);
-          newCacheItem.addHit();
-
-          // then store it in the cache
-          this.storeItem(cacheType, newCacheItem);
-
-          // and return so we can continue
-          return newCacheItem;
-        })
-        .catch(getError => {
-          log.warn(__filename, method, 'Item not returned from service -> ' + getError.message);
-        });
-    }
-
     // return may be undefined
-    if (cacheItem !== undefined) {
-      cacheItem.addHit();
-      log.debug(__filename, method, 'Returning objectId ' + cacheItem.item.Id);
-      return Promise.resolve(cacheItem.item);
+    if (cacheEntry !== undefined) {
+      cacheEntry.addHit();
+      log.debug(__filename, method, 'CACHE HIT!');
+      return Promise.resolve(cacheEntry.item);
     } else {
-      return Promise.reject(new Error(`${CACHE_TYPES[cacheType]} object ${objId} not found in cache or by service.`));
+      log.debug(__filename, method, 'CACHE MISS!');
+      return Promise.reject(new Error(`${CACHE_TYPES[cacheType]} item ${objId} not in cache.`));
     }
   }
 
@@ -164,8 +141,8 @@ export class Cache {
     const cache = this.getCacheArray(cacheType);
     const retArray = new Array();
 
-    for (const cacheItem of cache) {
-      retArray.push(cacheItem.Item);
+    for (const cacheEntry of cache) {
+      retArray.push(cacheEntry.Item);
     }
     log.debug(__filename, `fetchItems(${CACHE_TYPES[cacheType]})`, `Returning array of ${retArray.length} items.`);
     return retArray;
@@ -190,7 +167,7 @@ export class Cache {
     }
 
     const method = `dumpCache(${CACHE_TYPES[cacheType]})`;
-    const cache: Array<CacheItem> = this.getCacheArray(cacheType);
+    const cache: Array<CacheEntry> = this.getCacheArray(cacheType);
     for (const ci of cache) {
       const msg = `cache: ${CACHE_TYPES[cacheType]}, id=${ci.Item.Id} value=${ci.SortKey}, hits:${ci.HitCount}, lastHit=${ci.LastHitTime}`;
       log.debug(__filename, method, msg);
@@ -201,28 +178,42 @@ export class Cache {
    * Pushes an object onto the bottom of the given cache array.
    * If the cache is full (cache.length >= env.CACHE_SIZE_<NAME>), shift top element before pushing
    *
-   * @param newCacheItem
    * @param cacheType
+   * @param object any - an appropriate Maze Master JSON object or instantiated class
+   * @returns CacheItem - The CacheItem created while storing the mmjs Object into memory
    */
-  public storeItem(cacheType: CACHE_TYPES, newCacheItem: CacheItem) {
-    const method = `storeItem(${CACHE_TYPES[cacheType]}, Object: ${newCacheItem.Item.Id})`;
+  public storeItem(cacheType: CACHE_TYPES, object: any): CacheEntry {
+    const method = `storeItem(${CACHE_TYPES[cacheType]}, Object: ${object.id})`;
     const cache = this.getCacheArray(cacheType);
     const max: number = this.getCacheSize(cacheType);
+    let cacheEntry: CacheEntry;
+
+    // create CacheEntry
+    cacheEntry = new CacheEntry(cacheType, object);
 
     // if the cache is full, sort it and pop off the bottom (lowest value) cached element
     if (cache.length >= max) {
       this.sortCache(cache);
       const trash: any = cache.pop();
       log.warn(__filename, method, `${CACHE_TYPES[cacheType]} full. ${trash ? trash.Item.Id : 'undefined'} removed from cache.`);
+      // log.warn(__filename, method, `${CACHE_TYPES[cacheType]} full. Clearing an item from cache: ${JSON.stringify(trash).substr(0, 100)}`);
     }
 
-    // now we can push the new item onto the cache
-    cache.push(newCacheItem);
+    // now we can push the new entry onto the cache
+    cache.push(cacheEntry);
+
+    // offer the new cacheEntry as a return
+    return cacheEntry;
   }
 
-  private async sortCache(cache: Array<CacheItem>) {
-    log.debug(__filename, 'sortCache(Array<CacheItem>)', `Sorting cache of ${cache.length} items.`);
-    await cache.sort((first: CacheItem, second: CacheItem) => {
+  /**
+   * Sorts the given cache using Array.Sort() and CacheEntry.SortKey
+   *
+   * @param cache
+   */
+  private async sortCache(cache: Array<CacheEntry>) {
+    log.debug(__filename, 'sortCache(Array<CacheEntry>)', `Sorting cache of ${cache.length} items.`);
+    await cache.sort((first: CacheEntry, second: CacheEntry) => {
       return second.SortKey - first.SortKey;
     });
   }
@@ -233,19 +224,19 @@ export class Cache {
    */
   private async initialize() {
     // load the maze cache
-    await this.loadCache(config.SERVICE_MAZE + '/get', CACHE_TYPES.MAZE).catch(error => {
+    await this.loadCache(CACHE_TYPES.MAZE, config.SERVICE_MAZE + '/get').catch(error => {
       log.error(__filename, 'constructor()', 'Error loading maze cache ->', error);
       return Promise.reject(error);
     });
 
     // load the trophy cache
-    await this.loadCache(config.SERVICE_TROPHY + '/get', CACHE_TYPES.TROPHY).catch(error => {
+    await this.loadCache(CACHE_TYPES.TROPHY, config.SERVICE_TROPHY + '/get').catch(error => {
       log.error(__filename, 'constructor()', 'Error loading trophy cache ->', error);
       return Promise.reject(error);
     });
 
     // load the team cache
-    await this.loadCache(config.SERVICE_TEAM + '/get', CACHE_TYPES.TEAM).catch(error => {
+    await this.loadCache(CACHE_TYPES.TEAM, config.SERVICE_TEAM + '/get').catch(error => {
       log.error(__filename, 'constructor()', 'Error loading team cache ->', error);
       return Promise.reject(error);
     });
@@ -253,26 +244,31 @@ export class Cache {
     return Promise.resolve();
   }
 
-  private async loadCache(url: string, cacheType: CACHE_TYPES): Promise<number> {
-    const method = `loadCache(${fns.trimUrl(url)}, ${CACHE_TYPES[cacheType]})`;
+  /**
+   * Pulls data from the MMJS service backing the given cache type
+   *
+   * @param svcUrl
+   * @param cacheType
+   */
+  private async loadCache(cacheType: CACHE_TYPES, svcUrl: string): Promise<number> {
+    const method = `loadCache(${fns.trimUrl(svcUrl)}, ${CACHE_TYPES[cacheType]})`;
     const startTime = Date.now();
 
     // set some cache-specific reference vars
     const cache = this.getCacheArray(cacheType);
     const max = this.getCacheSize(cacheType);
 
-    // we'll use this to capture errors from arrow functions
-    let error;
+    let errorCount = 0; // <-- will use this to track errors and abort program if things look too bad
+    const MAX_ERRORS = Math.ceil(max / config.CACHE_LOAD_MAX_FAIL_PERCENT);
 
     // get the data we need to cache from the service passed via the url parameter
-    const data: any = await fns.doGet(url).catch(getDataError => {
+    const data: any = await fns.doGet(svcUrl).catch(getDataError => {
       log.error(__filename, method, 'Error requesting data ->', getDataError);
-      error = getDataError;
     });
 
-    // check for
-    if (error !== undefined) {
-      return Promise.reject(error);
+    // we'll need to reject the promise if data returned undefined
+    if (data === undefined) {
+      return Promise.reject(data);
     }
 
     // iterate through the elements in the returned JSON object array
@@ -282,28 +278,35 @@ export class Cache {
       // api/maze/get only returns stubs, so we have to make a second request
       // to get the full maze data that we need for the cache
       if (cacheType === CACHE_TYPES.MAZE) {
-        jsonObj = await fns.doGet(url + `?id=${ele.id}`);
+        jsonObj = await fns.doGet(svcUrl + `?id=${ele.id}`);
         jsonObj = jsonObj[0]; // all /api/get calls return array, even for single-object responses
       } else {
         jsonObj = ele;
       }
 
+      // now attempt to push it onto the cache (and give it a hit)
       try {
-        // pass the data through the coerce function to validate the data and get a fully functioning class object
-        const cacheItem: CacheItem = new CacheItem(jsonObj, cacheType);
-
-        // now attempt to push it onto the cache
-        this.storeItem(cacheType, cacheItem);
-        if (cache.length >= this.getCacheSize(cacheType)) {
-          log.warn(__filename, method, `${CACHE_TYPES[cacheType]} cache capacity reached (${max} loaded, ${data.length - max} uncached), aborting cache load.`);
-          break;
-        }
+        log.debug(__filename, method, 'Storing item in cache.');
+        this.storeItem(cacheType, jsonObj).addHit();
       } catch (storeError) {
-        log.warn(__filename, method, `Unable to cache ${CACHE_TYPES[cacheType]} item -> ${storeError.message}`);
+        errorCount += 1;
+        log.warn(__filename, method, `Error #${errorCount} (max ${MAX_ERRORS}) -> ${storeError.message}`);
+        if (errorCount > MAX_ERRORS) {
+          const maxFailError = new Error(
+            `${errorCount} load error(s) exceeds the ${config.CACHE_LOAD_MAX_FAIL_PERCENT}% cache load failure rate, aborting startup.`,
+          );
+          log.error(__filename, method, `Cache Load Failure Rate Exceeded ->`, maxFailError);
+          return Promise.reject(maxFailError);
+        }
+      }
+
+      if (cache.length >= max) {
+        log.warn(__filename, method, `Cache capacity reached, aborting load with ${data.length - cache.length} elements uncached.`);
+        break;
       }
     }
 
-    log.debug(__filename, method, `${CACHE_TYPES[cacheType]} cache loaded with ${cache.length} (max: ${max}) elements in ${Date.now() - startTime}ms.`);
+    log.debug(__filename, method, `${cache.length} items loaded in ${Date.now() - startTime}ms.`);
     return Promise.resolve(cache.length);
   }
 
@@ -348,10 +351,14 @@ export class Cache {
   /**
    *  Returns the total number of cache hits for the given cache
    */
-  private countCacheHits(cache: Array<CacheItem>): number {
+  private countCacheHits(cache: Array<CacheEntry>): number {
     let totalHits = 0;
+
     for (const ci of cache) {
       totalHits += ci.HitCount;
+      // if (isNaN(ci.HitCount)) {
+      //   console.log('NAN HC: ' + JSON.stringify(ci).substr(0, 100));
+      // }
     }
 
     return totalHits;
@@ -392,7 +399,7 @@ export class Cache {
    *
    * @param cacheType
    */
-  private getCacheArray(cacheType: CACHE_TYPES): Array<CacheItem> {
+  private getCacheArray(cacheType: CACHE_TYPES): Array<CacheEntry> {
     switch (cacheType) {
       case CACHE_TYPES.MAZE: {
         return this.maze;

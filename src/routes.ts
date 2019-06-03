@@ -12,7 +12,7 @@ import { Team } from '@mazemasterjs/shared-library/Team';
 import { PLAYER_STATES } from '@mazemasterjs/shared-library/Enums';
 import Score from '@mazemasterjs/shared-library/Score';
 import { IScore } from '@mazemasterjs/shared-library/IScore';
-import CacheItem from './CacheItem';
+import CacheEntry from './CacheEntry';
 
 // set constant utility references
 const log = Logger.getInstance();
@@ -55,11 +55,8 @@ export const createSinglePlayerGame = async (req: Request, res: Response) => {
     const game = new Game(maze, player, new Score(), 1, botId, teamId);
 
     // put the game on the game cache
-    Cache.use().storeItem(CACHE_TYPES.GAME, new CacheItem(game, CACHE_TYPES.GAME));
+    Cache.use().storeItem(CACHE_TYPES.GAME, new CacheEntry(CACHE_TYPES.GAME, game));
 
-    Cache.use().dumpCache(CACHE_TYPES.MAZE);
-    Cache.use().dumpCache(CACHE_TYPES.TEAM);
-    Cache.use().dumpCache(CACHE_TYPES.GAME);
     // and we're done!
     return res.status(200).json(game);
   } catch (err) {
