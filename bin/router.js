@@ -17,11 +17,12 @@ exports.router = express_1.default.Router();
 // load the service config
 const config = Config_1.default.getInstance();
 // map all of the common routes
-exports.router.get('/get/games', routes.listGames);
-exports.router.get('/count/games', routes.countGames);
+exports.router.get('/get', routes.listGames);
+exports.router.get('/get/:gameId', routes.getGame);
+exports.router.get('/count', routes.countGames);
 exports.router.get('/newSinglePlayer/:mazeId/:teamId/:botId', routes.createSinglePlayerGame);
-// router.put('/insert', routes.insertDoc);
-// router.delete('/delete/:docId', routes.deleteDoc);
+// TODO: Remove this debugging route
+exports.router.get('/cache/dump', routes.dumpCache);
 // map the live/ready probes
 exports.router.get('/probes/live', routes.livenessProbe);
 exports.router.get('/probes/ready', routes.readinessProbe);

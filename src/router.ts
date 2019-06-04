@@ -8,13 +8,14 @@ export const router = express.Router();
 const config = Config.getInstance();
 
 // map all of the common routes
-router.get('/get/games', routes.listGames);
-router.get('/count/games', routes.countGames);
+router.get('/get', routes.listGames);
+router.get('/get/:gameId', routes.getGame);
+router.get('/count', routes.countGames);
 
 router.get('/newSinglePlayer/:mazeId/:teamId/:botId', routes.createSinglePlayerGame);
 
-// router.put('/insert', routes.insertDoc);
-// router.delete('/delete/:docId', routes.deleteDoc);
+// TODO: Remove this debugging route
+router.get('/cache/dump', routes.dumpCache);
 
 // map the live/ready probes
 router.get('/probes/live', routes.livenessProbe);

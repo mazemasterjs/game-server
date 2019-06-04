@@ -80,7 +80,7 @@ export class Cache {
    *
    * @param cache
    * @param objId
-   * @returns CacheEntry or undefined (if not found)
+   * @returns CacheEntry.Item or undefined (if not found)
    */
   public async fetchItem(cacheType: CACHE_TYPES, objId: string): Promise<any> {
     const method = `fetchItem(${CACHE_TYPES[cacheType]}, ${objId})`;
@@ -95,10 +95,10 @@ export class Cache {
     // return may be undefined
     if (cacheEntry !== undefined) {
       cacheEntry.addHit();
-      log.debug(__filename, method, 'CACHE HIT!');
+      log.debug(__filename, method, 'Item found.');
       return Promise.resolve(cacheEntry.item);
     } else {
-      log.debug(__filename, method, 'CACHE MISS!');
+      log.debug(__filename, method, 'Item not in cache.');
       return Promise.reject(new Error(`${CACHE_TYPES[cacheType]} item ${objId} not in cache.`));
     }
   }
@@ -138,7 +138,7 @@ export class Cache {
    * @param cacheType
    */
   public fetchItems(cacheType: CACHE_TYPES): Array<any> {
-    const cache = this.getCacheArray(cacheType);
+    const cache: Array<CacheEntry> = this.getCacheArray(cacheType);
     const retArray = new Array();
 
     for (const cacheEntry of cache) {
@@ -172,6 +172,8 @@ export class Cache {
       const msg = `cache: ${CACHE_TYPES[cacheType]}, id=${ci.Item.Id} value=${ci.SortKey}, hits:${ci.HitCount}, lastHit=${ci.LastHitTime}`;
       log.debug(__filename, method, msg);
     }
+
+    this.logCacheStatus();
   }
 
   /**
@@ -184,25 +186,29 @@ export class Cache {
    */
   public storeItem(cacheType: CACHE_TYPES, object: any): CacheEntry {
     const method = `storeItem(${CACHE_TYPES[cacheType]}, Object: ${object.id})`;
+    log.debug(__filename, method, 'Storing item in cache.');
     const cache = this.getCacheArray(cacheType);
     const max: number = this.getCacheSize(cacheType);
-    let cacheEntry: CacheEntry;
 
     // create CacheEntry
-    cacheEntry = new CacheEntry(cacheType, object);
+    const cacheEntry = new CacheEntry(cacheType, object);
+
+    // give the new item a hit
+    cacheEntry.addHit();
 
     // if the cache is full, sort it and pop off the bottom (lowest value) cached element
     if (cache.length >= max) {
+      log.warn(__filename, method, 'Cache is full, clearing space.');
       this.sortCache(cache);
       const trash: any = cache.pop();
-      log.warn(__filename, method, `${CACHE_TYPES[cacheType]} full. ${trash ? trash.Item.Id : 'undefined'} removed from cache.`);
-      // log.warn(__filename, method, `${CACHE_TYPES[cacheType]} full. Clearing an item from cache: ${JSON.stringify(trash).substr(0, 100)}`);
+      log.warn(__filename, method, `Item evicted: ${trash ? trash.Item.Id : 'undefined'}.`);
     }
 
     // now we can push the new entry onto the cache
     cache.push(cacheEntry);
 
     // offer the new cacheEntry as a return
+    log.debug(__filename, method, 'Store successful.');
     return cacheEntry;
   }
 
@@ -287,7 +293,7 @@ export class Cache {
       // now attempt to push it onto the cache (and give it a hit)
       try {
         log.debug(__filename, method, 'Storing item in cache.');
-        this.storeItem(cacheType, jsonObj).addHit();
+        this.storeItem(cacheType, jsonObj);
       } catch (storeError) {
         errorCount += 1;
         log.warn(__filename, method, `Error #${errorCount} (max ${MAX_ERRORS}) -> ${storeError.message}`);
@@ -356,9 +362,6 @@ export class Cache {
 
     for (const ci of cache) {
       totalHits += ci.HitCount;
-      // if (isNaN(ci.HitCount)) {
-      //   console.log('NAN HC: ' + JSON.stringify(ci).substr(0, 100));
-      // }
     }
 
     return totalHits;

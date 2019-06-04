@@ -7,7 +7,8 @@
     "start": "node ./bin/server.js",
     "scan": "sonar-scanner.bat",
     "watch": "nodemon -r dotenv/config bin/server.js -w bin/**/*.js",
-    "local": "node -r dotenv/config bin/server.js"
+    "local": "node -r dotenv/config bin/server.js",
+    "local-dbg": "node -r dotenv/config --inspect-brk bin/server.js"
   },
   "repository": {
     "type": "git",

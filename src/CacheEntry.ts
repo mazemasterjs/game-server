@@ -58,29 +58,32 @@ export class CacheEntry {
   /**
    * Attempts to load raw JSON object into a specific class according to the given data type name
    *
-   * @param jsonObj
+   * @param object
    * @param cacheType
    */
-  private coerce(cacheType: CACHE_TYPES, jsonObj: any): any {
-    const method = `coerce(Object: ${jsonObj.id}, ${CACHE_TYPES[cacheType]})`;
-    log.debug(__filename, method, `Attempting coercion.`);
+  private coerce(cacheType: CACHE_TYPES, object: any): any {
+    const method = `coerce(${object}, ${CACHE_TYPES[cacheType]})`;
+    log.debug(__filename, method, `Attempting coercion. ${JSON.stringify(object).substr(0, 100)}`);
 
     // if trace logging, we'll dump the actual JSON object too
     if (log.LogLevel === LOG_LEVELS.TRACE) {
-      log.trace(__filename, method, JSON.stringify(jsonObj).substr(0, 100));
+      log.trace(__filename, method, JSON.stringify(object).substr(0, 100));
     }
 
     // when appropriate, try to instantiate specific class with the given data
     try {
       switch (cacheType) {
         case CACHE_TYPES.MAZE: {
-          return new MazeBase(jsonObj);
+          log.debug(__filename, method, `MazeBase coercion complete.`);
+          return new MazeBase(object);
         }
         case CACHE_TYPES.TEAM: {
-          return new Team(jsonObj);
+          log.debug(__filename, method, `Team coercion complete.`);
+          return new Team(object);
         }
         case CACHE_TYPES.TROPHY: {
-          return new Trophy(jsonObj);
+          log.debug(__filename, method, `Trophy coercion complete.`);
+          return new Trophy(object);
         }
       }
     } catch (coerceError) {
@@ -89,8 +92,9 @@ export class CacheEntry {
     }
 
     // if we get here with no errors, this dataType doesn't need to be coerced
+
     log.debug(__filename, method, `Coercion not required.`);
-    return jsonObj;
+    return object;
   }
 }
 

@@ -106,27 +106,31 @@ export async function doGet(url: string): Promise<any> {
 export async function getItem(cacheType: CACHE_TYPES, itemId: string) {
   const method = `getItem(${CACHE_TYPES[cacheType]}, ${itemId})`;
 
-  let cacheEntry = await Cache.use()
+  log.debug(__filename, method, 'Fetching item from cache...');
+  let cachedItem = await Cache.use()
     .fetchItem(cacheType, itemId)
     .catch(fetchErr => {
-      log.error(__filename, method, 'Error fetching item ->', fetchErr);
+      log.warn(__filename, method, 'Fetch failed -> ' + fetchErr.message);
     });
 
   // didn't find it in the cache
-  if (cacheEntry === undefined) {
+  if (cachedItem !== undefined) {
+    log.debug(__filename, method, 'Fetch successful, returning ' + cachedItem.Id);
+    return Promise.resolve(cachedItem);
+  } else {
     log.debug(__filename, method, 'Item not in cache, retrieving...');
 
-    cacheEntry = await doGet(`${getSvcUrl(cacheType)}/get?id=${itemId}`)
+    return await doGet(`${getSvcUrl(cacheType)}/get?id=${itemId}`)
       .then(itemArray => {
         // got the item, lets cache it!
-        Cache.use().storeItem(cacheType, itemArray[0]);
+        cachedItem = Cache.use().storeItem(cacheType, itemArray[0]);
 
         // and return so we can continue
-        return cacheEntry;
+        return Promise.resolve(cachedItem.item);
       })
       .catch(getError => {
         log.warn(__filename, method, `${getSvcUrl(cacheType)}/get?id=${itemId} failed -> ${getError.message}`);
-        throw getError();
+        return Promise.reject(getError);
       });
   }
 }
