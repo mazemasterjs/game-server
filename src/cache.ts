@@ -87,7 +87,7 @@ export class Cache {
     const cache: Array<CacheEntry> = this.getCacheArray(cacheType);
 
     // search the array for a matching item
-    log.debug(__filename, method, 'Searching cache...');
+    logTrace(method, 'Searching cache...');
     const cacheEntry: any = await cache.find(ci => {
       return ci.Item.Id === objId;
     });
@@ -95,11 +95,51 @@ export class Cache {
     // return may be undefined
     if (cacheEntry !== undefined) {
       cacheEntry.addHit();
-      log.debug(__filename, method, 'Item found.');
+      logDebug(method, 'Item found.');
       return Promise.resolve(cacheEntry.item);
     } else {
-      log.debug(__filename, method, 'Item not in cache.');
+      logDebug(method, 'Item not in cache.');
       return Promise.reject(new Error(`${CACHE_TYPES[cacheType]} item ${objId} not in cache.`));
+    }
+  }
+
+  /**
+   * First attempts to fetch an item from the cache - if it's not found there, will
+   * attempt to get the item from the appropriate service
+   *
+   * @param cacheType
+   * @param itemId
+   */
+  public async fetchOrGetItem(cacheType: CACHE_TYPES, itemId: string): Promise<any> {
+    const method = `fetchOrGetItem(${CACHE_TYPES[cacheType]}, ${itemId})`;
+
+    logTrace(method, 'Fetching item from cache...');
+    let cachedItem = await Cache.use()
+      .fetchItem(cacheType, itemId)
+      .catch(fetchErr => {
+        log.warn(__filename, method, 'Fetch failed -> ' + fetchErr.message);
+      });
+
+    // didn't find it in the cache
+    if (cachedItem !== undefined) {
+      logTrace(method, 'Fetch successful.');
+      return Promise.resolve(cachedItem);
+    } else {
+      logTrace(method, 'Item not in cache, retrieving from service...');
+
+      return await fns
+        .doGet(`${fns.getSvcUrl(cacheType)}/get?id=${itemId}`)
+        .then(itemArray => {
+          // got the item, lets cache it!
+          cachedItem = Cache.use().storeItem(cacheType, itemArray[0]);
+
+          // and return so we can continue
+          return Promise.resolve(cachedItem.item);
+        })
+        .catch(getError => {
+          log.warn(__filename, method, `${fns.getSvcUrl(cacheType)}/get?id=${itemId} failed -> ${getError.message}`);
+          return Promise.reject(getError);
+        });
     }
   }
 
@@ -113,14 +153,14 @@ export class Cache {
     const method = `evictItem(${CACHE_TYPES[cacheType]}, ${objectId})`;
     const cache = this.getCacheArray(cacheType);
 
-    log.debug(__filename, method, `Searching for index of objectId: ${objectId}`);
+    logTrace(method, 'Searching for object index.');
     const index: number = await cache.findIndex(ci => {
       return ci.Item.Id === objectId;
     });
 
     // got an index - evict and return eviction count (1)
     if (index === -1) {
-      log.warn(__filename, method, `Attempted to evict non-existent tenant: cache=${CACHE_TYPES[cacheType]}, objectId=${objectId}, index=NOT_FOUND`);
+      log.warn(__filename, method, 'Attempted to evict non-existent tenant.');
       return Promise.reject(-1);
     }
 
@@ -128,7 +168,7 @@ export class Cache {
     cache.splice(index, 1);
 
     // all done - log and return
-    log.debug(__filename, method, `Eviction: cache=${CACHE_TYPES[cacheType]}, objectId=${objectId}, index=${index}`);
+    logDebug(method, 'Item evicted.');
     this.logCacheStatus();
     return Promise.resolve(1);
   }
@@ -144,7 +184,7 @@ export class Cache {
     for (const cacheEntry of cache) {
       retArray.push(cacheEntry.Item);
     }
-    log.debug(__filename, `fetchItems(${CACHE_TYPES[cacheType]})`, `Returning array of ${retArray.length} items.`);
+    logDebug(`fetchItems(${CACHE_TYPES[cacheType]})`, `Fetch complete, returning ${retArray.length} items.`);
     return retArray;
   }
 
@@ -170,7 +210,7 @@ export class Cache {
     const cache: Array<CacheEntry> = this.getCacheArray(cacheType);
     for (const ci of cache) {
       const msg = `cache: ${CACHE_TYPES[cacheType]}, id=${ci.Item.Id} value=${ci.SortKey}, hits:${ci.HitCount}, lastHit=${ci.LastHitTime}`;
-      log.debug(__filename, method, msg);
+      logTrace(method, msg);
     }
 
     this.logCacheStatus();
@@ -186,7 +226,7 @@ export class Cache {
    */
   public storeItem(cacheType: CACHE_TYPES, object: any): CacheEntry {
     const method = `storeItem(${CACHE_TYPES[cacheType]}, Object: ${object.id})`;
-    log.debug(__filename, method, 'Storing item in cache.');
+    logTrace(method, 'Storing item in cache.');
     const cache = this.getCacheArray(cacheType);
     const max: number = this.getCacheSize(cacheType);
 
@@ -198,17 +238,17 @@ export class Cache {
 
     // if the cache is full, sort it and pop off the bottom (lowest value) cached element
     if (cache.length >= max) {
-      log.warn(__filename, method, 'Cache is full, clearing space.');
+      log.debug(__filename, method, 'Cache is full, clearing space...');
       this.sortCache(cache);
       const trash: any = cache.pop();
-      log.warn(__filename, method, `Item evicted: ${trash ? trash.Item.Id : 'undefined'}.`);
+      log.warn(__filename, method, `Cache full, evicted item: ${trash ? trash.Item.Id : 'undefined'}.`);
     }
 
     // now we can push the new entry onto the cache
     cache.push(cacheEntry);
 
     // offer the new cacheEntry as a return
-    log.debug(__filename, method, 'Store successful.');
+    logDebug(method, 'Item cached.');
     return cacheEntry;
   }
 
@@ -218,10 +258,11 @@ export class Cache {
    * @param cache
    */
   private async sortCache(cache: Array<CacheEntry>) {
-    log.debug(__filename, 'sortCache(Array<CacheEntry>)', `Sorting cache of ${cache.length} items.`);
+    logTrace('sortCache(Array<CacheEntry>)', `Sorting cache of ${cache.length} items.`);
     await cache.sort((first: CacheEntry, second: CacheEntry) => {
       return second.SortKey - first.SortKey;
     });
+    logDebug('sortCache(Array<CacheEntry>)', `Cache sorted.`);
   }
 
   /**
@@ -292,7 +333,7 @@ export class Cache {
 
       // now attempt to push it onto the cache (and give it a hit)
       try {
-        log.debug(__filename, method, 'Storing item in cache.');
+        logTrace(method, 'Caching item.');
         this.storeItem(cacheType, jsonObj);
       } catch (storeError) {
         errorCount += 1;
@@ -312,7 +353,7 @@ export class Cache {
       }
     }
 
-    log.debug(__filename, method, `${cache.length} items loaded in ${Date.now() - startTime}ms.`);
+    logDebug(method, `${cache.length} items loaded in ${Date.now() - startTime}ms.`);
     return Promise.resolve(cache.length);
   }
 
@@ -425,6 +466,18 @@ export class Cache {
     const cacheError = new Error(`${cacheType} is not a valid cache array name.`);
     log.error(__filename, `getCacheArrayByName(${cacheType})`, 'Invalid Cache Name', cacheError);
     throw cacheError;
+  }
+}
+
+function logTrace(method: string, msg: string) {
+  if (log.LogLevel >= LOG_LEVELS.TRACE) {
+    log.trace(__filename, method, msg);
+  }
+}
+
+function logDebug(method: string, msg: string) {
+  if (log.LogLevel >= LOG_LEVELS.DEBUG) {
+    log.debug(__filename, method, msg);
   }
 }
 

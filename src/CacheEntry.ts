@@ -1,8 +1,6 @@
 import { LOG_LEVELS, Logger } from '@mazemasterjs/logger';
 import { MazeBase } from '@mazemasterjs/shared-library/MazeBase';
-import { Score } from '@mazemasterjs/shared-library/Score';
 import { Team } from '@mazemasterjs/shared-library/Team';
-import { Game } from '@mazemasterjs/shared-library/Game';
 import { Trophy } from '@mazemasterjs/shared-library/Trophy';
 import { CACHE_TYPES } from './Cache';
 
@@ -23,6 +21,7 @@ export class CacheEntry {
     this.createTime = now;
     this.lastHitTime = Math.floor(now / LAST_HIT_MODIFIER); // convert now to minutes
     this.cacheValue = 0;
+    logTrace(`constructor(${CACHE_TYPES[cacheType]}, ${item.id})`, 'CacheEntry instantiated.');
   }
 
   public get Item(): any {
@@ -63,26 +62,26 @@ export class CacheEntry {
    */
   private coerce(cacheType: CACHE_TYPES, object: any): any {
     const method = `coerce(${object}, ${CACHE_TYPES[cacheType]})`;
-    log.debug(__filename, method, `Attempting coercion. ${JSON.stringify(object).substr(0, 100)}`);
+    logTrace(method, `Attempting coercion. ${object.id}`);
 
     // if trace logging, we'll dump the actual JSON object too
     if (log.LogLevel === LOG_LEVELS.TRACE) {
-      log.trace(__filename, method, JSON.stringify(object).substr(0, 100));
+      logTrace(method, JSON.stringify(object).substr(0, 100));
     }
 
     // when appropriate, try to instantiate specific class with the given data
     try {
       switch (cacheType) {
         case CACHE_TYPES.MAZE: {
-          log.debug(__filename, method, `MazeBase coercion complete.`);
+          logTrace(method, `MazeBase coercion complete.`);
           return new MazeBase(object);
         }
         case CACHE_TYPES.TEAM: {
-          log.debug(__filename, method, `Team coercion complete.`);
+          logTrace(method, `Team coercion complete.`);
           return new Team(object);
         }
         case CACHE_TYPES.TROPHY: {
-          log.debug(__filename, method, `Trophy coercion complete.`);
+          logTrace(method, `Trophy coercion complete.`);
           return new Trophy(object);
         }
       }
@@ -93,9 +92,14 @@ export class CacheEntry {
 
     // if we get here with no errors, this dataType doesn't need to be coerced
 
-    log.debug(__filename, method, `Coercion not required.`);
+    logTrace(method, `Coercion not required.`);
     return object;
   }
 }
 
+function logTrace(method: string, msg: string) {
+  if (log.LogLevel >= LOG_LEVELS.DEBUG) {
+    log.trace(__filename, method, msg);
+  }
+}
 export default CacheEntry;

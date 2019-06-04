@@ -29,21 +29,30 @@ const Score_1 = __importDefault(require("@mazemasterjs/shared-library/Score"));
 // set constant utility references
 const log = logger_1.Logger.getInstance();
 const config = Config_1.Config.getInstance();
+/**
+ * Creates a new, single-player game.
+ *
+ * @param req
+ * @param res
+ */
 exports.createSinglePlayerGame = (req, res) => __awaiter(this, void 0, void 0, function* () {
     logRequest('createGame', req);
-    const startTime = Date.now();
     const mazeId = req.params.mazeId;
     const teamId = req.params.teamId;
     const botId = req.params.botId;
     const method = `createSinglePlayerGame(${mazeId}, ${teamId}, ${botId})`;
     try {
         // get maze - bail on fail
-        const maze = yield fns.getItem(Cache_1.CACHE_TYPES.MAZE, mazeId).catch(mazeErr => {
+        const maze = yield Cache_1.Cache.use()
+            .fetchOrGetItem(Cache_1.CACHE_TYPES.MAZE, mazeId)
+            .catch(mazeErr => {
             log.warn(__filename, method, 'Unable to get maze');
             throw mazeErr;
         });
         // get team - bail on fail
-        const team = yield fns.getItem(Cache_1.CACHE_TYPES.TEAM, teamId).catch(teamErr => {
+        const team = yield Cache_1.Cache.use()
+            .fetchOrGetItem(Cache_1.CACHE_TYPES.TEAM, teamId)
+            .catch(teamErr => {
             log.warn(__filename, method, 'Unable to get team');
             throw teamErr;
         });
@@ -63,33 +72,38 @@ exports.createSinglePlayerGame = (req, res) => __awaiter(this, void 0, void 0, f
         Cache_1.Cache.use().storeItem(Cache_1.CACHE_TYPES.GAME, game);
         // return json containing status, message, gameId, and initial action
         // TODO: Add initial action!
-        return res.status(200).json({ status: 200, message: 'Game Created', gameId: game.Id, execTime: Date.now() - startTime });
+        return res.status(200).json({ status: 200, message: 'Game Created', gameId: game.Id });
     }
     catch (err) {
         log.error(__filename, method, 'Game creation failed ->', err);
-        res.status(400).json({ status: 400, message: 'Invalid Data Provided', error: err.message, execTime: Date.now() - startTime });
+        res.status(400).json({ status: 400, message: 'Invalid Data Provided', error: err.message });
     }
 });
+/**
+ * Returns game data for the requested Game.Id
+ */
 exports.getGame = (req, res) => __awaiter(this, void 0, void 0, function* () {
     logRequest('getGames', req);
-    const startTime = Date.now();
     return yield Cache_1.Cache.use()
         .fetchItem(Cache_1.CACHE_TYPES.GAME, req.params.gameId)
         .then(game => {
-        return res.status(200).json({ status: 200, message: 'Game Located', gameId: game.Id, execTime: Date.now() - startTime });
+        return res.status(200).json(game.getStub(config.EXT_URL_GAME));
     })
         .catch(fetchError => {
-        res.status(404).json({ status: 404, message: 'Game Not Found', error: fetchError.message, execTime: Date.now() - startTime });
+        res.status(404).json({ status: 404, message: 'Game Not Found', error: fetchError.message });
     });
 });
+/**
+ * Returns a list of stubbed game data for all games currently
+ * held in memory.
+ */
 exports.listGames = (req, res) => {
     logRequest('listGames', req);
-    const games = Cache_1.Cache.use().fetchItems(Cache_1.CACHE_TYPES.GAME);
-    if (games !== undefined) {
-        return res.status(200).json(games);
+    try {
+        return res.status(200).json(fns.getGameStubs());
     }
-    else {
-        return res.status(500).json({ status: '500', message: 'Server Error', error: 'Unable to retrieve list of games.' });
+    catch (gameStubsError) {
+        return res.status(500).json({ status: '500', message: 'Server Error', error: gameStubsError.message });
     }
 };
 exports.countGames = (req, res) => {

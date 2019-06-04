@@ -18,9 +18,14 @@ import CacheEntry from './CacheEntry';
 const log = Logger.getInstance();
 const config = Config.getInstance();
 
+/**
+ * Creates a new, single-player game.
+ *
+ * @param req
+ * @param res
+ */
 export const createSinglePlayerGame = async (req: Request, res: Response) => {
   logRequest('createGame', req);
-  const startTime = Date.now();
   const mazeId = req.params.mazeId;
   const teamId = req.params.teamId;
   const botId = req.params.botId;
@@ -28,16 +33,20 @@ export const createSinglePlayerGame = async (req: Request, res: Response) => {
 
   try {
     // get maze - bail on fail
-    const maze: MazeBase = await fns.getItem(CACHE_TYPES.MAZE, mazeId).catch(mazeErr => {
-      log.warn(__filename, method, 'Unable to get maze');
-      throw mazeErr;
-    });
+    const maze: MazeBase = await Cache.use()
+      .fetchOrGetItem(CACHE_TYPES.MAZE, mazeId)
+      .catch(mazeErr => {
+        log.warn(__filename, method, 'Unable to get maze');
+        throw mazeErr;
+      });
 
     // get team - bail on fail
-    const team: Team = await fns.getItem(CACHE_TYPES.TEAM, teamId).catch(teamErr => {
-      log.warn(__filename, method, 'Unable to get team');
-      throw teamErr;
-    });
+    const team: Team = await Cache.use()
+      .fetchOrGetItem(CACHE_TYPES.TEAM, teamId)
+      .catch(teamErr => {
+        log.warn(__filename, method, 'Unable to get team');
+        throw teamErr;
+      });
 
     // verify bot - bail on fail
     if (!fns.findBot(team, botId)) {
@@ -59,33 +68,39 @@ export const createSinglePlayerGame = async (req: Request, res: Response) => {
 
     // return json containing status, message, gameId, and initial action
     // TODO: Add initial action!
-    return res.status(200).json({ status: 200, message: 'Game Created', gameId: game.Id, execTime: Date.now() - startTime });
+    return res.status(200).json({ status: 200, message: 'Game Created', gameId: game.Id });
   } catch (err) {
     log.error(__filename, method, 'Game creation failed ->', err);
-    res.status(400).json({ status: 400, message: 'Invalid Data Provided', error: err.message, execTime: Date.now() - startTime });
+    res.status(400).json({ status: 400, message: 'Invalid Data Provided', error: err.message });
   }
 };
 
+/**
+ * Returns game data for the requested Game.Id
+ */
 export const getGame = async (req: Request, res: Response) => {
   logRequest('getGames', req);
-  const startTime = Date.now();
   return await Cache.use()
     .fetchItem(CACHE_TYPES.GAME, req.params.gameId)
     .then(game => {
-      return res.status(200).json({ status: 200, message: 'Game Located', gameId: game.Id, execTime: Date.now() - startTime });
+      return res.status(200).json(game.getStub(config.EXT_URL_GAME));
     })
     .catch(fetchError => {
-      res.status(404).json({ status: 404, message: 'Game Not Found', error: fetchError.message, execTime: Date.now() - startTime });
+      res.status(404).json({ status: 404, message: 'Game Not Found', error: fetchError.message });
     });
 };
 
+/**
+ * Returns a list of stubbed game data for all games currently
+ * held in memory.
+ */
 export const listGames = (req: Request, res: Response) => {
   logRequest('listGames', req);
-  const games = Cache.use().fetchItems(CACHE_TYPES.GAME);
-  if (games !== undefined) {
-    return res.status(200).json(games);
-  } else {
-    return res.status(500).json({ status: '500', message: 'Server Error', error: 'Unable to retrieve list of games.' });
+
+  try {
+    return res.status(200).json(fns.getGameStubs());
+  } catch (gameStubsError) {
+    return res.status(500).json({ status: '500', message: 'Server Error', error: gameStubsError.message });
   }
 };
 

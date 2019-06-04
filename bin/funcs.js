@@ -31,13 +31,13 @@ exports.genResMsg = genResMsg;
  * Returns IGameStub versions of all games in the cache
  */
 function getGameStubs() {
-    log.debug(__filename, 'getGameStubs()', 'Building array of game stubs.');
+    logTrace('getGameStubs()', 'Building array of game stubs.');
     const games = Cache_1.Cache.use().fetchItems(Cache_1.CACHE_TYPES.GAME);
     const stubs = new Array();
     for (const game of games) {
         stubs.push(game.getStub(config.EXT_URL_GAME));
     }
-    log.debug(__filename, 'getGameStubs()', `Returning array with ${stubs.length} IGameStub items.`);
+    logDebug('getGameStubs()', `Returning array with ${stubs.length} IGameStub items.`);
     return stubs;
 }
 exports.getGameStubs = getGameStubs;
@@ -92,13 +92,13 @@ exports.findBot = findBot;
 function doGet(url) {
     return __awaiter(this, void 0, void 0, function* () {
         const method = `doGet(${trimUrl(url)})`;
-        log.debug(__filename, method, `Requesting ${url}`);
+        logTrace(method, `Requesting ${url}`);
         return yield axios_1.default
             .get(url)
             .then(res => {
-            log.debug(__filename, method, genResMsg(url, res));
+            logDebug(method, genResMsg(url, res));
             if (log.LogLevel === logger_1.LOG_LEVELS.TRACE) {
-                log.trace(__filename, method, 'Response Data: \r\n' + JSON.stringify(res.data));
+                logTrace(method, 'Response Data: \r\n' + JSON.stringify(res.data));
             }
             return Promise.resolve(res.data);
         })
@@ -109,35 +109,14 @@ function doGet(url) {
     });
 }
 exports.doGet = doGet;
-function getItem(cacheType, itemId) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const method = `getItem(${Cache_1.CACHE_TYPES[cacheType]}, ${itemId})`;
-        log.debug(__filename, method, 'Fetching item from cache...');
-        let cachedItem = yield Cache_1.Cache.use()
-            .fetchItem(cacheType, itemId)
-            .catch(fetchErr => {
-            log.warn(__filename, method, 'Fetch failed -> ' + fetchErr.message);
-        });
-        // didn't find it in the cache
-        if (cachedItem !== undefined) {
-            log.debug(__filename, method, 'Fetch successful, returning ' + cachedItem.Id);
-            return Promise.resolve(cachedItem);
-        }
-        else {
-            log.debug(__filename, method, 'Item not in cache, retrieving...');
-            return yield doGet(`${getSvcUrl(cacheType)}/get?id=${itemId}`)
-                .then(itemArray => {
-                // got the item, lets cache it!
-                cachedItem = Cache_1.Cache.use().storeItem(cacheType, itemArray[0]);
-                // and return so we can continue
-                return Promise.resolve(cachedItem.item);
-            })
-                .catch(getError => {
-                log.warn(__filename, method, `${getSvcUrl(cacheType)}/get?id=${itemId} failed -> ${getError.message}`);
-                return Promise.reject(getError);
-            });
-        }
-    });
+function logTrace(method, msg) {
+    if (log.LogLevel >= logger_1.LOG_LEVELS.TRACE) {
+        log.trace(__filename, method, msg);
+    }
 }
-exports.getItem = getItem;
+function logDebug(method, msg) {
+    if (log.LogLevel >= logger_1.LOG_LEVELS.DEBUG) {
+        log.debug(__filename, method, msg);
+    }
+}
 //# sourceMappingURL=funcs.js.map
