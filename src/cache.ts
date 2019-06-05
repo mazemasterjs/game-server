@@ -159,7 +159,7 @@ export class Cache {
     const cache = this.getCache(cacheType);
 
     fns.logTrace(__filename, method, 'Searching for object index.');
-    const index: number = await cache.findIndex(ci => {
+    const index: number = cache.findIndex(ci => {
       return ci.Item.Id === objectId;
     });
 
@@ -326,7 +326,7 @@ export class Cache {
     const method = `sortCache(${CACHE_TYPES[cacheType]})`;
     const cache = this.getCache(cacheType);
     fns.logTrace(__filename, method, `Sorting cache of ${cache.length} items.`);
-    await cache.sort((first: CacheEntry, second: CacheEntry) => {
+    cache.sort((first: CacheEntry, second: CacheEntry) => {
       return second.SortKey - first.SortKey;
     });
     fns.logTrace(__filename, method, 'Cache sorted.');

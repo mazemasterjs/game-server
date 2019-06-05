@@ -84,7 +84,7 @@ export function findGame(teamId: string, botId: string) {
     .find(ce => {
       const game: Game = ce.Item;
       if (game.State === GAME_STATES.NEW || game.State === GAME_STATES.IN_PROGRESS) {
-        return game.TeamId === teamId && game.BotId === game.BotId;
+        return game.TeamId === teamId && game.BotId === botId;
       } else {
         return false;
       }
