@@ -7,12 +7,9 @@ import { Game } from '@mazemasterjs/shared-library/Game';
 import { Player } from '@mazemasterjs/shared-library/Player';
 import * as fns from './funcs';
 import MazeBase from '@mazemasterjs/shared-library/MazeBase';
-import { json } from 'body-parser';
 import { Team } from '@mazemasterjs/shared-library/Team';
 import { GAME_MODES, PLAYER_STATES } from '@mazemasterjs/shared-library/Enums';
 import Score from '@mazemasterjs/shared-library/Score';
-import { IScore } from '@mazemasterjs/shared-library/IScore';
-import CacheEntry from './CacheEntry';
 
 // set constant utility references
 const log = Logger.getInstance();
@@ -24,12 +21,12 @@ const config = Config.getInstance();
  * @param req
  * @param res
  */
-export const createSinglePlayerGame = async (req: Request, res: Response) => {
+export const createGame = async (req: Request, res: Response) => {
   logRequest('createGame', req);
   const mazeId = req.params.mazeId;
   const teamId = req.params.teamId;
-  const botId = req.params.botId;
-  const method = `createSinglePlayerGame(${mazeId}, ${teamId}, ${botId})`;
+  const botId = req.params.botId === undefined ? '' : req.params.botId;
+  const method = `createGame(${mazeId}, ${teamId}, ${botId})`;
 
   try {
     // get maze - bail on fail
@@ -48,20 +45,23 @@ export const createSinglePlayerGame = async (req: Request, res: Response) => {
         throw teamErr;
       });
 
-    // verify bot - bail on fail
-    if (!fns.findBot(team, botId)) {
+    // if a bot is given, verify it - bail on fail
+    if (botId !== '' && !fns.findBot(team, botId)) {
       const botErr = new Error(`Bot (${botId}) not found in team (${teamId})`);
       log.warn(__filename, method, 'Unable to find bot in team.');
       throw botErr;
     }
 
+    // now check to see if an active game already exists in memory for this team or team/bot
+    const activeGameId = fns.findGame(teamId, botId);
+    if (activeGameId !== '') {
+      return res.status(400).json({ status: 400, message: 'Invalid Request - An active game for team/bot already exists.', gameId: activeGameId });
+    }
+
     // so far so good!  Let's create the rest of the game objects...
     // Players always start sitting down in the maze's start cell
     const player = new Player(maze.StartCell, PLAYER_STATES.SITTING);
-    const game = new Game(maze, player, new Score(), 1, botId, teamId);
-
-    // set the game mode
-    game.Mode = GAME_MODES.SINGLE_PLAYER;
+    const game = new Game(maze, player, new Score(), 1, teamId, botId);
 
     // put the game on the game cache
     Cache.use().storeItem(CACHE_TYPES.GAME, game);
@@ -71,7 +71,7 @@ export const createSinglePlayerGame = async (req: Request, res: Response) => {
     return res.status(200).json({ status: 200, message: 'Game Created', gameId: game.Id });
   } catch (err) {
     log.error(__filename, method, 'Game creation failed ->', err);
-    res.status(400).json({ status: 400, message: 'Invalid Data Provided', error: err.message });
+    res.status(400).json({ status: 400, message: 'Invalid Request', error: err.message });
   }
 };
 
@@ -139,8 +139,8 @@ function logRequest(fnName: string, req: Request, trace?: boolean) {
 
   // otherwise check log as trace or debug
   if (trace && log.LogLevel >= LOG_LEVELS.TRACE) {
-    log.trace(__filename, req.path, 'Handling request -> ' + req.url);
+    log.trace(__filename, req.method, 'Handling request -> ' + req.url);
   } else {
-    log.debug(__filename, req.path, 'Handling request -> ' + req.url);
+    log.debug(__filename, req.method, 'Handling request -> ' + req.url);
   }
 }

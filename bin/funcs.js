@@ -15,6 +15,7 @@ const Cache_1 = require("./Cache");
 const logger_1 = require("@mazemasterjs/logger");
 const Config_1 = require("./Config");
 const axios_1 = __importDefault(require("axios"));
+const Enums_1 = require("@mazemasterjs/shared-library/Enums");
 const log = logger_1.Logger.getInstance();
 const config = Config_1.Config.getInstance();
 /**
@@ -71,6 +72,38 @@ function getSvcUrl(cacheType) {
     }
 }
 exports.getSvcUrl = getSvcUrl;
+/**
+ * Returns the gameId of an active game, if found.  Otherwise returns '';
+ *
+ * @param teamId
+ * @param botId
+ */
+function findGame(teamId, botId) {
+    const method = `findGame(${teamId}, ${botId})`;
+    botId = undefined ? '' : botId;
+    let cacheEntry;
+    logDebug(method, `Searching for active ${botId === '' ? 'TEAM' : 'BOT'} game.`);
+    cacheEntry = Cache_1.Cache.use()
+        .getCache(Cache_1.CACHE_TYPES.GAME)
+        .find(ce => {
+        const game = ce.Item;
+        if (game.State === Enums_1.GAME_STATES.NEW || game.State === Enums_1.GAME_STATES.IN_PROGRESS) {
+            return game.TeamId === teamId && game.BotId === game.BotId;
+        }
+        else {
+            return false;
+        }
+    });
+    if (cacheEntry !== undefined) {
+        logDebug(method, 'Active game found.');
+        return cacheEntry.Item.Id;
+    }
+    else {
+        logDebug(method, 'No active games found.');
+        return '';
+    }
+}
+exports.findGame = findGame;
 /**
  * Returns true if the given botId exists in the given Team
  *

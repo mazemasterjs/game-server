@@ -6,6 +6,8 @@ import { IGameStub } from '@mazemasterjs/shared-library/IGameStub';
 import { Config } from './Config';
 import axios from 'axios';
 import { Team } from '@mazemasterjs/shared-library/Team';
+import { GAME_STATES } from '@mazemasterjs/shared-library/Enums';
+import CacheEntry from './CacheEntry';
 
 const log = Logger.getInstance();
 const config = Config.getInstance();
@@ -24,14 +26,14 @@ export function genResMsg(url: string, res: AxiosResponse): string {
  * Returns IGameStub versions of all games in the cache
  */
 export function getGameStubs(): Array<IGameStub> {
-  logTrace('getGameStubs()', 'Building array of game stubs.');
+  logTrace(__filename, 'getGameStubs()', 'Building array of game stubs.');
   const games: Array<Game> = Cache.use().fetchItems(CACHE_TYPES.GAME);
   const stubs = new Array<IGameStub>();
 
   for (const game of games) {
     stubs.push(game.getStub(config.EXT_URL_GAME));
   }
-  logDebug('getGameStubs()', `Returning array with ${stubs.length} IGameStub items.`);
+  logDebug(__filename, 'getGameStubs()', `Returning array with ${stubs.length} IGameStub items.`);
   return stubs;
 }
 
@@ -66,6 +68,38 @@ export function getSvcUrl(cacheType: CACHE_TYPES) {
 }
 
 /**
+ * Returns the gameId of an active game, if found.  Otherwise returns '';
+ *
+ * @param teamId
+ * @param botId
+ */
+export function findGame(teamId: string, botId: string) {
+  const method = `findGame(${teamId}, ${botId})`;
+  botId = undefined ? '' : botId;
+  let cacheEntry: any;
+
+  logDebug(__filename, method, `Searching for active ${botId === '' ? 'TEAM' : 'BOT'} game.`);
+  cacheEntry = Cache.use()
+    .getCache(CACHE_TYPES.GAME)
+    .find(ce => {
+      const game: Game = ce.Item;
+      if (game.State === GAME_STATES.NEW || game.State === GAME_STATES.IN_PROGRESS) {
+        return game.TeamId === teamId && game.BotId === game.BotId;
+      } else {
+        return false;
+      }
+    });
+
+  if (cacheEntry !== undefined) {
+    logDebug(__filename, method, 'Active game found.');
+    return cacheEntry.Item.Id;
+  } else {
+    logDebug(__filename, method, 'No active games found.');
+    return '';
+  }
+}
+
+/**
  * Returns true if the given botId exists in the given Team
  *
  * @param team
@@ -86,14 +120,14 @@ export function findBot(team: Team, botId: string) {
  */
 export async function doGet(url: string): Promise<any> {
   const method = `doGet(${trimUrl(url)})`;
-  logTrace(method, `Requesting ${url}`);
+  logTrace(__filename, method, `Requesting ${url}`);
 
   return await axios
     .get(url)
     .then(res => {
-      logDebug(method, genResMsg(url, res));
+      logDebug(__filename, method, genResMsg(url, res));
       if (log.LogLevel === LOG_LEVELS.TRACE) {
-        logTrace(method, 'Response Data: \r\n' + JSON.stringify(res.data));
+        logTrace(__filename, method, 'Response Data: \r\n' + JSON.stringify(res.data));
       }
       return Promise.resolve(res.data);
     })
@@ -103,14 +137,26 @@ export async function doGet(url: string): Promise<any> {
     });
 }
 
-function logTrace(method: string, msg: string) {
+/**
+ * Simple trace wrapper to reduce the number of useless module calls
+ * @param file
+ * @param method
+ * @param msg
+ */
+export function logTrace(file: string, method: string, msg: string) {
   if (log.LogLevel >= LOG_LEVELS.TRACE) {
-    log.trace(__filename, method, msg);
+    log.trace(file, method, msg);
   }
 }
 
-function logDebug(method: string, msg: string) {
+/**
+ * Simple debug wrapper to reduce the number of useless module calls
+ * @param file
+ * @param method
+ * @param msg
+ */
+export function logDebug(file: string, method: string, msg: string) {
   if (log.LogLevel >= LOG_LEVELS.DEBUG) {
-    log.debug(__filename, method, msg);
+    log.debug(file, method, msg);
   }
 }

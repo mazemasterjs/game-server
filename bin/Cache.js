@@ -94,7 +94,7 @@ class Cache {
     fetchItem(cacheType, objId) {
         return __awaiter(this, void 0, void 0, function* () {
             const method = `fetchItem(${CACHE_TYPES[cacheType]}, ${objId})`;
-            const cache = this.getCacheArray(cacheType);
+            const cache = this.getCache(cacheType);
             // search the array for a matching item
             logTrace(method, 'Searching cache...');
             const cacheEntry = yield cache.find(ci => {
@@ -159,7 +159,7 @@ class Cache {
     evictItem(cacheType, objectId) {
         return __awaiter(this, void 0, void 0, function* () {
             const method = `evictItem(${CACHE_TYPES[cacheType]}, ${objectId})`;
-            const cache = this.getCacheArray(cacheType);
+            const cache = this.getCache(cacheType);
             logTrace(method, 'Searching for object index.');
             const index = yield cache.findIndex(ci => {
                 return ci.Item.Id === objectId;
@@ -182,7 +182,7 @@ class Cache {
      * @param cacheType
      */
     fetchItems(cacheType) {
-        const cache = this.getCacheArray(cacheType);
+        const cache = this.getCache(cacheType);
         const retArray = new Array();
         for (const cacheEntry of cache) {
             retArray.push(cacheEntry.Item);
@@ -195,7 +195,63 @@ class Cache {
      * @param cacheType
      */
     countItems(cacheType) {
-        return this.getCacheArray(cacheType).length;
+        return this.getCache(cacheType).length;
+    }
+    /**
+     * Returns the requested cache's max size
+     *
+     * @param cacheType
+     */
+    getCacheSize(cacheType) {
+        switch (cacheType) {
+            case CACHE_TYPES.MAZE: {
+                return config.CACHE_SIZE_MAZES;
+            }
+            case CACHE_TYPES.TEAM: {
+                return config.CACHE_SIZE_TEAMS;
+            }
+            case CACHE_TYPES.SCORE: {
+                return config.CACHE_SIZE_SCORES;
+            }
+            case CACHE_TYPES.GAME: {
+                return config.CACHE_SIZE_GAMES;
+            }
+            case CACHE_TYPES.TROPHY: {
+                return config.CACHE_SIZE_TROPHIES;
+            }
+        }
+        // this is bad news...
+        const cacheError = new Error(`${cacheType} is not a valid cache array name.`);
+        log.error(__filename, `getCacheSizeByName(${cacheType})`, 'Invalid Cache Name', cacheError);
+        throw cacheError;
+    }
+    /**
+     * Returns the requested cache array
+     *
+     * @param cacheType
+     */
+    getCache(cacheType) {
+        switch (cacheType) {
+            case CACHE_TYPES.MAZE: {
+                return this.maze;
+            }
+            case CACHE_TYPES.TEAM: {
+                return this.team;
+            }
+            case CACHE_TYPES.SCORE: {
+                return this.score;
+            }
+            case CACHE_TYPES.GAME: {
+                return this.game;
+            }
+            case CACHE_TYPES.TROPHY: {
+                return this.trophy;
+            }
+        }
+        // this is bad news...
+        const cacheError = new Error(`${cacheType} is not a valid cache array name.`);
+        log.error(__filename, `getCacheArrayByName(${cacheType})`, 'Invalid Cache Name', cacheError);
+        throw cacheError;
     }
     /**
      * Dumps the specified cache stats to log
@@ -207,7 +263,7 @@ class Cache {
             return;
         }
         const method = `dumpCache(${CACHE_TYPES[cacheType]})`;
-        const cache = this.getCacheArray(cacheType);
+        const cache = this.getCache(cacheType);
         for (const ci of cache) {
             const msg = `cache: ${CACHE_TYPES[cacheType]}, id=${ci.Item.Id} value=${ci.SortKey}, hits:${ci.HitCount}, lastHit=${ci.LastHitTime}`;
             logTrace(method, msg);
@@ -225,7 +281,7 @@ class Cache {
     storeItem(cacheType, object) {
         const method = `storeItem(${CACHE_TYPES[cacheType]}, Object: ${object.id})`;
         logTrace(method, 'Storing item in cache.');
-        const cache = this.getCacheArray(cacheType);
+        const cache = this.getCache(cacheType);
         const max = this.getCacheSize(cacheType);
         // create CacheEntry
         const cacheEntry = new CacheEntry_1.CacheEntry(cacheType, object);
@@ -293,7 +349,7 @@ class Cache {
             const method = `loadCache(${fns.trimUrl(svcUrl)}, ${CACHE_TYPES[cacheType]})`;
             const startTime = Date.now();
             // set some cache-specific reference vars
-            const cache = this.getCacheArray(cacheType);
+            const cache = this.getCache(cacheType);
             const max = this.getCacheSize(cacheType);
             let errorCount = 0; // <-- will use this to track errors and abort program if things look too bad
             const MAX_ERRORS = Math.ceil(max / config.CACHE_LOAD_MAX_FAIL_PERCENT);
@@ -360,7 +416,7 @@ class Cache {
     }
     getCacheStats(cacheType) {
         const stats = { len: '', max: '', pct: '', hits: '' };
-        const cache = this.getCacheArray(cacheType);
+        const cache = this.getCache(cacheType);
         const cLen = cache.length;
         const cMax = this.getCacheSize(cacheType);
         const cPct = (cache.length / cMax) * 100;
@@ -383,62 +439,6 @@ class Cache {
             totalHits += ci.HitCount;
         }
         return totalHits;
-    }
-    /**
-     * Returns the requested cache's max size
-     *
-     * @param cacheType
-     */
-    getCacheSize(cacheType) {
-        switch (cacheType) {
-            case CACHE_TYPES.MAZE: {
-                return config.CACHE_SIZE_MAZES;
-            }
-            case CACHE_TYPES.TEAM: {
-                return config.CACHE_SIZE_TEAMS;
-            }
-            case CACHE_TYPES.SCORE: {
-                return config.CACHE_SIZE_SCORES;
-            }
-            case CACHE_TYPES.GAME: {
-                return config.CACHE_SIZE_GAMES;
-            }
-            case CACHE_TYPES.TROPHY: {
-                return config.CACHE_SIZE_TROPHIES;
-            }
-        }
-        // this is bad news...
-        const cacheError = new Error(`${cacheType} is not a valid cache array name.`);
-        log.error(__filename, `getCacheSizeByName(${cacheType})`, 'Invalid Cache Name', cacheError);
-        throw cacheError;
-    }
-    /**
-     * Returns the requested cache array
-     *
-     * @param cacheType
-     */
-    getCacheArray(cacheType) {
-        switch (cacheType) {
-            case CACHE_TYPES.MAZE: {
-                return this.maze;
-            }
-            case CACHE_TYPES.TEAM: {
-                return this.team;
-            }
-            case CACHE_TYPES.SCORE: {
-                return this.score;
-            }
-            case CACHE_TYPES.GAME: {
-                return this.game;
-            }
-            case CACHE_TYPES.TROPHY: {
-                return this.trophy;
-            }
-        }
-        // this is bad news...
-        const cacheError = new Error(`${cacheType} is not a valid cache array name.`);
-        log.error(__filename, `getCacheArrayByName(${cacheType})`, 'Invalid Cache Name', cacheError);
-        throw cacheError;
     }
 }
 exports.Cache = Cache;

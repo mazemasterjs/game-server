@@ -35,12 +35,12 @@ const config = Config_1.Config.getInstance();
  * @param req
  * @param res
  */
-exports.createSinglePlayerGame = (req, res) => __awaiter(this, void 0, void 0, function* () {
+exports.createGame = (req, res) => __awaiter(this, void 0, void 0, function* () {
     logRequest('createGame', req);
     const mazeId = req.params.mazeId;
     const teamId = req.params.teamId;
-    const botId = req.params.botId;
-    const method = `createSinglePlayerGame(${mazeId}, ${teamId}, ${botId})`;
+    const botId = req.params.botId === undefined ? '' : req.params.botId;
+    const method = `createGame(${mazeId}, ${teamId}, ${botId})`;
     try {
         // get maze - bail on fail
         const maze = yield Cache_1.Cache.use()
@@ -56,18 +56,21 @@ exports.createSinglePlayerGame = (req, res) => __awaiter(this, void 0, void 0, f
             log.warn(__filename, method, 'Unable to get team');
             throw teamErr;
         });
-        // verify bot - bail on fail
-        if (!fns.findBot(team, botId)) {
+        // if a bot is given, verify it - bail on fail
+        if (botId !== '' && !fns.findBot(team, botId)) {
             const botErr = new Error(`Bot (${botId}) not found in team (${teamId})`);
             log.warn(__filename, method, 'Unable to find bot in team.');
             throw botErr;
         }
+        // now check to see if an active game already exists in memory for this team or team/bot
+        const activeGameId = fns.findGame(teamId, botId);
+        if (activeGameId !== '') {
+            return res.status(400).json({ status: 400, message: 'Invalid Request - An active game for team/bot already exists.', gameId: activeGameId });
+        }
         // so far so good!  Let's create the rest of the game objects...
         // Players always start sitting down in the maze's start cell
         const player = new Player_1.Player(maze.StartCell, Enums_1.PLAYER_STATES.SITTING);
-        const game = new Game_1.Game(maze, player, new Score_1.default(), 1, botId, teamId);
-        // set the game mode
-        game.Mode = Enums_1.GAME_MODES.SINGLE_PLAYER;
+        const game = new Game_1.Game(maze, player, new Score_1.default(), 1, teamId, botId);
         // put the game on the game cache
         Cache_1.Cache.use().storeItem(Cache_1.CACHE_TYPES.GAME, game);
         // return json containing status, message, gameId, and initial action
@@ -76,7 +79,7 @@ exports.createSinglePlayerGame = (req, res) => __awaiter(this, void 0, void 0, f
     }
     catch (err) {
         log.error(__filename, method, 'Game creation failed ->', err);
-        res.status(400).json({ status: 400, message: 'Invalid Data Provided', error: err.message });
+        res.status(400).json({ status: 400, message: 'Invalid Request', error: err.message });
     }
 });
 /**
@@ -137,10 +140,10 @@ function logRequest(fnName, req, trace) {
     }
     // otherwise check log as trace or debug
     if (trace && log.LogLevel >= logger_1.LOG_LEVELS.TRACE) {
-        log.trace(__filename, req.path, 'Handling request -> ' + req.url);
+        log.trace(__filename, req.method, 'Handling request -> ' + req.url);
     }
     else {
-        log.debug(__filename, req.path, 'Handling request -> ' + req.url);
+        log.debug(__filename, req.method, 'Handling request -> ' + req.url);
     }
 }
 //# sourceMappingURL=routes.js.map

@@ -16,13 +16,15 @@ const Config_1 = __importDefault(require("./Config"));
 exports.router = express_1.default.Router();
 // load the service config
 const config = Config_1.default.getInstance();
-// map all of the common routes
+// existing games
 exports.router.get('/get', routes.listGames);
 exports.router.get('/get/:gameId', routes.getGame);
+// new games
+exports.router.put('/new/:mazeId/:teamId/:botId', routes.createGame); // single-player
+exports.router.put('/new/:mazeId/:teamId/', routes.createGame); // multi-player
+// utility
 exports.router.get('/count', routes.countGames);
-exports.router.get('/newSinglePlayer/:mazeId/:teamId/:botId', routes.createSinglePlayerGame);
-// TODO: Remove this debugging route
-exports.router.get('/cache/dump', routes.dumpCache);
+exports.router.get('/cache/dump', routes.dumpCache); // TODO: Remove this debugging route
 // map the live/ready probes
 exports.router.get('/probes/live', routes.livenessProbe);
 exports.router.get('/probes/ready', routes.readinessProbe);
