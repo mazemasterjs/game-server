@@ -10,6 +10,8 @@ import { Team } from '@mazemasterjs/shared-library/Team';
 import { GAME_MODES, GAME_STATES, PLAYER_STATES } from '@mazemasterjs/shared-library/Enums';
 import Score from '@mazemasterjs/shared-library/Score';
 import { IAction } from '@mazemasterjs/shared-library/IAction';
+import './controllers/actLook';
+import { doLook } from './controllers/actLook';
 
 // set constant utility references
 const log = Logger.getInstance();
@@ -123,11 +125,14 @@ export const processAction = (req: Request, res: Response) => {
       } else {
         const action: IAction = fns.createIAction(req.body, game);
         game.State = GAME_STATES.IN_PROGRESS;
+        game.addAction(action);
         switch (action.action.toUpperCase()) {
           case 'LOOK': {
-            const err = new Error('The "LOOK" action has not been implemented yet.');
-            log.error(__filename, req.path, 'Not Implemented', err);
-            return res.status(500).json({ status: 500, message: 'Action Not Implemented', error: err.message });
+            // const err = new Error('The "LOOK" action has not been implemented yet.');
+            // log.error(__filename, req.path, 'Not Implemented', err);
+            // return res.status(500).json({ status: 500, message: 'Action Not Implemented', error: err.message });
+            const outcome: Game = doLook(game);
+            return res.status(200).json({ outcome });
           }
           case 'MOVE': {
             const err = new Error('The "MOVE" action has not been implemented yet.');
