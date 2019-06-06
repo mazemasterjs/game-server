@@ -1,13 +1,17 @@
+import { Team } from '@mazemasterjs/shared-library/Team';
 import { AxiosResponse } from 'axios';
-import { Cache, CACHE_TYPES } from './Cache';
 import { LOG_LEVELS, Logger } from '@mazemasterjs/logger';
 import { Game } from '@mazemasterjs/shared-library/Game';
 import { IGameStub } from '@mazemasterjs/shared-library/IGameStub';
 import { Config } from './Config';
 import axios from 'axios';
-import { Team } from '@mazemasterjs/shared-library/Team';
-import { GAME_STATES } from '@mazemasterjs/shared-library/Enums';
+import { Cache, CACHE_TYPES } from './Cache';
+import { DIRS, GAME_STATES } from '@mazemasterjs/shared-library/Enums';
 import CacheEntry from './CacheEntry';
+import { IAction } from '@mazemasterjs/shared-library/IAction';
+import { Engram } from '@mazemasterjs/shared-library/Engram';
+import Trophy from '@mazemasterjs/shared-library/Trophy';
+import ITrophyStub from '@mazemasterjs/shared-library/ITrophyStub';
 
 const log = Logger.getInstance();
 const config = Config.getInstance();
@@ -135,6 +139,23 @@ export async function doGet(url: string): Promise<any> {
       log.error(__filename, method, 'Error retrieving data ->', axiosErr);
       return Promise.reject(axiosErr);
     });
+}
+
+export function createIAction(actReq: any, game: Game) {
+  const action: IAction = {
+    action: actReq.action,
+    mazeId: game.Maze.Id,
+    direction: DIRS[actReq.direction],
+    location: game.Player.Location,
+    score: game.Score,
+    playerState: game.Player.State,
+    botCohesion: actReq.cohesionScores,
+    engram: new Engram({ sight: '', sound: '', smell: '', touch: '', taste: '' }),
+    outcome: new Array<string>(),
+    trophies: new Array<ITrophyStub>(),
+  };
+
+  return action;
 }
 
 /**

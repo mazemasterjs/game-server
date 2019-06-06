@@ -15,6 +15,9 @@ router.get('/get/:gameId', routes.getGame);
 router.put('/new/:mazeId/:teamId/:botId', routes.createGame); // single-player
 router.put('/new/:mazeId/:teamId/', routes.createGame); // multi-player
 
+// actions
+router.post('/action', routes.processAction);
+
 // utility
 router.get('/count', routes.countGames);
 router.get('/cache/dump', routes.dumpCache); // TODO: Remove this debugging route

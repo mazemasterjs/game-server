@@ -22,6 +22,7 @@ const fns = __importStar(require("./funcs"));
 const CacheEntry_1 = require("./CacheEntry");
 const Config_1 = __importDefault(require("./Config"));
 const logger_1 = __importStar(require("@mazemasterjs/logger"));
+const Enums_1 = require("@mazemasterjs/shared-library/Enums");
 // useful constants
 const config = Config_1.default.getInstance();
 const log = logger_1.default.getInstance();
@@ -34,18 +35,6 @@ var CACHE_TYPES;
     CACHE_TYPES[CACHE_TYPES["SCORE"] = 3] = "SCORE";
     CACHE_TYPES[CACHE_TYPES["TROPHY"] = 4] = "TROPHY";
 })(CACHE_TYPES = exports.CACHE_TYPES || (exports.CACHE_TYPES = {}));
-/**
- * Different modes for cache eviction:
- * ITEM = Evicts A single item by objectId (evictArg=objectId).
- * COUNT = Evicts a specific number of items (evictArg=numberToEvict), sorted by age / hitcount
- * PERCENT = Evicts enough items to free a percentage of space (evictArg=targetPercent)
- */
-var EVICT_MODES;
-(function (EVICT_MODES) {
-    EVICT_MODES[EVICT_MODES["ITEM"] = 0] = "ITEM";
-    EVICT_MODES[EVICT_MODES["COUNT"] = 1] = "COUNT";
-    EVICT_MODES[EVICT_MODES["PERCENT"] = 2] = "PERCENT";
-})(EVICT_MODES || (EVICT_MODES = {}));
 class Cache {
     // private constructor
     constructor() {
@@ -96,18 +85,18 @@ class Cache {
             const method = `fetchItem(${CACHE_TYPES[cacheType]}, ${objId})`;
             const cache = this.getCache(cacheType);
             // search the array for a matching item
-            logTrace(method, 'Searching cache...');
+            fns.logTrace(__filename, method, 'Searching cache...');
             const cacheEntry = yield cache.find(ci => {
                 return ci.Item.Id === objId;
             });
             // return may be undefined
             if (cacheEntry !== undefined) {
                 cacheEntry.addHit();
-                logDebug(method, 'Item found.');
+                fns.logDebug(__filename, method, 'Item found.');
                 return Promise.resolve(cacheEntry.item);
             }
             else {
-                logDebug(method, 'Item not in cache.');
+                fns.logDebug(__filename, method, 'Item not in cache.');
                 return Promise.reject(new Error(`${CACHE_TYPES[cacheType]} item ${objId} not in cache.`));
             }
         });
@@ -122,7 +111,11 @@ class Cache {
     fetchOrGetItem(cacheType, itemId) {
         return __awaiter(this, void 0, void 0, function* () {
             const method = `fetchOrGetItem(${CACHE_TYPES[cacheType]}, ${itemId})`;
-            logTrace(method, 'Fetching item from cache...');
+            // there is no games database or service, so do not attempt to get games
+            if (cacheType === CACHE_TYPES.GAME) {
+                return Promise.reject(new Error('INVALID CACHE TYPE -> GAME.  The game cache is not persisted.  Use Cache.fetchItem() instead.'));
+            }
+            fns.logTrace(__filename, method, 'Fetching item from cache...');
             let cachedItem = yield Cache.use()
                 .fetchItem(cacheType, itemId)
                 .catch(fetchErr => {
@@ -130,11 +123,11 @@ class Cache {
             });
             // didn't find it in the cache
             if (cachedItem !== undefined) {
-                logTrace(method, 'Fetch successful.');
+                fns.logTrace(__filename, method, 'Fetch successful.');
                 return Promise.resolve(cachedItem);
             }
             else {
-                logTrace(method, 'Item not in cache, retrieving from service...');
+                fns.logTrace(__filename, method, 'Item not in cache, retrieving from service...');
                 return yield fns
                     .doGet(`${fns.getSvcUrl(cacheType)}/get?id=${itemId}`)
                     .then(itemArray => {
@@ -160,8 +153,8 @@ class Cache {
         return __awaiter(this, void 0, void 0, function* () {
             const method = `evictItem(${CACHE_TYPES[cacheType]}, ${objectId})`;
             const cache = this.getCache(cacheType);
-            logTrace(method, 'Searching for object index.');
-            const index = yield cache.findIndex(ci => {
+            fns.logTrace(__filename, method, 'Searching for object index.');
+            const index = cache.findIndex(ci => {
                 return ci.Item.Id === objectId;
             });
             // got an index - evict and return eviction count (1)
@@ -172,7 +165,7 @@ class Cache {
             // we found 'em... now evict 'em!
             cache.splice(index, 1);
             // all done - log and return
-            logDebug(method, 'Item evicted.');
+            fns.logDebug(__filename, method, 'Item evicted.');
             this.logCacheStatus();
             return Promise.resolve(1);
         });
@@ -187,7 +180,7 @@ class Cache {
         for (const cacheEntry of cache) {
             retArray.push(cacheEntry.Item);
         }
-        logDebug(`fetchItems(${CACHE_TYPES[cacheType]})`, `Fetch complete, returning ${retArray.length} items.`);
+        fns.logDebug(__filename, `fetchItems(${CACHE_TYPES[cacheType]})`, `Fetch complete, returning ${retArray.length} items.`);
         return retArray;
     }
     /**
@@ -266,7 +259,7 @@ class Cache {
         const cache = this.getCache(cacheType);
         for (const ci of cache) {
             const msg = `cache: ${CACHE_TYPES[cacheType]}, id=${ci.Item.Id} value=${ci.SortKey}, hits:${ci.HitCount}, lastHit=${ci.LastHitTime}`;
-            logTrace(method, msg);
+            fns.logTrace(__filename, method, msg);
         }
         this.logCacheStatus();
     }
@@ -280,24 +273,27 @@ class Cache {
      */
     storeItem(cacheType, object) {
         const method = `storeItem(${CACHE_TYPES[cacheType]}, Object: ${object.id})`;
-        logTrace(method, 'Storing item in cache.');
+        fns.logTrace(__filename, method, 'Storing item in cache.');
         const cache = this.getCache(cacheType);
         const max = this.getCacheSize(cacheType);
         // create CacheEntry
         const cacheEntry = new CacheEntry_1.CacheEntry(cacheType, object);
         // give the new item a hit
         cacheEntry.addHit();
-        // if the cache is full, sort it and pop off the bottom (lowest value) cached element
-        if (cache.length >= max) {
-            log.debug(__filename, method, 'Cache is full, clearing space...');
-            this.sortCache(cache);
-            const trash = cache.pop();
-            log.warn(__filename, method, `Cache full, evicted item: ${trash ? trash.Item.Id : 'undefined'}.`);
+        // if the cache is full, attempt to make some space
+        if ((cache.length / max) * 100 > config.CACHE_PRUNE_TRIGGER_PERCENT) {
+            try {
+                this.pruneCache(cacheType);
+            }
+            catch (pruneError) {
+                log.error(__filename, method, 'Cache Full ->', pruneError);
+                throw pruneError;
+            }
         }
         // now we can push the new entry onto the cache
         cache.push(cacheEntry);
         // offer the new cacheEntry as a return
-        logDebug(method, 'Item cached.');
+        fns.logDebug(__filename, method, 'Item cached.');
         return cacheEntry;
     }
     /**
@@ -305,14 +301,63 @@ class Cache {
      *
      * @param cache
      */
-    sortCache(cache) {
-        return __awaiter(this, void 0, void 0, function* () {
-            logTrace('sortCache(Array<CacheEntry>)', `Sorting cache of ${cache.length} items.`);
-            yield cache.sort((first, second) => {
+    sortCache(cacheType) {
+        const method = `sortCache(${CACHE_TYPES[cacheType]})`;
+        const cache = this.getCache(cacheType);
+        fns.logTrace(__filename, method, `Sorting cache of ${cache.length} items.`);
+        cache.sort((first, second) => {
+            if (cacheType === CACHE_TYPES.GAME) {
+                // For games only, we'll massively devalue games that aren't IN_PROGRESS
+                const fVal = first.Item.State >= Enums_1.GAME_STATES.FINISHED ? first.SortKey / 2 : first.SortKey;
+                const sVal = second.Item.State >= Enums_1.GAME_STATES.FINISHED ? second.SortKey / 2 : second.SortKey;
+                return sVal - fVal;
+            }
+            else {
+                // for everyting else, we'll use the existing hit/time-based value
                 return second.SortKey - first.SortKey;
-            });
-            logDebug('sortCache(Array<CacheEntry>)', `Cache sorted.`);
+            }
         });
+        fns.logDebug(__filename, method, 'Cache sorted.');
+    }
+    /**
+     * Triggered when cache utilization is above env.CACHE_PRUNE_TRIGGER_PERCENT, will attempt to remove items
+     * until utilization is env.CACHE_FREE_TARGET_PERCENT or lower.
+     *
+     * @param cacheType
+     */
+    pruneCache(cacheType) {
+        const method = `pruneCache(${CACHE_TYPES[cacheType]})`;
+        fns.logDebug(__filename, method, `Cache utilization above ${config.CACHE_PRUNE_TRIGGER_PERCENT}%, pruning.`);
+        const cache = this.getCache(cacheType);
+        const max = this.getCacheSize(cacheType);
+        this.sortCache(cacheType);
+        while ((cache.length / max) * 100 > config.CACHE_FREE_TARGET_PERCENT) {
+            // special rules for game cache...
+            if (cacheType === CACHE_TYPES.GAME) {
+                const game = cache[cache.length - 1].Item;
+                if (game.State >= Enums_1.GAME_STATES.FINISHED) {
+                    cache.pop();
+                    fns.logDebug(__filename, method, `Evicted item from GAME cache: ${game.Id}`);
+                }
+                else {
+                    const pruneError = new Error(`GAME cache is ${(cache.length / max) * 100}% full with ACTIVE or very high cache-value games!`);
+                    log.error(__filename, method, 'GAME cache is full!', pruneError);
+                    this.logCacheStatus();
+                    throw pruneError;
+                }
+            }
+            else {
+                const ce = cache.pop();
+                if (ce !== undefined) {
+                    fns.logDebug(__filename, method, `Evicted item from ${CACHE_TYPES[cacheType]} cache: ${!ce.Item.Id}`);
+                }
+                else {
+                    log.warn(__filename, method, `Eviction error! Cache size too low? Check env.CACHE_SIZE_[cache-name]!`);
+                }
+            }
+        }
+        // log a cache status report
+        this.logCacheStatus();
     }
     /**
      * Asynchronous cache intialization function preloads the mostly static data from
@@ -375,7 +420,7 @@ class Cache {
                 }
                 // now attempt to push it onto the cache (and give it a hit)
                 try {
-                    logTrace(method, 'Caching item.');
+                    fns.logTrace(__filename, method, 'Caching item.');
                     this.storeItem(cacheType, jsonObj);
                 }
                 catch (storeError) {
@@ -392,7 +437,7 @@ class Cache {
                     break;
                 }
             }
-            logDebug(method, `${cache.length} items loaded in ${Date.now() - startTime}ms.`);
+            fns.logDebug(__filename, method, `${cache.length} items loaded in ${Date.now() - startTime}ms.`);
             return Promise.resolve(cache.length);
         });
     }
@@ -442,15 +487,5 @@ class Cache {
     }
 }
 exports.Cache = Cache;
-function logTrace(method, msg) {
-    if (log.LogLevel >= logger_1.LOG_LEVELS.TRACE) {
-        log.trace(__filename, method, msg);
-    }
-}
-function logDebug(method, msg) {
-    if (log.LogLevel >= logger_1.LOG_LEVELS.DEBUG) {
-        log.debug(__filename, method, msg);
-    }
-}
 exports.default = Cache;
 //# sourceMappingURL=Cache.js.map

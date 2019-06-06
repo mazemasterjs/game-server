@@ -11,11 +11,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const Cache_1 = require("./Cache");
 const logger_1 = require("@mazemasterjs/logger");
 const Config_1 = require("./Config");
 const axios_1 = __importDefault(require("axios"));
+const Cache_1 = require("./Cache");
 const Enums_1 = require("@mazemasterjs/shared-library/Enums");
+const Engram_1 = require("@mazemasterjs/shared-library/Engram");
 const log = logger_1.Logger.getInstance();
 const config = Config_1.Config.getInstance();
 /**
@@ -32,13 +33,13 @@ exports.genResMsg = genResMsg;
  * Returns IGameStub versions of all games in the cache
  */
 function getGameStubs() {
-    logTrace('getGameStubs()', 'Building array of game stubs.');
+    logTrace(__filename, 'getGameStubs()', 'Building array of game stubs.');
     const games = Cache_1.Cache.use().fetchItems(Cache_1.CACHE_TYPES.GAME);
     const stubs = new Array();
     for (const game of games) {
         stubs.push(game.getStub(config.EXT_URL_GAME));
     }
-    logDebug('getGameStubs()', `Returning array with ${stubs.length} IGameStub items.`);
+    logDebug(__filename, 'getGameStubs()', `Returning array with ${stubs.length} IGameStub items.`);
     return stubs;
 }
 exports.getGameStubs = getGameStubs;
@@ -82,24 +83,24 @@ function findGame(teamId, botId) {
     const method = `findGame(${teamId}, ${botId})`;
     botId = undefined ? '' : botId;
     let cacheEntry;
-    logDebug(method, `Searching for active ${botId === '' ? 'TEAM' : 'BOT'} game.`);
+    logDebug(__filename, method, `Searching for active ${botId === '' ? 'TEAM' : 'BOT'} game.`);
     cacheEntry = Cache_1.Cache.use()
         .getCache(Cache_1.CACHE_TYPES.GAME)
         .find(ce => {
         const game = ce.Item;
         if (game.State === Enums_1.GAME_STATES.NEW || game.State === Enums_1.GAME_STATES.IN_PROGRESS) {
-            return game.TeamId === teamId && game.BotId === game.BotId;
+            return game.TeamId === teamId && game.BotId === botId;
         }
         else {
             return false;
         }
     });
     if (cacheEntry !== undefined) {
-        logDebug(method, 'Active game found.');
+        logDebug(__filename, method, 'Active game found.');
         return cacheEntry.Item.Id;
     }
     else {
-        logDebug(method, 'No active games found.');
+        logDebug(__filename, method, 'No active games found.');
         return '';
     }
 }
@@ -125,13 +126,13 @@ exports.findBot = findBot;
 function doGet(url) {
     return __awaiter(this, void 0, void 0, function* () {
         const method = `doGet(${trimUrl(url)})`;
-        logTrace(method, `Requesting ${url}`);
+        logTrace(__filename, method, `Requesting ${url}`);
         return yield axios_1.default
             .get(url)
             .then(res => {
-            logDebug(method, genResMsg(url, res));
+            logDebug(__filename, method, genResMsg(url, res));
             if (log.LogLevel === logger_1.LOG_LEVELS.TRACE) {
-                logTrace(method, 'Response Data: \r\n' + JSON.stringify(res.data));
+                logTrace(__filename, method, 'Response Data: \r\n' + JSON.stringify(res.data));
             }
             return Promise.resolve(res.data);
         })
@@ -142,14 +143,44 @@ function doGet(url) {
     });
 }
 exports.doGet = doGet;
-function logTrace(method, msg) {
+function createIAction(actReq, game) {
+    const action = {
+        action: actReq.action,
+        mazeId: game.Maze.Id,
+        direction: Enums_1.DIRS[actReq.direction],
+        location: game.Player.Location,
+        score: game.Score,
+        playerState: game.Player.State,
+        botCohesion: actReq.cohesionScores,
+        engram: new Engram_1.Engram({ sight: '', sound: '', smell: '', touch: '', taste: '' }),
+        outcome: new Array(),
+        trophies: new Array(),
+    };
+    return action;
+}
+exports.createIAction = createIAction;
+/**
+ * Simple trace wrapper to reduce the number of useless module calls
+ * @param file
+ * @param method
+ * @param msg
+ */
+function logTrace(file, method, msg) {
     if (log.LogLevel >= logger_1.LOG_LEVELS.TRACE) {
-        log.trace(__filename, method, msg);
+        log.trace(file, method, msg);
     }
 }
-function logDebug(method, msg) {
+exports.logTrace = logTrace;
+/**
+ * Simple debug wrapper to reduce the number of useless module calls
+ * @param file
+ * @param method
+ * @param msg
+ */
+function logDebug(file, method, msg) {
     if (log.LogLevel >= logger_1.LOG_LEVELS.DEBUG) {
-        log.debug(__filename, method, msg);
+        log.debug(file, method, msg);
     }
 }
+exports.logDebug = logDebug;
 //# sourceMappingURL=funcs.js.map

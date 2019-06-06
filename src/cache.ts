@@ -2,6 +2,8 @@ import * as fns from './funcs';
 import { CacheEntry } from './CacheEntry';
 import Config from './Config';
 import Logger, { LOG_LEVELS } from '@mazemasterjs/logger';
+import { Game } from '@mazemasterjs/shared-library/Game';
+import { GAME_STATES } from '@mazemasterjs/shared-library/Enums';
 
 // useful constants
 const config: Config = Config.getInstance();
@@ -14,18 +16,6 @@ export enum CACHE_TYPES {
   GAME,
   SCORE,
   TROPHY,
-}
-
-/**
- * Different modes for cache eviction:
- * ITEM = Evicts A single item by objectId (evictArg=objectId).
- * COUNT = Evicts a specific number of items (evictArg=numberToEvict), sorted by age / hitcount
- * PERCENT = Evicts enough items to free a percentage of space (evictArg=targetPercent)
- */
-enum EVICT_MODES {
-  ITEM,
-  COUNT,
-  PERCENT,
 }
 
 export class Cache {
@@ -301,12 +291,14 @@ export class Cache {
     // give the new item a hit
     cacheEntry.addHit();
 
-    // if the cache is full, sort it and pop off the bottom (lowest value) cached element
-    if (cache.length >= max) {
-      log.debug(__filename, method, 'Cache is full, clearing space...');
-      this.sortCache(cacheType);
-      const trash: any = cache.pop();
-      log.warn(__filename, method, `Cache full, evicted item: ${trash ? trash.Item.Id : 'undefined'}.`);
+    // if the cache is full, attempt to make some space
+    if ((cache.length / max) * 100 > config.CACHE_PRUNE_TRIGGER_PERCENT) {
+      try {
+        this.pruneCache(cacheType);
+      } catch (pruneError) {
+        log.error(__filename, method, 'Cache Full ->', pruneError);
+        throw pruneError;
+      }
     }
 
     // now we can push the new entry onto the cache
@@ -322,14 +314,63 @@ export class Cache {
    *
    * @param cache
    */
-  private async sortCache(cacheType: CACHE_TYPES) {
+  private sortCache(cacheType: CACHE_TYPES) {
     const method = `sortCache(${CACHE_TYPES[cacheType]})`;
     const cache = this.getCache(cacheType);
     fns.logTrace(__filename, method, `Sorting cache of ${cache.length} items.`);
     cache.sort((first: CacheEntry, second: CacheEntry) => {
-      return second.SortKey - first.SortKey;
+      if (cacheType === CACHE_TYPES.GAME) {
+        // For games only, we'll massively devalue games that aren't IN_PROGRESS
+        const fVal = first.Item.State >= GAME_STATES.FINISHED ? first.SortKey / 2 : first.SortKey;
+        const sVal = second.Item.State >= GAME_STATES.FINISHED ? second.SortKey / 2 : second.SortKey;
+        return sVal - fVal;
+      } else {
+        // for everyting else, we'll use the existing hit/time-based value
+        return second.SortKey - first.SortKey;
+      }
     });
-    fns.logTrace(__filename, method, 'Cache sorted.');
+    fns.logDebug(__filename, method, 'Cache sorted.');
+  }
+
+  /**
+   * Triggered when cache utilization is above env.CACHE_PRUNE_TRIGGER_PERCENT, will attempt to remove items
+   * until utilization is env.CACHE_FREE_TARGET_PERCENT or lower.
+   *
+   * @param cacheType
+   */
+  private pruneCache(cacheType: CACHE_TYPES) {
+    const method = `pruneCache(${CACHE_TYPES[cacheType]})`;
+    fns.logDebug(__filename, method, `Cache utilization above ${config.CACHE_PRUNE_TRIGGER_PERCENT}%, pruning.`);
+
+    const cache = this.getCache(cacheType);
+    const max = this.getCacheSize(cacheType);
+    this.sortCache(cacheType);
+
+    while ((cache.length / max) * 100 > config.CACHE_FREE_TARGET_PERCENT) {
+      // special rules for game cache...
+      if (cacheType === CACHE_TYPES.GAME) {
+        const game: Game = cache[cache.length - 1].Item;
+        if (game.State >= GAME_STATES.FINISHED) {
+          cache.pop();
+          fns.logDebug(__filename, method, `Evicted item from GAME cache: ${game.Id}`);
+        } else {
+          const pruneError = new Error(`GAME cache is ${(cache.length / max) * 100}% full with ACTIVE or very high cache-value games!`);
+          log.error(__filename, method, 'GAME cache is full!', pruneError);
+          this.logCacheStatus();
+          throw pruneError;
+        }
+      } else {
+        const ce = cache.pop();
+        if (ce !== undefined) {
+          fns.logDebug(__filename, method, `Evicted item from ${CACHE_TYPES[cacheType]} cache: ${!ce.Item.Id}`);
+        } else {
+          log.warn(__filename, method, `Eviction error! Cache size too low? Check env.CACHE_SIZE_[cache-name]!`);
+        }
+      }
+    }
+
+    // log a cache status report
+    this.logCacheStatus();
   }
 
   /**

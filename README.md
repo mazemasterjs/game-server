@@ -26,6 +26,7 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 
 - Routes added: /count, /get, /get:gameId, /new/:mazeId/:teamId, /new/:mazeId/:teamId/:botId
 - Starting a new game will fail if the team (multi-player) or bot (single-player) already have an active game in memory
+- Added prune function that checks utilization level when a new entry is added. If utilization is > 95% (env.CACHE_PRUNE_TRIGGER_PERCENT), low-value items will be evicted until cache has desired space (env.CACHE_FREE_TARGET_PERCENT)
 - Cache.fetchOrGet() function added - first attempts to pull from cache, then then from the service backing the cache. Note: For non-persisted object types (just Game, at the moment) objects, use Cache.fetchItem()
 
 ### v0.2.0
