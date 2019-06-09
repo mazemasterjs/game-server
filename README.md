@@ -13,17 +13,18 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 - get: '/game/:gameId' - Returns the full game object for the matching gameId
 - put: '/game/new/:mazeId/:teamId' - Creates a new, multiplayer team game in the given maze
 - put: '/game/new/:mazeId/:teamId/:botId' - Creates a new, single-player bot game in the given maze
-- delete: '/game/abandon/:gameId' - Marks a game as abandoned, allowing that team/bot to start a new game
 - put: '/game/action' - Requires req.body with gameId and command (minimum).
-  -- COMMANDS: _look_, _move_, jump (pending), sit (pending), stand (pending), quit (pending)
-  -- DIRECTIONS: north, south, east, west
-  -- Sample req.body: `{ "gameId":"unique-game-id-here", "command":"move", "direction":"north", "message":"", "cohesionScores":[1, null, null, null, null] }`
+  - COMMANDS: _look_, _move_, jump (pending), sit (pending), stand (pending), write (pending), quit (pending)
+  - DIRECTIONS: north, south, east, west
+  - Sample req.body:
+    - `{ "gameId":"game-id", "command":"move", "direction":"north" }`
+- delete: '/game/abandon/:gameId' - Marks a game as abandoned, allowing that team/bot to start a new game
 
 ## TODO
 
-- ~~Implement percentage-based cache eviction routine that keeps a minimum amount of free-space available instead of the current FIFO model~~
-- ~~Ensure that cache entries for active games aren't evicted (add game state to value calculation?)~~
-- Add logic to automatically end games after a certain period of inactivity (set GAMES_STATES.ABANDONED)
+- [x] Implement percentage-based cache eviction routine that keeps a minimum amount of free-space available instead of the current FIFO model
+- [x] Ensure that cache entries for active games aren't evicted (add game state to value calculation?)
+- [ ] Add logic to automatically end games after a certain period of inactivity (set GAMES_STATES.ABANDONED)
 
 ## Change Notes
 
