@@ -81,25 +81,26 @@ class Cache {
      * @returns CacheEntry.Item or undefined (if not found)
      */
     fetchItem(cacheType, objId) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const method = `fetchItem(${CACHE_TYPES[cacheType]}, ${objId})`;
-            const cache = this.getCache(cacheType);
-            // search the array for a matching item
-            fns.logTrace(__filename, method, 'Searching cache...');
-            const cacheEntry = yield cache.find(ci => {
-                return ci.Item.Id === objId;
-            });
-            // return may be undefined
-            if (cacheEntry !== undefined) {
-                cacheEntry.addHit();
-                fns.logDebug(__filename, method, 'Item found.');
-                return Promise.resolve(cacheEntry.item);
-            }
-            else {
-                fns.logDebug(__filename, method, 'Item not in cache.');
-                return Promise.reject(new Error(`${CACHE_TYPES[cacheType]} item ${objId} not in cache.`));
-            }
+        const method = `fetchItem(${CACHE_TYPES[cacheType]}, ${objId})`;
+        const cache = this.getCache(cacheType);
+        // search the array for a matching item
+        fns.logTrace(__filename, method, 'Searching cache...');
+        const cacheEntryAny = cache.find(ci => {
+            return ci.Item.Id === objId;
         });
+        // return may be undefined
+        if (cacheEntryAny !== undefined) {
+            const cacheEntry = cacheEntryAny;
+            cacheEntry.addHit();
+            fns.logDebug(__filename, method, 'Item found.');
+            return cacheEntry.Item;
+        }
+        else {
+            fns.logDebug(__filename, method, 'Item not in cache.');
+            const fetchError = new Error(`${CACHE_TYPES[cacheType]} item ${objId} not in cache.`);
+            log.error(__filename, method, 'Error Fetching', fetchError);
+            throw fetchError;
+        }
     }
     /**
      * First attempts to fetch an item from the cache - if it's not found there, will
@@ -116,31 +117,26 @@ class Cache {
                 return Promise.reject(new Error('INVALID CACHE TYPE -> GAME.  The game cache is not persisted.  Use Cache.fetchItem() instead.'));
             }
             fns.logTrace(__filename, method, 'Fetching item from cache...');
-            let cachedItem = yield Cache.use()
-                .fetchItem(cacheType, itemId)
-                .catch(fetchErr => {
+            try {
+                return Promise.resolve(Cache.use().fetchItem(cacheType, itemId));
+            }
+            catch (fetchErr) {
                 log.warn(__filename, method, 'Fetch failed -> ' + fetchErr.message);
-            });
+            }
             // didn't find it in the cache
-            if (cachedItem !== undefined) {
-                fns.logTrace(__filename, method, 'Fetch successful.');
-                return Promise.resolve(cachedItem);
-            }
-            else {
-                fns.logTrace(__filename, method, 'Item not in cache, retrieving from service...');
-                return yield fns
-                    .doGet(`${fns.getSvcUrl(cacheType)}/get?id=${itemId}`)
-                    .then(itemArray => {
-                    // got the item, lets cache it!
-                    cachedItem = Cache.use().storeItem(cacheType, itemArray[0]);
-                    // and return so we can continue
-                    return Promise.resolve(cachedItem.item);
-                })
-                    .catch(getError => {
-                    log.warn(__filename, method, `${fns.getSvcUrl(cacheType)}/get?id=${itemId} failed -> ${getError.message}`);
-                    return Promise.reject(getError);
-                });
-            }
+            fns.logTrace(__filename, method, 'Item not in cache, retrieving from service...');
+            // So retrieve it from the appropriate service
+            return yield fns
+                .doGet(`${fns.getSvcUrl(cacheType)}/get?id=${itemId}`)
+                .then(itemArray => {
+                const cacheEntry = Cache.use().storeItem(cacheType, itemArray[0]);
+                // and return so we can continue
+                return Promise.resolve(cacheEntry.Item);
+            })
+                .catch(getError => {
+                log.warn(__filename, method, `${fns.getSvcUrl(cacheType)}/get?id=${itemId} failed -> ${getError.message}`);
+                return Promise.reject(getError);
+            });
         });
     }
     /**

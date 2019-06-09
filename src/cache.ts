@@ -72,24 +72,27 @@ export class Cache {
    * @param objId
    * @returns CacheEntry.Item or undefined (if not found)
    */
-  public async fetchItem(cacheType: CACHE_TYPES, objId: string): Promise<any> {
+  public fetchItem(cacheType: CACHE_TYPES, objId: string): any {
     const method = `fetchItem(${CACHE_TYPES[cacheType]}, ${objId})`;
     const cache: Array<CacheEntry> = this.getCache(cacheType);
 
     // search the array for a matching item
     fns.logTrace(__filename, method, 'Searching cache...');
-    const cacheEntry: any = await cache.find(ci => {
+    const cacheEntryAny: any = cache.find(ci => {
       return ci.Item.Id === objId;
     });
 
     // return may be undefined
-    if (cacheEntry !== undefined) {
+    if (cacheEntryAny !== undefined) {
+      const cacheEntry: CacheEntry = cacheEntryAny;
       cacheEntry.addHit();
       fns.logDebug(__filename, method, 'Item found.');
-      return Promise.resolve(cacheEntry.item);
+      return cacheEntry.Item;
     } else {
       fns.logDebug(__filename, method, 'Item not in cache.');
-      return Promise.reject(new Error(`${CACHE_TYPES[cacheType]} item ${objId} not in cache.`));
+      const fetchError = new Error(`${CACHE_TYPES[cacheType]} item ${objId} not in cache.`);
+      log.error(__filename, method, 'Error Fetching', fetchError);
+      throw fetchError;
     }
   }
 
@@ -109,33 +112,28 @@ export class Cache {
     }
 
     fns.logTrace(__filename, method, 'Fetching item from cache...');
-    let cachedItem = await Cache.use()
-      .fetchItem(cacheType, itemId)
-      .catch(fetchErr => {
-        log.warn(__filename, method, 'Fetch failed -> ' + fetchErr.message);
-      });
+
+    try {
+      return Promise.resolve(Cache.use().fetchItem(cacheType, itemId));
+    } catch (fetchErr) {
+      log.warn(__filename, method, 'Fetch failed -> ' + fetchErr.message);
+    }
 
     // didn't find it in the cache
-    if (cachedItem !== undefined) {
-      fns.logTrace(__filename, method, 'Fetch successful.');
-      return Promise.resolve(cachedItem);
-    } else {
-      fns.logTrace(__filename, method, 'Item not in cache, retrieving from service...');
+    fns.logTrace(__filename, method, 'Item not in cache, retrieving from service...');
 
-      return await fns
-        .doGet(`${fns.getSvcUrl(cacheType)}/get?id=${itemId}`)
-        .then(itemArray => {
-          // got the item, lets cache it!
-          cachedItem = Cache.use().storeItem(cacheType, itemArray[0]);
-
-          // and return so we can continue
-          return Promise.resolve(cachedItem.item);
-        })
-        .catch(getError => {
-          log.warn(__filename, method, `${fns.getSvcUrl(cacheType)}/get?id=${itemId} failed -> ${getError.message}`);
-          return Promise.reject(getError);
-        });
-    }
+    // So retrieve it from the appropriate service
+    return await fns
+      .doGet(`${fns.getSvcUrl(cacheType)}/get?id=${itemId}`)
+      .then(itemArray => {
+        const cacheEntry = Cache.use().storeItem(cacheType, itemArray[0]);
+        // and return so we can continue
+        return Promise.resolve(cacheEntry.Item);
+      })
+      .catch(getError => {
+        log.warn(__filename, method, `${fns.getSvcUrl(cacheType)}/get?id=${itemId} failed -> ${getError.message}`);
+        return Promise.reject(getError);
+      });
   }
 
   /**
@@ -279,7 +277,7 @@ export class Cache {
    * @param object any - an appropriate Maze Master JSON object or instantiated class
    * @returns CacheItem - The CacheItem created while storing the mmjs Object into memory
    */
-  public storeItem(cacheType: CACHE_TYPES, object: any): CacheEntry {
+  public storeItem(cacheType: CACHE_TYPES, object: any): any {
     const method = `storeItem(${CACHE_TYPES[cacheType]}, Object: ${object.id})`;
     fns.logTrace(__filename, method, 'Storing item in cache.');
     const cache = this.getCache(cacheType);

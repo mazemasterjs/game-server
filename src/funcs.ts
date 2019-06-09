@@ -1,17 +1,18 @@
+import axios from 'axios';
 import { Team } from '@mazemasterjs/shared-library/Team';
-import { AxiosResponse } from 'axios';
 import { LOG_LEVELS, Logger } from '@mazemasterjs/logger';
 import { Game } from '@mazemasterjs/shared-library/Game';
-import { IGameStub } from '@mazemasterjs/shared-library/IGameStub';
+import { IGameStub } from '@mazemasterjs/shared-library/Interfaces/IGameStub';
 import { Config } from './Config';
-import axios from 'axios';
+import { AxiosResponse } from 'axios';
 import { Cache, CACHE_TYPES } from './Cache';
-import { DIRS, GAME_STATES } from '@mazemasterjs/shared-library/Enums';
-import CacheEntry from './CacheEntry';
-import { IAction } from '@mazemasterjs/shared-library/IAction';
+import { COMMANDS, DIRS, GAME_STATES, GAME_RESULTS } from '@mazemasterjs/shared-library/Enums';
+import { Action } from '@mazemasterjs/shared-library/Action';
 import { Engram } from '@mazemasterjs/shared-library/Engram';
-import Trophy from '@mazemasterjs/shared-library/Trophy';
-import ITrophyStub from '@mazemasterjs/shared-library/ITrophyStub';
+import ITrophyStub from '@mazemasterjs/shared-library/Interfaces/ITrophyStub';
+import { Request } from 'express';
+import Score from '@mazemasterjs/shared-library/Score';
+import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
 
 const log = Logger.getInstance();
 const config = Config.getInstance();
@@ -141,21 +142,87 @@ export async function doGet(url: string): Promise<any> {
     });
 }
 
-export function createIAction(actReq: any, game: Game) {
-  const action: IAction = {
-    action: actReq.action,
-    mazeId: game.Maze.Id,
-    direction: DIRS[actReq.direction],
-    location: game.Player.Location,
-    score: game.Score,
-    playerState: game.Player.State,
-    botCohesion: actReq.cohesionScores,
-    engram: new Engram({ sight: '', sound: '', smell: '', touch: '', taste: '' }),
-    outcome: new Array<string>(),
-    trophies: new Array<ITrophyStub>(),
-  };
+/**
+ * Clean up and standardize input, then attempt to map against available directions
+ * to return the DIRS enum value of the given direction
+ *
+ * @param dirName
+ */
+export function getDirByName(dirName: string): number {
+  switch (dirName.toUpperCase().trim()) {
+    case 'NORTH': {
+      return DIRS.NORTH;
+    }
+    case 'SOUTH': {
+      return DIRS.SOUTH;
+    }
+    case 'EAST': {
+      return DIRS.EAST;
+    }
+    case 'WEST': {
+      return DIRS.WEST;
+    }
+    case 'NONE': {
+      return DIRS.NONE;
+    }
+    default:
+      log.warn(__filename, `getDirByName(${dirName})`, 'Invalid direction received, returning DIRS.NONE.');
+      return DIRS.NONE;
+  }
+}
 
-  return action;
+/**
+ * Clean up and standardize input, then attempt to map against available commands
+ * to return the correct COMMANDS enum value
+ *
+ * @param dirName
+ */
+export function getCmdByName(cmdName: string): number {
+  switch (cmdName.toUpperCase().trim()) {
+    case 'LOOK': {
+      return COMMANDS.LOOK;
+    }
+    case 'JUMP': {
+      return COMMANDS.JUMP;
+    }
+    case 'MOVE': {
+      return COMMANDS.MOVE;
+    }
+    case 'SIT': {
+      return COMMANDS.SIT;
+    }
+    case 'STAND': {
+      return COMMANDS.STAND;
+    }
+    case 'WRITE': {
+      return COMMANDS.WRITE;
+    }
+    // case 'QUIT': {
+    //   return COMMANDS.QUIT;
+    // }
+    case 'NONE': {
+      return COMMANDS.NONE;
+    }
+    default:
+      log.warn(__filename, `getCmdByName(${cmdName})`, 'Invalid command received, returning COMMANDS.NONE.');
+      return COMMANDS.NONE;
+  }
+}
+
+/**
+ * Appeneds game summary as outcome strings on given action using values
+ * from the given score
+ *
+ * @param action
+ * @param score
+ */
+export function summarizeGame(action: IAction, score: Score) {
+  action.outcomes.push(`Game Over: ${GAME_RESULTS[score.GameResult]}`);
+  action.outcomes.push(`Moves: ${score.MoveCount}`);
+  action.outcomes.push(`Backtracks: ${score.BacktrackCount}`);
+  action.outcomes.push(`Bonus Points: ${score.BonusPoints}`);
+  action.outcomes.push(`Trophies: ${score.Trophies.length}`);
+  action.outcomes.push(`Final Score: ${score.getTotalScore()}`);
 }
 
 /**
@@ -179,5 +246,17 @@ export function logTrace(file: string, method: string, msg: string) {
 export function logDebug(file: string, method: string, msg: string) {
   if (log.LogLevel >= LOG_LEVELS.DEBUG) {
     log.debug(file, method, msg);
+  }
+}
+
+/**
+ * Simple warn wrapper to reduce the number of useless module calls
+ * @param file
+ * @param method
+ * @param msg
+ */
+export function logWarn(file: string, method: string, msg: string) {
+  if (log.LogLevel >= LOG_LEVELS.WARN) {
+    log.warn(file, method, msg);
   }
 }

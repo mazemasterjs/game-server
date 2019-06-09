@@ -14,20 +14,16 @@ var __importStar = (this && this.__importStar) || function (mod) {
     result["default"] = mod;
     return result;
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-const fns = __importStar(require("./funcs"));
+const Config_1 = require("./Config");
 const logger_1 = require("@mazemasterjs/logger");
 const Cache_1 = require("./Cache");
 const Game_1 = require("@mazemasterjs/shared-library/Game");
-const Player_1 = require("@mazemasterjs/shared-library/Player");
-const Config_1 = require("./Config");
+const fns = __importStar(require("./funcs"));
 const Enums_1 = require("@mazemasterjs/shared-library/Enums");
-const Score_1 = __importDefault(require("@mazemasterjs/shared-library/Score"));
-require("./controllers/actLook");
+const Action_1 = require("@mazemasterjs/shared-library/Action");
 const actLook_1 = require("./controllers/actLook");
+const actMove_1 = require("./controllers/actMove");
 // set constant utility references
 const log = logger_1.Logger.getInstance();
 const config = Config_1.Config.getInstance();
@@ -39,9 +35,19 @@ const config = Config_1.Config.getInstance();
  */
 exports.createGame = (req, res) => __awaiter(this, void 0, void 0, function* () {
     logRequest('createGame', req);
+    // make sure that the request body has the minimum parameters defined
+    if (!req.params.mazeId || !req.params.teamId) {
+        return res.status(400).json({
+            status: 400,
+            message: 'Invalid Request',
+            error: 'Request body must include the following elements: { mazeId:<string>, teamId: <string> }',
+        });
+    }
+    // set some vars from req parameters
     const mazeId = req.params.mazeId;
     const teamId = req.params.teamId;
-    const botId = req.params.botId === undefined ? '' : req.params.botId;
+    const botId = req.params.botId + '';
+    const forceId = req.query.forceId + '';
     const method = `createGame(${mazeId}, ${teamId}, ${botId})`;
     try {
         // get maze - bail on fail
@@ -69,15 +75,16 @@ exports.createGame = (req, res) => __awaiter(this, void 0, void 0, function* () 
         if (activeGameId !== '') {
             return res.status(400).json({ status: 400, message: 'Invalid Request - An active game for team/bot already exists.', gameId: activeGameId });
         }
-        // so far so good!  Let's create the rest of the game objects...
-        // Players always start sitting down in the maze's start cell
-        const player = new Player_1.Player(maze.StartCell, Enums_1.PLAYER_STATES.SITTING);
         // break this down into two steps so we can better tell where any errors come from
-        let game = new Game_1.Game(maze, player, new Score_1.default(), 1, teamId, botId);
-        game = Cache_1.Cache.use().storeItem(Cache_1.CACHE_TYPES.GAME, game).Item;
-        // Return json containing status, message, gameId, and initial action
-        // TODO: Add initial action!
-        return res.status(200).json({ status: 200, message: 'Game Created', gameId: game.Id, getUrl: `${config.EXT_URL_GAME}/get/${game.Id}` });
+        const game = new Game_1.Game(maze, teamId, botId);
+        // force-set the gameId if the query parameter was set
+        if (forceId !== undefined) {
+            game.forceSetId(forceId);
+        }
+        // store the game on the cache
+        Cache_1.Cache.use().storeItem(Cache_1.CACHE_TYPES.GAME, game);
+        // return json game stub: game.Id, getUrl: `${config.EXT_URL_GAME}/get/${game.Id}
+        return res.status(200).json({ status: 200, message: 'Game Created', game: game.getStub(`${config.EXT_URL_GAME}/get/`) });
     }
     catch (err) {
         log.error(__filename, method, 'Game creation failed ->', err);
@@ -85,18 +92,34 @@ exports.createGame = (req, res) => __awaiter(this, void 0, void 0, function* () 
     }
 });
 /**
+ * Returns abandons a game currently in memory
+ */
+exports.abandonGame = (req, res) => {
+    logRequest('abandonGame', req);
+    try {
+        const game = Cache_1.Cache.use().fetchItem(Cache_1.CACHE_TYPES.GAME, req.params.gameId);
+        game.State = Enums_1.GAME_STATES.ABORTED;
+        // Change the ID of abandoned game so that I can keep re-using it
+        game.forceSetId(`${game.Id}__${Date.now()}`);
+        log.warn(__filename, 'abandonGame', `${game.Id} forcibly abandoned by request from ${req.ip}`);
+        return res.status(200).json(game.getStub(config.EXT_URL_GAME + '/get/'));
+    }
+    catch (fetchError) {
+        res.status(404).json({ status: 404, message: 'Game Not Found', error: fetchError.message });
+    }
+};
+/**
  * Returns game data for the requested Game.Id
  */
 exports.getGame = (req, res) => {
     logRequest('getGames', req);
-    return Cache_1.Cache.use()
-        .fetchItem(Cache_1.CACHE_TYPES.GAME, req.params.gameId)
-        .then(game => {
+    try {
+        const game = Cache_1.Cache.use().fetchItem(Cache_1.CACHE_TYPES.GAME, req.params.gameId);
         return res.status(200).json(game.getStub(config.EXT_URL_GAME));
-    })
-        .catch(fetchError => {
+    }
+    catch (fetchError) {
         res.status(404).json({ status: 404, message: 'Game Not Found', error: fetchError.message });
-    });
+    }
 };
 /**
  * Returns a list of stubbed game data for all games currently
@@ -111,73 +134,79 @@ exports.listGames = (req, res) => {
         return res.status(500).json({ status: '500', message: 'Server Error', error: gameStubsError.message });
     }
 };
+/**
+ * Returns a quick count of the games cache
+ *
+ * @param req
+ * @param res
+ */
 exports.countGames = (req, res) => {
     logRequest('countGames', req);
     return res.status(200).json({ count: Cache_1.Cache.use().countItems(Cache_1.CACHE_TYPES.GAME) });
 };
-exports.processAction = (req, res) => {
-    logRequest('getGames', req);
+/**
+ * Process an incoming game action request
+ *
+ * @param req
+ * @param res
+ */
+exports.processAction = (req, res) => __awaiter(this, void 0, void 0, function* () {
+    logRequest('processAction', req);
     let game;
-    return Cache_1.Cache.use()
-        .fetchItem(Cache_1.CACHE_TYPES.GAME, req.body.gameId)
-        .then(cachedGame => {
-        game = cachedGame;
-        if (game.State >= Enums_1.GAME_STATES.FINISHED) {
-            log.warn(__filename, req.path, `Action sent to ${Enums_1.GAME_STATES[game.State]} gameId ${game.Id}.`);
-            return res.status(400).json({ status: 400, message: 'Game Over', gameState: Enums_1.GAME_STATES[game.State] });
+    // make sure that the request body has the minimum parameters defined
+    if (!req.body.command || !req.body.direction || !req.body.gameId) {
+        return res.status(400).json({
+            status: 400,
+            message: 'Invalid Request',
+            error: 'Request body must include the following elements: { gameId:<string>, command: <string>, direction: <string> }',
+        });
+    }
+    // assign some reference vars from req.body (validate cmd and dir)
+    const gameId = req.body.gameId;
+    const cmd = fns.getCmdByName(req.body.command);
+    const dir = fns.getDirByName(req.body.direction);
+    const msg = req.body.message + '';
+    // first attempt to get the game by the given Id - fetchItem will throw an
+    // error if the game is not found and we'll respond accordingly
+    try {
+        game = Cache_1.Cache.use().fetchItem(Cache_1.CACHE_TYPES.GAME, gameId);
+    }
+    catch (fetchError) {
+        return res.status(404).json({ status: 404, message: 'Game Not Found', error: fetchError.message });
+    }
+    // got a game - make sure it's not in an end-state: FINISHED, ABANDONDED, or ERROR
+    if (game.State >= Enums_1.GAME_STATES.FINISHED) {
+        log.warn(__filename, req.path, `Action sent to ${Enums_1.GAME_STATES[game.State]} game.`);
+        return res.status(400).json({ status: 400, message: 'Game Over', gameState: Enums_1.GAME_STATES[game.State] });
+    }
+    // the game is still active, so create and configure an Action item
+    const action = new Action_1.Action(cmd, dir, msg);
+    // add the new action to the game
+    game.addAction(action);
+    // make sure the game
+    game.State = Enums_1.GAME_STATES.IN_PROGRESS;
+    switch (action.command) {
+        case Enums_1.COMMANDS.LOOK: {
+            return res.status(200).json(yield actLook_1.doLook(game));
         }
-        else {
-            const action = fns.createIAction(req.body, game);
-            game.State = Enums_1.GAME_STATES.IN_PROGRESS;
-            game.addAction(action);
-            switch (action.action.toUpperCase()) {
-                case 'LOOK': {
-                    // const err = new Error('The "LOOK" action has not been implemented yet.');
-                    // log.error(__filename, req.path, 'Not Implemented', err);
-                    // return res.status(500).json({ status: 500, message: 'Action Not Implemented', error: err.message });
-                    const outcome = actLook_1.doLook(game);
-                    return res.status(200).json({ outcome });
-                }
-                case 'MOVE': {
-                    const err = new Error('The "MOVE" action has not been implemented yet.');
-                    log.error(__filename, req.path, 'Not Implemented', err);
-                    return res.status(500).json({ status: 500, message: 'Action Not Implemented', error: err.message });
-                }
-                case 'JUMP': {
-                    const err = new Error('The "JUMP" action has not been implemented yet.');
-                    log.error(__filename, req.path, 'Not Implemented', err);
-                    return res.status(500).json({ status: 500, message: 'Action Not Implemented', error: err.message });
-                }
-                case 'STAND': {
-                    const err = new Error('The "STAND" action has not been implemented yet.');
-                    log.error(__filename, req.path, 'Not Implemented', err);
-                    return res.status(500).json({ status: 500, message: 'Action Not Implemented', error: err.message });
-                }
-                case 'WRITE': {
-                    const err = new Error('The "WRITE" action has not been implemented yet.');
-                    log.error(__filename, req.path, 'Not Implemented', err);
-                    return res.status(500).json({ status: 500, message: 'Action Not Implemented', error: err.message });
-                }
-                default: {
-                    const err = new Error('Invalid Action: ' + action.action.toUpperCase());
-                    log.error(__filename, req.path, 'Not Implemented', err);
-                    return res.status(500).json({ status: 500, message: 'Action Not Implemented', error: err.message });
-                }
-            }
+        case Enums_1.COMMANDS.MOVE: {
+            return yield res.status(200).json(yield actMove_1.doMove(game));
         }
-        //      return res.status(200).json(game.getStub(config.EXT_URL_GAME));
-    })
-        .catch(fetchError => {
-        res.status(404).json({ status: 404, message: 'Game Not Found', error: fetchError.message });
-    });
-    // {
-    //     "gameId":"c440d650-733e-4db9-9814-59061b737df7",
-    //     "action":"look",
-    //     "direction":"north",
-    //     "message":"test",
-    //     "cohesionScores":[1,0.5,1,0.5,null,null]
-    //  }
-};
+        case Enums_1.COMMANDS.JUMP:
+        case Enums_1.COMMANDS.SIT:
+        case Enums_1.COMMANDS.STAND:
+        case Enums_1.COMMANDS.WRITE: {
+            const err = new Error(`The ${Enums_1.COMMANDS[action.command]} command has not been implemented yet.`);
+            log.error(__filename, req.path, 'Command Not Implemented', err);
+            return res.status(500).json({ status: 500, message: 'Command Not Implemented', error: err.message });
+        }
+        default: {
+            const err = new Error(`${Enums_1.COMMANDS[action.command]} is not recognized. Valid commands are LOOK, MOVE, JUMP, SIT, STAND, and WRITE.`);
+            log.error(__filename, req.path, 'Unrecognized Command', err);
+            return res.status(500).json({ status: 400, message: 'Unrecognized Command', error: err.message });
+        }
+    }
+});
 exports.dumpCache = (req, res) => {
     logRequest('dumpCache - MAZE', req);
     Cache_1.Cache.use().dumpCache(Cache_1.CACHE_TYPES.MAZE);

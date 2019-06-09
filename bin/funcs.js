@@ -11,12 +11,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const axios_1 = __importDefault(require("axios"));
 const logger_1 = require("@mazemasterjs/logger");
 const Config_1 = require("./Config");
-const axios_1 = __importDefault(require("axios"));
 const Cache_1 = require("./Cache");
 const Enums_1 = require("@mazemasterjs/shared-library/Enums");
-const Engram_1 = require("@mazemasterjs/shared-library/Engram");
 const log = logger_1.Logger.getInstance();
 const config = Config_1.Config.getInstance();
 /**
@@ -143,22 +142,89 @@ function doGet(url) {
     });
 }
 exports.doGet = doGet;
-function createIAction(actReq, game) {
-    const action = {
-        action: actReq.action,
-        mazeId: game.Maze.Id,
-        direction: Enums_1.DIRS[actReq.direction],
-        location: game.Player.Location,
-        score: game.Score,
-        playerState: game.Player.State,
-        botCohesion: actReq.cohesionScores,
-        engram: new Engram_1.Engram({ sight: '', sound: '', smell: '', touch: '', taste: '' }),
-        outcome: new Array(),
-        trophies: new Array(),
-    };
-    return action;
+/**
+ * Clean up and standardize input, then attempt to map against available directions
+ * to return the DIRS enum value of the given direction
+ *
+ * @param dirName
+ */
+function getDirByName(dirName) {
+    switch (dirName.toUpperCase().trim()) {
+        case 'NORTH': {
+            return Enums_1.DIRS.NORTH;
+        }
+        case 'SOUTH': {
+            return Enums_1.DIRS.SOUTH;
+        }
+        case 'EAST': {
+            return Enums_1.DIRS.EAST;
+        }
+        case 'WEST': {
+            return Enums_1.DIRS.WEST;
+        }
+        case 'NONE': {
+            return Enums_1.DIRS.NONE;
+        }
+        default:
+            log.warn(__filename, `getDirByName(${dirName})`, 'Invalid direction received, returning DIRS.NONE.');
+            return Enums_1.DIRS.NONE;
+    }
 }
-exports.createIAction = createIAction;
+exports.getDirByName = getDirByName;
+/**
+ * Clean up and standardize input, then attempt to map against available commands
+ * to return the correct COMMANDS enum value
+ *
+ * @param dirName
+ */
+function getCmdByName(cmdName) {
+    switch (cmdName.toUpperCase().trim()) {
+        case 'LOOK': {
+            return Enums_1.COMMANDS.LOOK;
+        }
+        case 'JUMP': {
+            return Enums_1.COMMANDS.JUMP;
+        }
+        case 'MOVE': {
+            return Enums_1.COMMANDS.MOVE;
+        }
+        case 'SIT': {
+            return Enums_1.COMMANDS.SIT;
+        }
+        case 'STAND': {
+            return Enums_1.COMMANDS.STAND;
+        }
+        case 'WRITE': {
+            return Enums_1.COMMANDS.WRITE;
+        }
+        // case 'QUIT': {
+        //   return COMMANDS.QUIT;
+        // }
+        case 'NONE': {
+            return Enums_1.COMMANDS.NONE;
+        }
+        default:
+            log.warn(__filename, `getCmdByName(${cmdName})`, 'Invalid command received, returning COMMANDS.NONE.');
+            return Enums_1.COMMANDS.NONE;
+    }
+}
+exports.getCmdByName = getCmdByName;
+/**
+ * Appeneds game summary as outcome strings on given action using values
+ * from the given score
+ *
+ * @param action
+ * @param score
+ */
+function summarizeGame(action, score) {
+    action.outcomes.push(`Game Over: ${Enums_1.GAME_RESULTS[score.GameResult]}`);
+    action.outcomes.push(`Moves: ${score.MoveCount}`);
+    action.outcomes.push(`Backtracks: ${score.BacktrackCount}`);
+    action.outcomes.push(`Bonus Points: ${score.BonusPoints}`);
+    action.outcomes.push(`Trophies: ${score.Trophies.length}`);
+    action.outcomes.push(`Final Score: ${score.getTotalScore()}`);
+}
+exports.summarizeGame = summarizeGame;
 /**
  * Simple trace wrapper to reduce the number of useless module calls
  * @param file
@@ -183,4 +249,16 @@ function logDebug(file, method, msg) {
     }
 }
 exports.logDebug = logDebug;
+/**
+ * Simple warn wrapper to reduce the number of useless module calls
+ * @param file
+ * @param method
+ * @param msg
+ */
+function logWarn(file, method, msg) {
+    if (log.LogLevel >= logger_1.LOG_LEVELS.WARN) {
+        log.warn(file, method, msg);
+    }
+}
+exports.logWarn = logWarn;
 //# sourceMappingURL=funcs.js.map

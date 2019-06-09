@@ -23,9 +23,10 @@ exports.router.get('/get/:gameId', routes.getGame);
 exports.router.put('/new/:mazeId/:teamId/:botId', routes.createGame); // single-player
 exports.router.put('/new/:mazeId/:teamId/', routes.createGame); // multi-player
 // actions
-exports.router.post('/action', routes.processAction);
+exports.router.put('/action', routes.processAction);
 // utility
 exports.router.get('/count', routes.countGames);
+exports.router.delete('/abandon/:gameId', routes.abandonGame);
 exports.router.get('/cache/dump', routes.dumpCache); // TODO: Remove this debugging route
 // map the live/ready probes
 exports.router.get('/probes/live', routes.livenessProbe);

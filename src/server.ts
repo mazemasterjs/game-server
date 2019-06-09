@@ -8,6 +8,7 @@ import { Config } from './Config';
 import { Cache } from './Cache';
 import { hostname } from 'os';
 import { router } from './router';
+import Maze from '@mazemasterjs/shared-library/Maze';
 
 // get logger &  config instances
 const log = Logger.getInstance();
