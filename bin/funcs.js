@@ -11,10 +11,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const Cache_1 = require("./Cache");
 const axios_1 = __importDefault(require("axios"));
 const logger_1 = require("@mazemasterjs/logger");
 const Config_1 = require("./Config");
-const Cache_1 = require("./Cache");
 const Enums_1 = require("@mazemasterjs/shared-library/Enums");
 const log = logger_1.Logger.getInstance();
 const config = Config_1.Config.getInstance();
@@ -143,6 +143,32 @@ function doGet(url) {
 }
 exports.doGet = doGet;
 /**
+ * Puts given data to the given URL
+ *
+ * @param url
+ * @param data
+ */
+function doPut(url, data) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const method = `doPut(${trimUrl(url)})`;
+        logTrace(__filename, method, `Requesting ${url}`);
+        return yield axios_1.default
+            .put(url, data)
+            .then(res => {
+            logDebug(__filename, method, genResMsg(url, res));
+            if (log.LogLevel === logger_1.LOG_LEVELS.TRACE) {
+                logTrace(__filename, method, 'Response Data: \r\n' + JSON.stringify(res.data));
+            }
+            return Promise.resolve(res.data);
+        })
+            .catch(axiosErr => {
+            log.error(__filename, method, 'Error sending data ->', axiosErr);
+            return Promise.reject(axiosErr);
+        });
+    });
+}
+exports.doPut = doPut;
+/**
  * Clean up and standardize input, then attempt to map against available directions
  * to return the DIRS enum value of the given direction
  *
@@ -210,6 +236,87 @@ function getCmdByName(cmdName) {
 }
 exports.getCmdByName = getCmdByName;
 /**
+ * Handles updating the player's location, associated maze cell visit/backtrack
+ * counters, and updates the Score.MoveCount.
+ *
+ * @param game: Game - the current game
+ * @param action: IAction - the pre-validated IAction behind this move
+ */
+function movePlayer(game, act) {
+    const pLoc = game.Player.Location;
+    // reposition the player - all move validation is preformed prior to this call
+    switch (act.direction) {
+        case Enums_1.DIRS.NORTH: {
+            game.Player.Location.row--;
+            act.outcomes.push('You move to the North.');
+            break;
+        }
+        case Enums_1.DIRS.SOUTH: {
+            game.Player.Location.row++;
+            act.outcomes.push('You move to the South.');
+            break;
+        }
+        case Enums_1.DIRS.EAST: {
+            game.Player.Location.col++;
+            act.outcomes.push('You move to the East.');
+            break;
+        }
+        case Enums_1.DIRS.WEST: {
+            game.Player.Location.col--;
+            act.outcomes.push('You move to the West.');
+            break;
+        }
+    }
+    // increment the move counters
+    game.Score.addMove();
+    act.moveCount++;
+    const cell = game.Maze.Cells[game.Player.Location.row][game.Player.Location.col];
+    // until blindness or something is added, always see exits
+    act.engram.sight = 'You see exits: ' + game.Maze.Cells[pLoc.row][pLoc.col].listExits();
+    // check for backtracking
+    if (game.Maze.Cells[game.Player.Location.row][game.Player.Location.col].VisitCount > 0) {
+        game.Score.addBacktrack();
+        act.engram.sight += ' Footprints mar the dusty floor. ';
+    }
+    // and update the cell visit count
+    cell.addVisit(game.Score.MoveCount);
+    // send the updated game back
+    return game;
+}
+exports.movePlayer = movePlayer;
+/**
+ * Adds the requested trophy and related bonusPoints to the given
+ * game.Score object.
+ *
+ * @param game
+ * @param trophyId
+ * @returns Promise<Game>
+ */
+function grantTrophy(game, trophyId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const method = `grantTrophy(${game.Id}, ${Enums_1.TROPHY_IDS[trophyId]})`;
+        return yield Cache_1.Cache.use()
+            .fetchOrGetItem(Cache_1.CACHE_TYPES.TROPHY, Enums_1.TROPHY_IDS[trophyId])
+            .then(item => {
+            const trophy = item;
+            // TODO: Add a getStub() function to Trophy
+            // add trophy stub data to the action so we can track ongoing score during playback
+            game.Actions[game.Actions.length - 1].trophies.push({ id: trophy.Id, count: 1 });
+            game.Actions[game.Actions.length - 1].score += trophy.BonusAward;
+            // add the trophy and points to the game's score, too (obviously)
+            game.Score.addTrophy(trophyId);
+            game.Score.addBonusPoints(trophy.BonusAward);
+            logDebug(__filename, method, 'Trophy added.');
+            return Promise.resolve(game);
+        })
+            .catch(fetchError => {
+            logWarn(__filename, method, 'Unable to fetch trophy: ' + Enums_1.TROPHY_IDS[Enums_1.TROPHY_IDS.WISHFUL_DYING] + '. Error -> ' + fetchError.message);
+            return Promise.reject(fetchError);
+        });
+    });
+}
+exports.grantTrophy = grantTrophy;
+/**
  * Appeneds game summary as outcome strings on given action using values
  * from the given score
  *
@@ -217,12 +324,12 @@ exports.getCmdByName = getCmdByName;
  * @param score
  */
 function summarizeGame(action, score) {
-    action.outcomes.push(`Game Over: ${Enums_1.GAME_RESULTS[score.GameResult]}`);
+    action.outcomes.push(`Game Result: ${Enums_1.GAME_RESULTS[score.GameResult]}`);
     action.outcomes.push(`Moves: ${score.MoveCount}`);
     action.outcomes.push(`Backtracks: ${score.BacktrackCount}`);
     action.outcomes.push(`Bonus Points: ${score.BonusPoints}`);
     action.outcomes.push(`Trophies: ${score.Trophies.length}`);
-    action.outcomes.push(`Final Score: ${score.getTotalScore()}`);
+    action.outcomes.push(`Total Score: ${score.getTotalScore()}`);
 }
 exports.summarizeGame = summarizeGame;
 /**
@@ -261,4 +368,14 @@ function logWarn(file, method, msg) {
     }
 }
 exports.logWarn = logWarn;
+/**
+ * Simple error wrapper - really just here for consistency
+ * @param file
+ * @param method
+ * @param msg
+ */
+function logError(file, method, msg, error) {
+    log.error(file, method, msg, error);
+}
+exports.logError = logError;
 //# sourceMappingURL=funcs.js.map

@@ -1,18 +1,19 @@
+import { Cache, CACHE_TYPES } from './Cache';
 import axios from 'axios';
-import { Team } from '@mazemasterjs/shared-library/Team';
 import { LOG_LEVELS, Logger } from '@mazemasterjs/logger';
 import { Game } from '@mazemasterjs/shared-library/Game';
 import { IGameStub } from '@mazemasterjs/shared-library/Interfaces/IGameStub';
 import { Config } from './Config';
 import { AxiosResponse } from 'axios';
-import { Cache, CACHE_TYPES } from './Cache';
-import { COMMANDS, DIRS, GAME_STATES, GAME_RESULTS } from '@mazemasterjs/shared-library/Enums';
-import { Action } from '@mazemasterjs/shared-library/Action';
-import { Engram } from '@mazemasterjs/shared-library/Engram';
-import ITrophyStub from '@mazemasterjs/shared-library/Interfaces/ITrophyStub';
-import { Request } from 'express';
+import { Team } from '@mazemasterjs/shared-library/Team';
+import { COMMANDS, DIRS, GAME_RESULTS, GAME_STATES, TROPHY_IDS } from '@mazemasterjs/shared-library/Enums';
 import Score from '@mazemasterjs/shared-library/Score';
 import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
+import MazeLoc from '@mazemasterjs/shared-library/MazeLoc';
+import Cell from '@mazemasterjs/shared-library/Cell';
+import MazeBase from '@mazemasterjs/shared-library/MazeBase';
+import { Action } from '@mazemasterjs/shared-library/Action';
+import Trophy from '@mazemasterjs/shared-library/Trophy';
 
 const log = Logger.getInstance();
 const config = Config.getInstance();
@@ -143,6 +144,31 @@ export async function doGet(url: string): Promise<any> {
 }
 
 /**
+ * Puts given data to the given URL
+ *
+ * @param url
+ * @param data
+ */
+export async function doPut(url: string, data: any): Promise<any> {
+  const method = `doPut(${trimUrl(url)})`;
+  logTrace(__filename, method, `Requesting ${url}`);
+
+  return await axios
+    .put(url, data)
+    .then(res => {
+      logDebug(__filename, method, genResMsg(url, res));
+      if (log.LogLevel === LOG_LEVELS.TRACE) {
+        logTrace(__filename, method, 'Response Data: \r\n' + JSON.stringify(res.data));
+      }
+      return Promise.resolve(res.data);
+    })
+    .catch(axiosErr => {
+      log.error(__filename, method, 'Error sending data ->', axiosErr);
+      return Promise.reject(axiosErr);
+    });
+}
+
+/**
  * Clean up and standardize input, then attempt to map against available directions
  * to return the DIRS enum value of the given direction
  *
@@ -210,6 +236,95 @@ export function getCmdByName(cmdName: string): number {
 }
 
 /**
+ * Handles updating the player's location, associated maze cell visit/backtrack
+ * counters, and updates the Score.MoveCount.
+ *
+ * @param game: Game - the current game
+ * @param action: IAction - the pre-validated IAction behind this move
+ */
+export function movePlayer(game: Game, act: IAction): Game {
+  const pLoc: MazeLoc = game.Player.Location;
+
+  // reposition the player - all move validation is preformed prior to this call
+  switch (act.direction) {
+    case DIRS.NORTH: {
+      game.Player.Location.row--;
+      act.outcomes.push('You move to the North.');
+      break;
+    }
+    case DIRS.SOUTH: {
+      game.Player.Location.row++;
+      act.outcomes.push('You move to the South.');
+      break;
+    }
+    case DIRS.EAST: {
+      game.Player.Location.col++;
+      act.outcomes.push('You move to the East.');
+      break;
+    }
+    case DIRS.WEST: {
+      game.Player.Location.col--;
+      act.outcomes.push('You move to the West.');
+      break;
+    }
+  }
+
+  // increment the move counters
+  game.Score.addMove();
+  act.moveCount++;
+
+  const cell: Cell = game.Maze.Cells[game.Player.Location.row][game.Player.Location.col];
+
+  // until blindness or something is added, always see exits
+  act.engram.sight = 'You see exits: ' + game.Maze.Cells[pLoc.row][pLoc.col].listExits();
+
+  // check for backtracking
+  if (game.Maze.Cells[game.Player.Location.row][game.Player.Location.col].VisitCount > 0) {
+    game.Score.addBacktrack();
+    act.engram.sight += ' Footprints mar the dusty floor. ';
+  }
+
+  // and update the cell visit count
+  cell.addVisit(game.Score.MoveCount);
+
+  // send the updated game back
+  return game;
+}
+
+/**
+ * Adds the requested trophy and related bonusPoints to the given
+ * game.Score object.
+ *
+ * @param game
+ * @param trophyId
+ * @returns Promise<Game>
+ */
+export async function grantTrophy(game: Game, trophyId: TROPHY_IDS): Promise<Game> {
+  const method = `grantTrophy(${game.Id}, ${TROPHY_IDS[trophyId]})`;
+
+  return await Cache.use()
+    .fetchOrGetItem(CACHE_TYPES.TROPHY, TROPHY_IDS[trophyId])
+    .then(item => {
+      const trophy: Trophy = item;
+
+      // TODO: Add a getStub() function to Trophy
+      // add trophy stub data to the action so we can track ongoing score during playback
+      game.Actions[game.Actions.length - 1].trophies.push({ id: trophy.Id, count: 1 });
+      game.Actions[game.Actions.length - 1].score += trophy.BonusAward;
+
+      // add the trophy and points to the game's score, too (obviously)
+      game.Score.addTrophy(trophyId);
+      game.Score.addBonusPoints(trophy.BonusAward);
+      logDebug(__filename, method, 'Trophy added.');
+      return Promise.resolve(game);
+    })
+    .catch(fetchError => {
+      logWarn(__filename, method, 'Unable to fetch trophy: ' + TROPHY_IDS[TROPHY_IDS.WISHFUL_DYING] + '. Error -> ' + fetchError.message);
+      return Promise.reject(fetchError);
+    });
+}
+
+/**
  * Appeneds game summary as outcome strings on given action using values
  * from the given score
  *
@@ -217,12 +332,12 @@ export function getCmdByName(cmdName: string): number {
  * @param score
  */
 export function summarizeGame(action: IAction, score: Score) {
-  action.outcomes.push(`Game Over: ${GAME_RESULTS[score.GameResult]}`);
+  action.outcomes.push(`Game Result: ${GAME_RESULTS[score.GameResult]}`);
   action.outcomes.push(`Moves: ${score.MoveCount}`);
   action.outcomes.push(`Backtracks: ${score.BacktrackCount}`);
   action.outcomes.push(`Bonus Points: ${score.BonusPoints}`);
   action.outcomes.push(`Trophies: ${score.Trophies.length}`);
-  action.outcomes.push(`Final Score: ${score.getTotalScore()}`);
+  action.outcomes.push(`Total Score: ${score.getTotalScore()}`);
 }
 
 /**
@@ -259,4 +374,14 @@ export function logWarn(file: string, method: string, msg: string) {
   if (log.LogLevel >= LOG_LEVELS.WARN) {
     log.warn(file, method, msg);
   }
+}
+
+/**
+ * Simple error wrapper - really just here for consistency
+ * @param file
+ * @param method
+ * @param msg
+ */
+export function logError(file: string, method: string, msg: string, error: Error) {
+  log.error(file, method, msg, error);
 }

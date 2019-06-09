@@ -22,6 +22,7 @@ const Game_1 = require("@mazemasterjs/shared-library/Game");
 const fns = __importStar(require("./funcs"));
 const Enums_1 = require("@mazemasterjs/shared-library/Enums");
 const Action_1 = require("@mazemasterjs/shared-library/Action");
+const actStand_1 = require("./controllers/actStand");
 const actLook_1 = require("./controllers/actLook");
 const actMove_1 = require("./controllers/actMove");
 // set constant utility references
@@ -77,6 +78,8 @@ exports.createGame = (req, res) => __awaiter(this, void 0, void 0, function* () 
         }
         // break this down into two steps so we can better tell where any errors come from
         const game = new Game_1.Game(maze, teamId, botId);
+        // add a visit to the start cell of the maze since the player just walked in
+        game.Maze.Cells[game.Maze.StartCell.row][game.Maze.StartCell.col].addVisit(0);
         // force-set the gameId if the query parameter was set
         if (forceId !== undefined) {
             game.forceSetId(forceId);
@@ -96,11 +99,21 @@ exports.createGame = (req, res) => __awaiter(this, void 0, void 0, function* () 
  */
 exports.abandonGame = (req, res) => {
     logRequest('abandonGame', req);
+    const gameId = req.params.gameId + '';
+    const method = `abandonGame/${gameId}`;
     try {
-        const game = Cache_1.Cache.use().fetchItem(Cache_1.CACHE_TYPES.GAME, req.params.gameId);
-        game.State = Enums_1.GAME_STATES.ABORTED;
-        // Change the ID of abandoned game so that I can keep re-using it
-        game.forceSetId(`${game.Id}__${Date.now()}`);
+        const game = Cache_1.Cache.use().fetchItem(Cache_1.CACHE_TYPES.GAME, gameId);
+        if (game.State >= Enums_1.GAME_STATES.FINISHED) {
+            const msg = `Cannot abort completed game. game.State is ${Enums_1.GAME_STATES[game.State]}`;
+            fns.logDebug(__filename, method, msg);
+            return res.status(404).json({ status: 400, message: 'Game Abort Error', error: msg });
+        }
+        // Force-set gameId's starting with the word 'FORCED' will be renamed
+        // so the original IDs can be re-used - very handy for testing and development
+        if (game.Id.startsWith('FORCED')) {
+            game.forceSetId(`${game.Id}__${Date.now()}`);
+        }
+        // go ahead and abandon the game
         log.warn(__filename, 'abandonGame', `${game.Id} forcibly abandoned by request from ${req.ip}`);
         return res.status(200).json(game.getStub(config.EXT_URL_GAME + '/get/'));
     }
@@ -194,7 +207,9 @@ exports.processAction = (req, res) => __awaiter(this, void 0, void 0, function* 
         }
         case Enums_1.COMMANDS.JUMP:
         case Enums_1.COMMANDS.SIT:
-        case Enums_1.COMMANDS.STAND:
+        case Enums_1.COMMANDS.STAND: {
+            return res.status(200).json(yield actStand_1.doStand(game));
+        }
         case Enums_1.COMMANDS.WRITE: {
             const err = new Error(`The ${Enums_1.COMMANDS[action.command]} command has not been implemented yet.`);
             log.error(__filename, req.path, 'Command Not Implemented', err);

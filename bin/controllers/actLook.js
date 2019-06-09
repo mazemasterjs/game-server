@@ -9,6 +9,7 @@ function doLook(game) {
     const engram = new Engram_1.Engram();
     const cell = game.Maze.Cells[game.Player.Location.row][game.Player.Location.col];
     const action = game.Actions[game.Actions.length - 1];
+    const preMoveScore = game.Score.getTotalScore();
     const maze = new Maze_1.default(game.Maze);
     console.log(maze.generateTextRender(true, game.Player.Location));
     engram.sight = 'You see exits: ' + cell.listExits();
@@ -21,6 +22,8 @@ function doLook(game) {
         action.outcomes.push('You look around and see exits: ' + cell.listExits());
         action.outcomes.push('There is lava to the North.');
     }
+    // track the score change from this one move
+    action.score = game.Score.getTotalScore() - preMoveScore;
     return action;
 }
 exports.doLook = doLook;

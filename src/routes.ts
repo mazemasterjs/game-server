@@ -12,6 +12,7 @@ import Score from '@mazemasterjs/shared-library/Score';
 import { Action } from '@mazemasterjs/shared-library/Action';
 import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
 
+import { doStand } from './controllers/actStand';
 import { doLook } from './controllers/actLook';
 import { doMove } from './controllers/actMove';
 import MazeLoc from '@mazemasterjs/shared-library/MazeLoc';
@@ -78,6 +79,9 @@ export const createGame = async (req: Request, res: Response) => {
     // break this down into two steps so we can better tell where any errors come from
     const game: Game = new Game(maze, teamId, botId);
 
+    // add a visit to the start cell of the maze since the player just walked in
+    game.Maze.Cells[game.Maze.StartCell.row][game.Maze.StartCell.col].addVisit(0);
+
     // force-set the gameId if the query parameter was set
     if (forceId !== undefined) {
       game.forceSetId(forceId);
@@ -99,12 +103,24 @@ export const createGame = async (req: Request, res: Response) => {
  */
 export const abandonGame = (req: Request, res: Response) => {
   logRequest('abandonGame', req);
+  const gameId: string = req.params.gameId + '';
+  const method = `abandonGame/${gameId}`;
   try {
-    const game: Game = Cache.use().fetchItem(CACHE_TYPES.GAME, req.params.gameId);
-    game.State = GAME_STATES.ABORTED;
+    const game: Game = Cache.use().fetchItem(CACHE_TYPES.GAME, gameId);
 
-    // Change the ID of abandoned game so that I can keep re-using it
-    game.forceSetId(`${game.Id}__${Date.now()}`);
+    if (game.State >= GAME_STATES.FINISHED) {
+      const msg = `Cannot abort completed game. game.State is ${GAME_STATES[game.State]}`;
+      fns.logDebug(__filename, method, msg);
+      return res.status(404).json({ status: 400, message: 'Game Abort Error', error: msg });
+    }
+
+    // Force-set gameId's starting with the word 'FORCED' will be renamed
+    // so the original IDs can be re-used - very handy for testing and development
+    if (game.Id.startsWith('FORCED')) {
+      game.forceSetId(`${game.Id}__${Date.now()}`);
+    }
+
+    // go ahead and abandon the game
     log.warn(__filename, 'abandonGame', `${game.Id} forcibly abandoned by request from ${req.ip}`);
     return res.status(200).json(game.getStub(config.EXT_URL_GAME + '/get/'));
   } catch (fetchError) {
@@ -207,7 +223,10 @@ export const processAction = async (req: Request, res: Response) => {
     }
     case COMMANDS.JUMP:
     case COMMANDS.SIT:
-    case COMMANDS.STAND:
+    case COMMANDS.STAND: {
+      return res.status(200).json(await doStand(game));
+    }
+
     case COMMANDS.WRITE: {
       const err = new Error(`The ${COMMANDS[action.command]} command has not been implemented yet.`);
       log.error(__filename, req.path, 'Command Not Implemented', err);
