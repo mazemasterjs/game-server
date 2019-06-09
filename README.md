@@ -13,11 +13,15 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 - get: '/game/:gameId' - Returns the full game object for the matching gameId
 - put: '/game/new/:mazeId/:teamId' - Creates a new, multiplayer team game in the given maze
 - put: '/game/new/:mazeId/:teamId/:botId' - Creates a new, single-player bot game in the given maze
-- put: '/game/action' - Requires req.body with gameId and command (minimum).
-  - COMMANDS: _look_, _move_, jump (pending), sit (pending), stand (pending), write (pending), quit (pending)
-  - DIRECTIONS: north, south, east, west
-  - Sample req.body:
-    - `{ "gameId":"game-id", "command":"move", "direction":"north" }`
+- put: '/game/action' - Send an action command to an active game, returns action results.
+  - Requires req.body with at least a gameId and a command
+    - COMMANDS: _look_, _move_, jump (pending), sit (pending), stand (pending), write (pending), quit (pending)
+    - DIRECTIONS: north, south, east, west
+      - req.body samples:
+        - `{ "gameId": "<GAME-UUID>", "command": "move", "direction": "north" }`
+        - `{ "gameId": "<GAME-UUID>", "command": "look", "direction": "" }`
+        - `{ "gameId": "<GAME-UUID>", "command": "look", "direction": "north" }`
+        - `{ "gameId": "<GAME-UUID>", "command": "move", "direction": "south" }`
 - delete: '/game/abandon/:gameId' - Marks a game as abandoned, allowing that team/bot to start a new game
 
 ## TODO
