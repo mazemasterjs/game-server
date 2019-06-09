@@ -13,18 +13,23 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 - get: '/game/:gameId' - Returns the full game object for the matching gameId
 - put: '/game/new/:mazeId/:teamId' - Creates a new, multiplayer team game in the given maze
 - put: '/game/new/:mazeId/:teamId/:botId' - Creates a new, single-player bot game in the given maze
+- delete: '/game/abandon/:gameId' - Marks a game as abandoned, allowing that team/bot to start a new game
+- put: '/game/action' - Requires req.body with gameId and command (minimum).
+  -- COMMANDS: _look_, _move_, jump (pending), sit (pending), stand (pending), quit (pending)
+  -- DIRECTIONS: north, south, east, west
+  -- Sample req.body: `{ "gameId":"unique-game-id-here", "command":"move", "direction":"north", "message":"", "cohesionScores":[1, null, null, null, null] }`
 
 ## TODO
 
-- Implement percentage-based cache eviction routine that keeps a minimum amount of free-space available instead of the current FIFO model
-- Ensure that cache entries for active games aren't evicted (add game state to value calculation?)
+- ~~Implement percentage-based cache eviction routine that keeps a minimum amount of free-space available instead of the current FIFO model~~
+- ~~Ensure that cache entries for active games aren't evicted (add game state to value calculation?)~~
 - Add logic to automatically end games after a certain period of inactivity (set GAMES_STATES.ABANDONED)
 
 ## Change Notes
 
 ### v0.3.0
 
-- Routes added: /count, /get, /get:gameId, /new/:mazeId/:teamId, /new/:mazeId/:teamId/:botId
+- Routes added: /count, /get, /get:gameId, /new/:mazeId/:teamId, /new/:mazeId/:teamId/:botId, /action, /abandon/:gameId
 - Starting a new game will fail if the team (multi-player) or bot (single-player) already have an active game in memory
 - Added prune function that checks utilization level when a new entry is added. If utilization is > 95% (env.CACHE_PRUNE_TRIGGER_PERCENT), low-value items will be evicted until cache has desired space (env.CACHE_FREE_TARGET_PERCENT)
 - Cache.fetchOrGet() function added - first attempts to pull from cache, then then from the service backing the cache. Note: For non-persisted object types (just Game, at the moment) objects, use Cache.fetchItem()
