@@ -15,13 +15,14 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 - put: '/game/new/:mazeId/:teamId/:botId' - Creates a new, single-player bot game in the given maze
 - put: '/game/action' - Send an action command to an active game, returns action results.
   - Requires req.body with at least a gameId and a command
-    - COMMANDS: _look_, _move_, jump (pending), sit (pending), stand (pending), write (pending), quit (pending)
+    - COMMANDS: _look_, _move_, _stand_, jump (pending), sit (pending), stand, write (pending), quit (pending)
     - DIRECTIONS: north, south, east, west
       - req.body samples:
         - `{ "gameId": "<GAME-UUID>", "command": "move", "direction": "north" }`
         - `{ "gameId": "<GAME-UUID>", "command": "look", "direction": "" }`
         - `{ "gameId": "<GAME-UUID>", "command": "look", "direction": "north" }`
         - `{ "gameId": "<GAME-UUID>", "command": "move", "direction": "south" }`
+        - `{ "gameId": "<GAME-UUID>", "command": "stand", "direction": "" }`
 - delete: '/game/abandon/:gameId' - Marks a game as abandoned, allowing that team/bot to start a new game
 
 ## TODO
@@ -31,6 +32,14 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 - [ ] Add logic to automatically end games after a certain period of inactivity (set GAMES_STATES.ABANDONED)
 
 ## Change Notes
+
+### v0.4.0
+
+- added support for COMMANDS.STAND
+- refactored some mega-functions
+- added scoring and trophy support for basic actions
+- players can now walk into walls, attempt to move while sitting, and stand up
+- sub-score and trophies now tracked in each action (as well as game.Score total) to allow playback to show visual indicators of score changes and trophy awards
 
 ### v0.3.0
 
