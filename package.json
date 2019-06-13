@@ -1,6 +1,6 @@
 {
   "name": "game-server",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "MazeMasterJS Game Server",
   "main": "./bin/server.js",
   "scripts": {
@@ -39,6 +39,6 @@
     "dotenv": "^8.0.0",
     "tslint": "^5.17.0",
     "tslint-config-prettier": "^1.18.0",
-    "typescript": "^3.5.1"
+    "typescript": "^3.5.2"
   }
 }

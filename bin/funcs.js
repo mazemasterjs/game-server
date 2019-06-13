@@ -131,7 +131,7 @@ function doGet(url) {
             .then(res => {
             logDebug(__filename, method, genResMsg(url, res));
             if (log.LogLevel === logger_1.LOG_LEVELS.TRACE) {
-                logTrace(__filename, method, 'Response Data: \r\n' + JSON.stringify(res.data));
+                logDebug(__filename, method, 'Response Data: \r\n' + JSON.stringify(res.data));
             }
             return Promise.resolve(res.data);
         })
