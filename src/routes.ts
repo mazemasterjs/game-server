@@ -11,11 +11,13 @@ import { COMMANDS, DIRS, GAME_MODES, GAME_STATES, PLAYER_STATES } from '@mazemas
 import Score from '@mazemasterjs/shared-library/Score';
 import { Action } from '@mazemasterjs/shared-library/Action';
 import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
-
+import path from 'path';
 import { doStand } from './controllers/actStand';
 import { doLook } from './controllers/actLook';
 import { doMove } from './controllers/actMove';
 import MazeLoc from '@mazemasterjs/shared-library/MazeLoc';
+import {en} from '../lang/en';
+import Ilanguage from 'lang/Ilanguage';
 
 // set constant utility references
 const log = Logger.getInstance();
@@ -176,6 +178,16 @@ export const processAction = async (req: Request, res: Response) => {
   logRequest('processAction', req);
   let game: Game;
 
+  //Gets the language header, and grabs the json with the appropriate language
+  let languageHeader :string = req.header('accept-language') + "";
+  log.force(__filename, 'Acquiring users language from the header: ',  languageHeader );
+  let userLanguage = languageHeader.substring(0,2);
+  log.force(__filename, 'User lanugage detected: ',  userLanguage );
+  var languageType = en.getInstance();
+  //Enfure that userLanugage is a supported language first
+  if (userLanguage == ('en' || 'es'))
+  { languageType =  eval(`${userLanguage}.getInstance()`);}
+
   // make sure that the request body has the minimum parameters defined
   if (!req.body.command || !req.body.direction || !req.body.gameId) {
     return res.status(400).json({
@@ -216,15 +228,15 @@ export const processAction = async (req: Request, res: Response) => {
 
   switch (action.command) {
     case COMMANDS.LOOK: {
-      return res.status(200).json(await doLook(game));
+      return res.status(200).json(await doLook(game, languageType));
     }
     case COMMANDS.MOVE: {
-      return await res.status(200).json(await doMove(game));
+      return await res.status(200).json(await doMove(game, languageType));
     }
     case COMMANDS.JUMP:
     case COMMANDS.SIT:
     case COMMANDS.STAND: {
-      return res.status(200).json(await doStand(game));
+      return res.status(200).json(await doStand(game, languageType));
     }
 
     case COMMANDS.WRITE: {
@@ -246,6 +258,21 @@ export const dumpCache = (req: Request, res: Response) => {
   logRequest('dumpCache - GAME', req);
   Cache.use().dumpCache(CACHE_TYPES.GAME);
   return res.status(200).json({ status: 200, message: 'OK' });
+};
+
+
+//Get the browsers language and return the proper lanugage file
+export const getLanguage = (req: Request, res: Response) =>{
+  
+  const languageHeader :string = req.header('accept-language') + "";
+  let outfile: string;
+  const mylang = languageHeader.substring(0,2);
+      
+  log.force(__filename, 'fileFromLocale(): ',  languageHeader );
+  log.force(__filename, 'fileFromLocale(): ',  mylang );
+  outfile = "./lang/" + mylang + ".json";
+  outfile = path.resolve(outfile);
+  return res.sendFile(outfile);
 };
 
 /**
