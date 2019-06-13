@@ -11,8 +11,6 @@ import Score from '@mazemasterjs/shared-library/Score';
 import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
 import MazeLoc from '@mazemasterjs/shared-library/MazeLoc';
 import Cell from '@mazemasterjs/shared-library/Cell';
-import MazeBase from '@mazemasterjs/shared-library/MazeBase';
-import { Action } from '@mazemasterjs/shared-library/Action';
 import Trophy from '@mazemasterjs/shared-library/Trophy';
 
 const log = Logger.getInstance();
@@ -133,7 +131,7 @@ export async function doGet(url: string): Promise<any> {
     .then(res => {
       logDebug(__filename, method, genResMsg(url, res));
       if (log.LogLevel === LOG_LEVELS.TRACE) {
-        logTrace(__filename, method, 'Response Data: \r\n' + JSON.stringify(res.data));
+        logDebug(__filename, method, 'Response Data: \r\n' + JSON.stringify(res.data));
       }
       return Promise.resolve(res.data);
     })

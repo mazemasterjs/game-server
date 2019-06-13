@@ -47,52 +47,52 @@ exports.createGame = (req, res) => __awaiter(this, void 0, void 0, function* () 
     // set some vars from req parameters
     const mazeId = req.params.mazeId;
     const teamId = req.params.teamId;
-    const botId = req.params.botId + '';
-    const forceId = req.query.forceId + '';
+    const botId = req.params.botId;
+    const forceId = req.query.forceId;
     const method = `createGame(${mazeId}, ${teamId}, ${botId})`;
-    try {
-        // get maze - bail on fail
-        const maze = yield Cache_1.Cache.use()
-            .fetchOrGetItem(Cache_1.CACHE_TYPES.MAZE, mazeId)
-            .catch(mazeErr => {
-            log.warn(__filename, method, 'Unable to get maze');
-            throw mazeErr;
-        });
-        // get team - bail on fail
-        const team = yield Cache_1.Cache.use()
+    // get maze - bail on fail
+    return yield Cache_1.Cache.use()
+        .fetchOrGetItem(Cache_1.CACHE_TYPES.MAZE, mazeId)
+        .then(maze => {
+        Cache_1.Cache.use()
             .fetchOrGetItem(Cache_1.CACHE_TYPES.TEAM, teamId)
+            .then(team => {
+            if (botId && team && fns.findBot(team, botId)) {
+                // now check to see if an active game already exists in memory for this team or team/bot
+                const activeGameId = fns.findGame(teamId, botId);
+                if (activeGameId !== '') {
+                    return res.status(400).json({ status: 400, message: 'Invalid Request - An active game for team/bot already exists.', gameId: activeGameId });
+                }
+                else {
+                    // break this down into two steps so we can better tell where any errors come from
+                    const game = new Game_1.Game(maze, teamId, botId);
+                    // add a visit to the start cell of the maze since the player just walked in
+                    game.Maze.Cells[game.Maze.StartCell.row][game.Maze.StartCell.col].addVisit(0);
+                    // force-set the gameId if the query parameter was set
+                    if (forceId) {
+                        game.forceSetId(forceId);
+                    }
+                    // store the game on the cache
+                    Cache_1.Cache.use().storeItem(Cache_1.CACHE_TYPES.GAME, game);
+                    // return json game stub: game.Id, getUrl: `${config.EXT_URL_GAME}/get/${game.Id}
+                    return res.status(200).json({ status: 200, message: 'Game Created', game: game.getStub(`${config.EXT_URL_GAME}/get/`) });
+                }
+            }
+            else {
+                const botErr = new Error(`Bot not found in team`);
+                log.warn(__filename, method, 'Unable to get Bot');
+                return res.status(404).json({ status: 404, message: 'Invalid Request - Bot not found.', error: botErr.message });
+            }
+        })
             .catch(teamErr => {
-            log.warn(__filename, method, 'Unable to get team');
-            throw teamErr;
+            log.warn(__filename, method, 'Unable to get Team');
+            return res.status(404).json({ status: 404, message: 'Invalid Request - Team not found.', error: teamErr.message });
         });
-        // if a bot is given, verify it - bail on fail
-        if (botId !== '' && !fns.findBot(team, botId)) {
-            const botErr = new Error(`Bot (${botId}) not found in team (${teamId})`);
-            log.warn(__filename, method, 'Unable to find bot in team.');
-            throw botErr;
-        }
-        // now check to see if an active game already exists in memory for this team or team/bot
-        const activeGameId = fns.findGame(teamId, botId);
-        if (activeGameId !== '') {
-            return res.status(400).json({ status: 400, message: 'Invalid Request - An active game for team/bot already exists.', gameId: activeGameId });
-        }
-        // break this down into two steps so we can better tell where any errors come from
-        const game = new Game_1.Game(maze, teamId, botId);
-        // add a visit to the start cell of the maze since the player just walked in
-        game.Maze.Cells[game.Maze.StartCell.row][game.Maze.StartCell.col].addVisit(0);
-        // force-set the gameId if the query parameter was set
-        if (forceId !== undefined) {
-            game.forceSetId(forceId);
-        }
-        // store the game on the cache
-        Cache_1.Cache.use().storeItem(Cache_1.CACHE_TYPES.GAME, game);
-        // return json game stub: game.Id, getUrl: `${config.EXT_URL_GAME}/get/${game.Id}
-        return res.status(200).json({ status: 200, message: 'Game Created', game: game.getStub(`${config.EXT_URL_GAME}/get/`) });
-    }
-    catch (err) {
-        log.error(__filename, method, 'Game creation failed ->', err);
-        res.status(400).json({ status: 500, message: 'Game Creation Error', error: err.message });
-    }
+    })
+        .catch(mazeErr => {
+        log.warn(__filename, method, 'Unable to get Maze');
+        return res.status(404).json({ status: 404, message: 'Invalid Request - Maze not found.', error: mazeErr.message });
+    });
 });
 /**
  * Returns abandons a game currently in memory
