@@ -1,12 +1,12 @@
-import { DIRS, GAME_RESULTS, GAME_STATES, PLAYER_STATES, TROPHY_IDS } from '@mazemasterjs/shared-library/Enums';
 import * as fns from '../funcs';
-import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
-import { Game } from '@mazemasterjs/shared-library/Game';
-import { logDebug } from '../funcs';
-import Maze from '@mazemasterjs/shared-library/Maze';
+import { Config } from '../Config';
+import { DIRS, GAME_RESULTS, GAME_STATES, PLAYER_STATES, TROPHY_IDS } from '@mazemasterjs/shared-library/Enums';
 import { Engram } from '@mazemasterjs/shared-library/Engram';
-import MazeLoc from '@mazemasterjs/shared-library/MazeLoc';
-import Config from '../Config';
+import { Game } from '@mazemasterjs/shared-library/Game';
+import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
+import { logDebug } from '../funcs';
+import { Maze } from '@mazemasterjs/shared-library/Maze';
+import { MazeLoc } from '@mazemasterjs/shared-library/MazeLoc';
 
 // need a config object for some of this
 const config: Config = Config.getInstance();
@@ -18,9 +18,8 @@ export async function doMove(game: Game): Promise<IAction> {
   const dir: DIRS = action.direction;
   const maze: Maze = new Maze(game.Maze);
 
-  // grab the current score so we can update action with points earned
-  // or lost during this move
-  const preMoveScore = game.Score.getTotalScore();
+  // grab the current score so we can update action with points earned or lost during this move
+  const startScore = game.Score.getTotalScore();
 
   // seems that that embedded objects reliable... have to keep reinstantiating things??
   const pLoc: MazeLoc = new MazeLoc(game.Player.Location.row, game.Player.Location.col);
@@ -29,14 +28,12 @@ export async function doMove(game: Game): Promise<IAction> {
   if (!(game.Player.State & PLAYER_STATES.STANDING)) {
     fns.logDebug(__filename, method, 'Player tried to move while not standing.');
 
-    // increment move counters
-    game.Score.addMove();
-    action.moveCount++;
-
     // add the trophy for walking without standing
     fns.grantTrophy(game, TROPHY_IDS.SPINNING_YOUR_WHEELS);
     action.outcomes.push('Try standing up before you move.');
-    return Promise.resolve(action);
+
+    // finalize and return action
+    return Promise.resolve(finalizeAction(game, maze, action, startScore));
   }
 
   // now check for start/finish cell win & lose conditions
@@ -58,32 +55,58 @@ export async function doMove(game: Game): Promise<IAction> {
       engram.taste = 'Cheese!';
       engram.sound = 'Cheese!';
       action.outcomes.push('You step into the light and find... CHEESE!');
-      action.outcomes.push('WINNER WINNER, CHEDDAR DINNER!');
+
+      // game over: WINNER or WIN_FLAWLESS
       if (game.Score.MoveCount <= game.Maze.ShortestPathLength) {
-        finishGame(game, action, GAME_RESULTS.WIN_FLAWLESS);
+        finishGame(game, finalizeAction(game, maze, action, startScore), GAME_RESULTS.WIN_FLAWLESS);
       } else {
-        finishGame(game, action, GAME_RESULTS.WIN);
+        finishGame(game, finalizeAction(game, maze, action, startScore), GAME_RESULTS.WIN);
       }
     } else {
       game = fns.movePlayer(game, action);
     }
   } else {
-    // they tried to walk in a direction that has a wall - no special penalties
-    game.Score.addMove();
-    action.moveCount++;
-
-    // but they do get a trophy
+    // they tried to walk in a direction that has a wall
     fns.grantTrophy(game, TROPHY_IDS.YOU_FOUGHT_THE_WALL);
-    action.outcomes.push('You walk headlong into a wall.');
+
+    game.Player.addState(PLAYER_STATES.SITTING);
+
+    engram.sight = `You get a very close up view of the wall to the ${DIRS[dir]}.`;
+    engram.touch = 'You feel the wall... with your face.';
+    engram.sound = 'Your ears are ringing.';
+
+    action.outcomes.push(`You walk headlong into the wall to the ${DIRS[dir]}, which knocks you down.`);
+    action.outcomes.push(`Your are now ${DIRS[dir]} now ${PLAYER_STATES[game.Player.State]}.`);
   }
 
-  // track the score change from this one move
-  action.score = game.Score.getTotalScore() - preMoveScore;
+  // game continues - return the action (with outcomes and engram)
+  return Promise.resolve(finalizeAction(game, maze, action, startScore));
+}
 
-  // TODO: Remove summarize from every - here now for debug purposes
+/**
+ * Aggregates some commmon scoring and debugging
+ *
+ * @param game
+ * @param maze
+ * @param action
+ * @param startScore
+ * @param finishScore
+ */
+function finalizeAction(game: Game, maze: Maze, action: IAction, startScore: number): IAction {
+  // increment move counters
+  game.Score.addMove();
+  action.moveCount++;
+
+  // track the score change from this one move
+  action.score = game.Score.getTotalScore() - startScore;
+
+  // TODO: Remove summarize from every every move - here now for DEV/DEBUG  purposes
   fns.summarizeGame(action, game.Score);
-  console.log(maze.generateTextRender(true, game.Player.Location));
-  return Promise.resolve(action);
+
+  // TODO: text render - here now just for DEV/DEBUG purposess
+  action.outcomes.push('DEBUG MAZE RENDER\r\n: ' + maze.generateTextRender(true, game.Player.Location));
+
+  return action;
 }
 
 /**

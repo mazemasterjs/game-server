@@ -14,40 +14,34 @@ var __importStar = (this && this.__importStar) || function (mod) {
     result["default"] = mod;
     return result;
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-const Enums_1 = require("@mazemasterjs/shared-library/Enums");
 const fns = __importStar(require("../funcs"));
+const Config_1 = require("../Config");
+const Enums_1 = require("@mazemasterjs/shared-library/Enums");
 const funcs_1 = require("../funcs");
-const Maze_1 = __importDefault(require("@mazemasterjs/shared-library/Maze"));
-const MazeLoc_1 = __importDefault(require("@mazemasterjs/shared-library/MazeLoc"));
-const Config_1 = __importDefault(require("../Config"));
+const Maze_1 = require("@mazemasterjs/shared-library/Maze");
+const MazeLoc_1 = require("@mazemasterjs/shared-library/MazeLoc");
 // need a config object for some of this
-const config = Config_1.default.getInstance();
+const config = Config_1.Config.getInstance();
 function doMove(game) {
     return __awaiter(this, void 0, void 0, function* () {
         const method = `doMove(${game.Id})`;
         const action = game.Actions[game.Actions.length - 1];
         const engram = action.engram;
         const dir = action.direction;
-        const maze = new Maze_1.default(game.Maze);
-        // grab the current score so we can update action with points earned
-        // or lost during this move
-        const preMoveScore = game.Score.getTotalScore();
+        const maze = new Maze_1.Maze(game.Maze);
+        // grab the current score so we can update action with points earned or lost during this move
+        const startScore = game.Score.getTotalScore();
         // seems that that embedded objects reliable... have to keep reinstantiating things??
-        const pLoc = new MazeLoc_1.default(game.Player.Location.row, game.Player.Location.col);
+        const pLoc = new MazeLoc_1.MazeLoc(game.Player.Location.row, game.Player.Location.col);
         // first make sure the player can move at all
         if (!(game.Player.State & Enums_1.PLAYER_STATES.STANDING)) {
             fns.logDebug(__filename, method, 'Player tried to move while not standing.');
-            // increment move counters
-            game.Score.addMove();
-            action.moveCount++;
             // add the trophy for walking without standing
             fns.grantTrophy(game, Enums_1.TROPHY_IDS.SPINNING_YOUR_WHEELS);
             action.outcomes.push('Try standing up before you move.');
-            return Promise.resolve(action);
+            // finalize and return action
+            return Promise.resolve(finalizeAction(game, maze, action, startScore));
         }
         // now check for start/finish cell win & lose conditions
         if (maze.getCell(pLoc).isDirOpen(dir)) {
@@ -69,12 +63,12 @@ function doMove(game) {
                 engram.taste = 'Cheese!';
                 engram.sound = 'Cheese!';
                 action.outcomes.push('You step into the light and find... CHEESE!');
-                action.outcomes.push('WINNER WINNER, CHEDDAR DINNER!');
+                // game over: WINNER or WIN_FLAWLESS
                 if (game.Score.MoveCount <= game.Maze.ShortestPathLength) {
-                    finishGame(game, action, Enums_1.GAME_RESULTS.WIN_FLAWLESS);
+                    finishGame(game, finalizeAction(game, maze, action, startScore), Enums_1.GAME_RESULTS.WIN_FLAWLESS);
                 }
                 else {
-                    finishGame(game, action, Enums_1.GAME_RESULTS.WIN);
+                    finishGame(game, finalizeAction(game, maze, action, startScore), Enums_1.GAME_RESULTS.WIN);
                 }
             }
             else {
@@ -82,22 +76,41 @@ function doMove(game) {
             }
         }
         else {
-            // they tried to walk in a direction that has a wall - no special penalties
-            game.Score.addMove();
-            action.moveCount++;
-            // but they do get a trophy
+            // they tried to walk in a direction that has a wall
             fns.grantTrophy(game, Enums_1.TROPHY_IDS.YOU_FOUGHT_THE_WALL);
-            action.outcomes.push('You walk headlong into a wall.');
+            game.Player.addState(Enums_1.PLAYER_STATES.SITTING);
+            engram.sight = `You get a very close up view of the wall to the ${Enums_1.DIRS[dir]}.`;
+            engram.touch = 'You feel the wall... with your face.';
+            engram.sound = 'Your ears are ringing.';
+            action.outcomes.push(`You walk headlong into the wall to the ${Enums_1.DIRS[dir]}, which knocks you down.`);
+            action.outcomes.push(`Your are now ${Enums_1.DIRS[dir]} now ${Enums_1.PLAYER_STATES[game.Player.State]}.`);
         }
-        // track the score change from this one move
-        action.score = game.Score.getTotalScore() - preMoveScore;
-        // TODO: Remove summarize from every - here now for debug purposes
-        fns.summarizeGame(action, game.Score);
-        console.log(maze.generateTextRender(true, game.Player.Location));
-        return Promise.resolve(action);
+        // game continues - return the action (with outcomes and engram)
+        return Promise.resolve(finalizeAction(game, maze, action, startScore));
     });
 }
 exports.doMove = doMove;
+/**
+ * Aggregates some commmon scoring and debugging
+ *
+ * @param game
+ * @param maze
+ * @param action
+ * @param startScore
+ * @param finishScore
+ */
+function finalizeAction(game, maze, action, startScore) {
+    // increment move counters
+    game.Score.addMove();
+    action.moveCount++;
+    // track the score change from this one move
+    action.score = game.Score.getTotalScore() - startScore;
+    // TODO: Remove summarize from every every move - here now for DEV/DEBUG  purposes
+    fns.summarizeGame(action, game.Score);
+    // TODO: text render - here now just for DEV/DEBUG purposess
+    action.outcomes.push('DEBUG MAZE RENDER\r\n: ' + maze.generateTextRender(true, game.Player.Location));
+    return action;
+}
 /**
  * Attempts to call the score service to save a game score in the
  * database's scores collection

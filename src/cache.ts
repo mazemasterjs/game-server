@@ -72,7 +72,7 @@ export class Cache {
    * @param objId
    * @returns CacheEntry.Item or undefined (if not found)
    */
-  public fetchItem(cacheType: CACHE_TYPES, objId: string): any {
+  public async fetchItem(cacheType: CACHE_TYPES, objId: string): Promise<any> {
     const method = `fetchItem(${CACHE_TYPES[cacheType]}, ${objId})`;
     const cache: Array<CacheEntry> = this.getCache(cacheType);
 
@@ -87,12 +87,12 @@ export class Cache {
       const cacheEntry: CacheEntry = cacheEntryAny;
       cacheEntry.addHit();
       fns.logDebug(__filename, method, 'Item found.');
-      return cacheEntry.Item;
+      return Promise.resolve(cacheEntry.Item);
     } else {
       fns.logDebug(__filename, method, 'Item not in cache.');
       const fetchError = new Error(`${CACHE_TYPES[cacheType]} item ${objId} not in cache.`);
-      log.error(__filename, method, 'Error Fetching', fetchError);
-      throw fetchError;
+      fns.logWarn(__filename, method, fetchError.message);
+      return Promise.reject(fetchError);
     }
   }
 

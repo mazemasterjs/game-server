@@ -1,15 +1,15 @@
-import { Request, Response } from 'express';
-import { Config } from './Config';
-import { LOG_LEVELS, Logger } from '@mazemasterjs/logger';
-import { Cache, CACHE_TYPES } from './Cache';
-import { Game } from '@mazemasterjs/shared-library/Game';
 import * as fns from './funcs';
-import { COMMANDS, GAME_STATES } from '@mazemasterjs/shared-library/Enums';
 import { Action } from '@mazemasterjs/shared-library/Action';
-
-import { doStand } from './controllers/actStand';
+import { Cache, CACHE_TYPES } from './Cache';
+import { COMMANDS, GAME_STATES } from '@mazemasterjs/shared-library/Enums';
+import { Config } from './Config';
 import { doLook } from './controllers/actLook';
 import { doMove } from './controllers/actMove';
+import { doStand } from './controllers/actStand';
+import { Game } from '@mazemasterjs/shared-library/Game';
+import { LOG_LEVELS, Logger } from '@mazemasterjs/logger';
+import { Request, Response } from 'express';
+import { ENGINE_METHOD_PKEY_ASN1_METHS } from 'constants';
 
 // set constant utility references
 const log = Logger.getInstance();
@@ -47,11 +47,20 @@ export const createGame = async (req: Request, res: Response) => {
       Cache.use()
         .fetchOrGetItem(CACHE_TYPES.TEAM, teamId)
         .then(team => {
-          if (botId && team && fns.findBot(team, botId)) {
+          // if there's a bot id, it must be in the team
+          if (botId && !fns.findBot(team, botId)) {
+            const botErr = new Error(`Bot not found in team`);
+            log.warn(__filename, method, 'Unable to get Bot');
+            return res.status(404).json({ status: 404, message: 'Invalid Request - Bot not found.', error: botErr.message });
+          } else {
             // now check to see if an active game already exists in memory for this team or team/bot
             const activeGameId = fns.findGame(teamId, botId);
+
             if (activeGameId !== '') {
-              return res.status(400).json({ status: 400, message: 'Invalid Request - An active game for team/bot already exists.', gameId: activeGameId });
+              const gameType = botId ? 'SINGLE_PLAYER (bot)' : 'MULTIPLAYER (team)';
+              return res
+                .status(400)
+                .json({ status: 400, message: 'Invalid Request - An active ' + gameType + ' game already exists.', gameId: activeGameId, teamId, botId });
             } else {
               // break this down into two steps so we can better tell where any errors come from
               const game: Game = new Game(maze, teamId, botId);
@@ -70,10 +79,6 @@ export const createGame = async (req: Request, res: Response) => {
               // return json game stub: game.Id, getUrl: `${config.EXT_URL_GAME}/get/${game.Id}
               return res.status(200).json({ status: 200, message: 'Game Created', game: game.getStub(`${config.EXT_URL_GAME}/get/`) });
             }
-          } else {
-            const botErr = new Error(`Bot not found in team`);
-            log.warn(__filename, method, 'Unable to get Bot');
-            return res.status(404).json({ status: 404, message: 'Invalid Request - Bot not found.', error: botErr.message });
           }
         })
         .catch(teamErr => {
@@ -90,31 +95,33 @@ export const createGame = async (req: Request, res: Response) => {
 /**
  * Returns abandons a game currently in memory
  */
-export const abandonGame = (req: Request, res: Response) => {
+export const abandonGame = async (req: Request, res: Response) => {
   logRequest('abandonGame', req);
   const gameId: string = req.params.gameId + '';
   const method = `abandonGame/${gameId}`;
-  try {
-    const game: Game = Cache.use().fetchItem(CACHE_TYPES.GAME, gameId);
 
-    if (game.State >= GAME_STATES.FINISHED) {
-      const msg = `Cannot abort completed game. game.State is ${GAME_STATES[game.State]}`;
-      fns.logDebug(__filename, method, msg);
-      return res.status(404).json({ status: 400, message: 'Game Abort Error', error: msg });
-    }
+  await Cache.use()
+    .fetchItem(CACHE_TYPES.GAME, gameId)
+    .then(game => {
+      if (game.State >= GAME_STATES.FINISHED) {
+        const msg = `game.State is ${GAME_STATES[game.State]} - cannot abort completed games.`;
+        fns.logDebug(__filename, method, msg);
+        return res.status(404).json({ status: 400, message: 'Game Abort Error', error: msg });
+      }
 
-    // Force-set gameId's starting with the word 'FORCED' will be renamed
-    // so the original IDs can be re-used - very handy for testing and development
-    if (game.Id.startsWith('FORCED')) {
-      game.forceSetId(`${game.Id}__${Date.now()}`);
-    }
+      // Force-set gameId's starting with the word 'FORCED' will be renamed
+      // so the original IDs can be re-used - very handy for testing and development
+      if (game.Id.startsWith('FORCED')) {
+        game.forceSetId(`${game.Id}__${Date.now()}`);
+      }
 
-    // go ahead and abandon the game
-    log.warn(__filename, 'abandonGame', `${game.Id} forcibly abandoned by request from ${req.ip}`);
-    return res.status(200).json(game.getStub(config.EXT_URL_GAME + '/get/'));
-  } catch (fetchError) {
-    res.status(404).json({ status: 404, message: 'Game Not Found', error: fetchError.message });
-  }
+      // go ahead and abandon the game
+      log.warn(__filename, 'abandonGame', `${game.Id} forcibly abandoned by request from ${req.ip}`);
+      return res.status(200).json(game.getStub(config.EXT_URL_GAME + '/get/'));
+    })
+    .catch(fetchError => {
+      res.status(404).json({ status: 404, message: 'Game Not Found', error: fetchError.message });
+    });
 };
 
 /**
@@ -122,12 +129,14 @@ export const abandonGame = (req: Request, res: Response) => {
  */
 export const getGame = (req: Request, res: Response) => {
   logRequest('getGames', req);
-  try {
-    const game: Game = Cache.use().fetchItem(CACHE_TYPES.GAME, req.params.gameId);
-    return res.status(200).json(game.getStub(config.EXT_URL_GAME));
-  } catch (fetchError) {
-    res.status(404).json({ status: 404, message: 'Game Not Found', error: fetchError.message });
-  }
+  return Cache.use()
+    .fetchItem(CACHE_TYPES.GAME, req.params.gameId)
+    .then(game => {
+      return res.status(200).json(game.getStub(config.EXT_URL_GAME));
+    })
+    .catch(fetchError => {
+      res.status(404).json({ status: 404, message: 'Game Not Found', error: fetchError.message });
+    });
 };
 
 /**
@@ -182,11 +191,14 @@ export const processAction = async (req: Request, res: Response) => {
 
   // first attempt to get the game by the given Id - fetchItem will throw an
   // error if the game is not found and we'll respond accordingly
-  try {
-    game = Cache.use().fetchItem(CACHE_TYPES.GAME, gameId);
-  } catch (fetchError) {
-    return res.status(404).json({ status: 404, message: 'Game Not Found', error: fetchError.message });
-  }
+  game = await Cache.use()
+    .fetchItem(CACHE_TYPES.GAME, gameId)
+    .then(fetchedGame => {
+      return fetchedGame;
+    })
+    .catch(fetchError => {
+      return res.status(404).json({ status: 404, message: 'Game Not Found', error: fetchError.message });
+    });
 
   // got a game - make sure it's not in an end-state: FINISHED, ABANDONDED, or ERROR
   if (game.State >= GAME_STATES.FINISHED) {
@@ -210,17 +222,12 @@ export const processAction = async (req: Request, res: Response) => {
     case COMMANDS.MOVE: {
       return await res.status(200).json(await doMove(game));
     }
-    case COMMANDS.JUMP:
-    case COMMANDS.SIT:
     case COMMANDS.STAND: {
       return res.status(200).json(await doStand(game));
     }
-
-    case COMMANDS.WRITE: {
-      const err = new Error(`The ${COMMANDS[action.command]} command has not been implemented yet.`);
-      log.error(__filename, req.path, 'Command Not Implemented', err);
-      return res.status(500).json({ status: 500, message: 'Command Not Implemented', error: err.message });
-    }
+    case COMMANDS.JUMP:
+    case COMMANDS.SIT:
+    case COMMANDS.WRITE:
     default: {
       const err = new Error(`${COMMANDS[action.command]} is not recognized. Valid commands are LOOK, MOVE, JUMP, SIT, STAND, and WRITE.`);
       log.error(__filename, req.path, 'Unrecognized Command', err);

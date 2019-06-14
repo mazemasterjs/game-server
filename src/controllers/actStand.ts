@@ -1,8 +1,8 @@
-import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
 import { Game } from '@mazemasterjs/shared-library/Game';
-import { logDebug } from '../funcs';
-import Maze from '@mazemasterjs/shared-library/Maze';
-import { PLAYER_STATES } from '@mazemasterjs/shared-library/Enums';
+import { grantTrophy, logDebug } from '../funcs';
+import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
+import { Maze } from '@mazemasterjs/shared-library/Maze';
+import { PLAYER_STATES, TROPHY_IDS } from '@mazemasterjs/shared-library/Enums';
 
 export function doStand(game: Game): IAction {
   logDebug(__filename, `doStand(${game.Id})`, 'Player has issued the STAND command.');
@@ -11,38 +11,36 @@ export function doStand(game: Game): IAction {
   const maze: Maze = new Maze(game.Maze);
   const preStandScore = game.Score.getTotalScore();
 
+  // increment move counters
+  game.Score.addMove();
+  action.moveCount++;
+
   // note the lava to the north if in the start cell
   if (cell.Location.equals(game.Maze.StartCell)) {
     action.engram.sight = 'There is lava to the North.';
   }
 
   if (!!(game.Player.State & PLAYER_STATES.STANDING)) {
-    // increment move counters
-    game.Score.addMove();
-    action.moveCount++;
-
     // TODO: Add trophy STANDING_AROUND once it's pushed live
+    grantTrophy(game, TROPHY_IDS.STANDING_AROUND);
     action.outcomes.push("You're already standing.");
   } else {
-    // increment move counters
-    game.Score.addMove();
-    action.moveCount++;
-
     // execute the stand command
     game.Player.addState(PLAYER_STATES.STANDING);
 
     // TODO: Add trophy TAKING_A_STAND once it's pushed live
+    grantTrophy(game, TROPHY_IDS.TAKING_A_STAND);
     action.outcomes.push('You struggle to your feet. You are now standing.');
   }
 
   // list exits
   action.engram.sight = 'You see exits: ' + cell.listExits();
 
-  // TODO: Remove this ... it's for debugging
-  console.log(maze.generateTextRender(true, game.Player.Location));
-
   // track the score change from this one move
   action.score = game.Score.getTotalScore() - preStandScore;
+
+  // TODO: text render - here now just for DEV/DEBUG purposes
+  action.outcomes.push(maze.generateTextRender(true, game.Player.Location));
 
   return action;
 }
