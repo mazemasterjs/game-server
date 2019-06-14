@@ -81,26 +81,28 @@ class Cache {
      * @returns CacheEntry.Item or undefined (if not found)
      */
     fetchItem(cacheType, objId) {
-        const method = `fetchItem(${CACHE_TYPES[cacheType]}, ${objId})`;
-        const cache = this.getCache(cacheType);
-        // search the array for a matching item
-        fns.logTrace(__filename, method, 'Searching cache...');
-        const cacheEntryAny = cache.find(ci => {
-            return ci.Item.Id === objId;
+        return __awaiter(this, void 0, void 0, function* () {
+            const method = `fetchItem(${CACHE_TYPES[cacheType]}, ${objId})`;
+            const cache = this.getCache(cacheType);
+            // search the array for a matching item
+            fns.logTrace(__filename, method, 'Searching cache...');
+            const cacheEntryAny = cache.find(ci => {
+                return ci.Item.Id === objId;
+            });
+            // return may be undefined
+            if (cacheEntryAny !== undefined) {
+                const cacheEntry = cacheEntryAny;
+                cacheEntry.addHit();
+                fns.logDebug(__filename, method, 'Item found.');
+                return Promise.resolve(cacheEntry.Item);
+            }
+            else {
+                fns.logDebug(__filename, method, 'Item not in cache.');
+                const fetchError = new Error(`${CACHE_TYPES[cacheType]} item ${objId} not in cache.`);
+                fns.logWarn(__filename, method, fetchError.message);
+                return Promise.reject(fetchError);
+            }
         });
-        // return may be undefined
-        if (cacheEntryAny !== undefined) {
-            const cacheEntry = cacheEntryAny;
-            cacheEntry.addHit();
-            fns.logDebug(__filename, method, 'Item found.');
-            return cacheEntry.Item;
-        }
-        else {
-            fns.logDebug(__filename, method, 'Item not in cache.');
-            const fetchError = new Error(`${CACHE_TYPES[cacheType]} item ${objId} not in cache.`);
-            log.error(__filename, method, 'Error Fetching', fetchError);
-            throw fetchError;
-        }
     }
     /**
      * First attempts to fetch an item from the cache - if it's not found there, will

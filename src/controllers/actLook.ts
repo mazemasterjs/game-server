@@ -1,8 +1,7 @@
 import { Engram } from '@mazemasterjs/shared-library/Engram';
-import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
 import { Game } from '@mazemasterjs/shared-library/Game';
-import { logDebug } from '../funcs';
-import Maze from '@mazemasterjs/shared-library/Maze';
+import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
+import { Maze } from '@mazemasterjs/shared-library/Maze';
 
 export function doLook(game: Game): IAction {
   const engram: Engram = new Engram();
@@ -11,7 +10,6 @@ export function doLook(game: Game): IAction {
   const preMoveScore = game.Score.getTotalScore();
 
   const maze: Maze = new Maze(game.Maze);
-  console.log(maze.generateTextRender(true, game.Player.Location));
 
   engram.sight = 'You see exits: ' + cell.listExits();
   engram.smell = 'You smell nothing.';
@@ -27,6 +25,9 @@ export function doLook(game: Game): IAction {
 
   // track the score change from this one move
   action.score = game.Score.getTotalScore() - preMoveScore;
+
+  // TODO: text render - here now just for DEV/DEBUG purposes
+  action.outcomes.push(maze.generateTextRender(true, game.Player.Location));
 
   return action;
 }

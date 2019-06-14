@@ -1,17 +1,17 @@
-import { Cache, CACHE_TYPES } from './Cache';
 import axios from 'axios';
-import { LOG_LEVELS, Logger } from '@mazemasterjs/logger';
-import { Game } from '@mazemasterjs/shared-library/Game';
-import { IGameStub } from '@mazemasterjs/shared-library/Interfaces/IGameStub';
-import { Config } from './Config';
+import { Cell } from '@mazemasterjs/shared-library/Cell';
+import { MazeLoc } from '@mazemasterjs/shared-library/MazeLoc';
+import { Score } from '@mazemasterjs/shared-library/Score';
+import { Trophy } from '@mazemasterjs/shared-library/Trophy';
 import { AxiosResponse } from 'axios';
-import { Team } from '@mazemasterjs/shared-library/Team';
+import { Cache, CACHE_TYPES } from './Cache';
 import { COMMANDS, DIRS, GAME_RESULTS, GAME_STATES, TROPHY_IDS } from '@mazemasterjs/shared-library/Enums';
-import Score from '@mazemasterjs/shared-library/Score';
+import { Config } from './Config';
+import { Game } from '@mazemasterjs/shared-library/Game';
 import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
-import MazeLoc from '@mazemasterjs/shared-library/MazeLoc';
-import Cell from '@mazemasterjs/shared-library/Cell';
-import Trophy from '@mazemasterjs/shared-library/Trophy';
+import { IGameStub } from '@mazemasterjs/shared-library/Interfaces/IGameStub';
+import { LOG_LEVELS, Logger } from '@mazemasterjs/logger';
+import { Team } from '@mazemasterjs/shared-library/Team';
 
 const log = Logger.getInstance();
 const config = Config.getInstance();
