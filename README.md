@@ -33,6 +33,10 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 
 ## Change Notes
 
+### v0.4.1
+
+- Fixed issue with /game/new where non-forced game IDs were returning undefined. Reported by Derald: https://trello.com/c/TcGnMxNa
+
 ### v0.4.0
 
 - added support for COMMANDS.STAND

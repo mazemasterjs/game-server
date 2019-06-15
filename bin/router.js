@@ -28,6 +28,8 @@ exports.router.put('/action', routes.processAction);
 exports.router.get('/count', routes.countGames);
 exports.router.delete('/abandon/:gameId', routes.abandonGame);
 exports.router.get('/cache/dump', routes.dumpCache); // TODO: Remove this debugging route
+// get the users lanugage
+exports.router.get('/language', routes.getLanguage);
 // map the live/ready probes
 exports.router.get('/probes/live', routes.livenessProbe);
 exports.router.get('/probes/ready', routes.readinessProbe);

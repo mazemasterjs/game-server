@@ -129,6 +129,11 @@ class Cache {
             return yield fns
                 .doGet(`${fns.getSvcUrl(cacheType)}/get?id=${itemId}`)
                 .then(itemArray => {
+                if (itemArray.length === 0) {
+                    const notFoundError = new Error('Document not found.');
+                    fns.logWarn(__filename, method, notFoundError.message);
+                    return Promise.reject(notFoundError);
+                }
                 const cacheEntry = Cache.use().storeItem(cacheType, itemArray[0]);
                 // and return so we can continue
                 return Promise.resolve(cacheEntry.Item);

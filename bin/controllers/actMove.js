@@ -26,13 +26,14 @@ const MazeLoc_1 = __importDefault(require("@mazemasterjs/shared-library/MazeLoc"
 const Config_1 = __importDefault(require("../Config"));
 // need a config object for some of this
 const config = Config_1.default.getInstance();
-function doMove(game) {
+function doMove(game, language) {
     return __awaiter(this, void 0, void 0, function* () {
         const method = `doMove(${game.Id})`;
         const action = game.Actions[game.Actions.length - 1];
         const engram = action.engram;
         const dir = action.direction;
         const maze = new Maze_1.default(game.Maze);
+        const messages = language.getInstance().messages;
         // grab the current score so we can update action with points earned
         // or lost during this move
         const preMoveScore = game.Score.getTotalScore();
@@ -46,19 +47,19 @@ function doMove(game) {
             action.moveCount++;
             // add the trophy for walking without standing
             fns.grantTrophy(game, Enums_1.TROPHY_IDS.SPINNING_YOUR_WHEELS);
-            action.outcomes.push('Try standing up before you move.');
+            action.outcomes.push(messages.actions.outcome.move.sitting);
             return Promise.resolve(action);
         }
         // now check for start/finish cell win & lose conditions
         if (maze.getCell(pLoc).isDirOpen(dir)) {
             if (dir === Enums_1.DIRS.NORTH && pLoc.equals(game.Maze.StartCell)) {
                 fns.logDebug(__filename, method, 'Player moved north into the entrance (lava).');
-                engram.sight = 'Lava!';
-                engram.smell = 'Lava!';
-                engram.touch = 'Lava!';
-                engram.taste = 'Lava!';
-                engram.sound = 'Lava!';
-                action.outcomes.push("You step into the lava and, well... Let's just say: Game over.");
+                engram.sight = messages.actions.engramDescriptions.sight.local.lava;
+                engram.smell = messages.actions.engramDescriptions.smell.local.lava;
+                engram.touch = messages.actions.engramDescriptions.touch.local.lava;
+                engram.taste = messages.actions.engramDescriptions.taste.local.lava;
+                engram.sound = messages.actions.engramDescriptions.sound.local.lava;
+                action.outcomes.push(messages.actions.outcome.lava);
                 finishGame(game, action, Enums_1.GAME_RESULTS.DEATH_LAVA);
             }
             else if (dir === Enums_1.DIRS.SOUTH && pLoc.equals(game.Maze.FinishCell)) {
@@ -68,7 +69,7 @@ function doMove(game) {
                 engram.touch = 'Cheese!';
                 engram.taste = 'Cheese!';
                 engram.sound = 'Cheese!';
-                action.outcomes.push('You step into the light and find... CHEESE!');
+                action.outcomes.push(messages.actions.outcome.finish);
                 action.outcomes.push('WINNER WINNER, CHEDDAR DINNER!');
                 if (game.Score.MoveCount <= game.Maze.ShortestPathLength) {
                     finishGame(game, action, Enums_1.GAME_RESULTS.WIN_FLAWLESS);
@@ -87,7 +88,7 @@ function doMove(game) {
             action.moveCount++;
             // but they do get a trophy
             fns.grantTrophy(game, Enums_1.TROPHY_IDS.YOU_FOUGHT_THE_WALL);
-            action.outcomes.push('You walk headlong into a wall.');
+            action.outcomes.push(messages.actions.outcome.wall.collide);
         }
         // track the score change from this one move
         action.score = game.Score.getTotalScore() - preMoveScore;

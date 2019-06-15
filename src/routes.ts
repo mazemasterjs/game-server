@@ -3,12 +3,8 @@ import { Config } from './Config';
 import { LOG_LEVELS, Logger } from '@mazemasterjs/logger';
 import { Cache, CACHE_TYPES } from './Cache';
 import { Game } from '@mazemasterjs/shared-library/Game';
-import { Player } from '@mazemasterjs/shared-library/Player';
 import * as fns from './funcs';
-import MazeBase from '@mazemasterjs/shared-library/MazeBase';
-import { Team } from '@mazemasterjs/shared-library/Team';
-import { COMMANDS, DIRS, GAME_MODES, GAME_STATES, PLAYER_STATES } from '@mazemasterjs/shared-library/Enums';
-import Score from '@mazemasterjs/shared-library/Score';
+import { COMMANDS, GAME_STATES } from '@mazemasterjs/shared-library/Enums';
 import { Action } from '@mazemasterjs/shared-library/Action';
 import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
 import path from 'path';
@@ -16,8 +12,7 @@ import { doStand } from './controllers/actStand';
 import { doLook } from './controllers/actLook';
 import { doMove } from './controllers/actMove';
 import MazeLoc from '@mazemasterjs/shared-library/MazeLoc';
-import {en} from '../lang/en';
-import Ilanguage from 'lang/Ilanguage';
+import * as lang from './lang/langIndex';
 
 // set constant utility references
 const log = Logger.getInstance();
@@ -44,60 +39,55 @@ export const createGame = async (req: Request, res: Response) => {
   // set some vars from req parameters
   const mazeId = req.params.mazeId;
   const teamId = req.params.teamId;
-  const botId = req.params.botId + '';
-  const forceId = req.query.forceId + '';
+  const botId = req.params.botId;
+  const forceId = req.query.forceId;
   const method = `createGame(${mazeId}, ${teamId}, ${botId})`;
 
-  try {
-    // get maze - bail on fail
-    const maze: MazeBase = await Cache.use()
-      .fetchOrGetItem(CACHE_TYPES.MAZE, mazeId)
-      .catch(mazeErr => {
-        log.warn(__filename, method, 'Unable to get maze');
-        throw mazeErr;
-      });
+  // get maze - bail on fail
+  return await Cache.use()
+    .fetchOrGetItem(CACHE_TYPES.MAZE, mazeId)
+    .then(maze => {
+      Cache.use()
+        .fetchOrGetItem(CACHE_TYPES.TEAM, teamId)
+        .then(team => {
+          if (botId && team && fns.findBot(team, botId)) {
+            // now check to see if an active game already exists in memory for this team or team/bot
+            const activeGameId = fns.findGame(teamId, botId);
+            if (activeGameId !== '') {
+              return res.status(400).json({ status: 400, message: 'Invalid Request - An active game for team/bot already exists.', gameId: activeGameId });
+            } else {
+              // break this down into two steps so we can better tell where any errors come from
+              const game: Game = new Game(maze, teamId, botId);
 
-    // get team - bail on fail
-    const team: Team = await Cache.use()
-      .fetchOrGetItem(CACHE_TYPES.TEAM, teamId)
-      .catch(teamErr => {
-        log.warn(__filename, method, 'Unable to get team');
-        throw teamErr;
-      });
+              // add a visit to the start cell of the maze since the player just walked in
+              game.Maze.Cells[game.Maze.StartCell.row][game.Maze.StartCell.col].addVisit(0);
 
-    // if a bot is given, verify it - bail on fail
-    if (botId !== '' && !fns.findBot(team, botId)) {
-      const botErr = new Error(`Bot (${botId}) not found in team (${teamId})`);
-      log.warn(__filename, method, 'Unable to find bot in team.');
-      throw botErr;
-    }
+              // force-set the gameId if the query parameter was set
+              if (forceId) {
+                game.forceSetId(forceId);
+              }
 
-    // now check to see if an active game already exists in memory for this team or team/bot
-    const activeGameId = fns.findGame(teamId, botId);
-    if (activeGameId !== '') {
-      return res.status(400).json({ status: 400, message: 'Invalid Request - An active game for team/bot already exists.', gameId: activeGameId });
-    }
+              // store the game on the cache
+              Cache.use().storeItem(CACHE_TYPES.GAME, game);
 
-    // break this down into two steps so we can better tell where any errors come from
-    const game: Game = new Game(maze, teamId, botId);
-
-    // add a visit to the start cell of the maze since the player just walked in
-    game.Maze.Cells[game.Maze.StartCell.row][game.Maze.StartCell.col].addVisit(0);
-
-    // force-set the gameId if the query parameter was set
-    if (forceId !== undefined) {
-      game.forceSetId(forceId);
-    }
-
-    // store the game on the cache
-    Cache.use().storeItem(CACHE_TYPES.GAME, game);
-
-    // return json game stub: game.Id, getUrl: `${config.EXT_URL_GAME}/get/${game.Id}
-    return res.status(200).json({ status: 200, message: 'Game Created', game: game.getStub(`${config.EXT_URL_GAME}/get/`) });
-  } catch (err) {
-    log.error(__filename, method, 'Game creation failed ->', err);
-    res.status(400).json({ status: 500, message: 'Game Creation Error', error: err.message });
-  }
+              // return json game stub: game.Id, getUrl: `${config.EXT_URL_GAME}/get/${game.Id}
+              return res.status(200).json({ status: 200, message: 'Game Created', game: game.getStub(`${config.EXT_URL_GAME}/get/`) });
+            }
+          } else {
+            const botErr = new Error(`Bot not found in team`);
+            log.warn(__filename, method, 'Unable to get Bot');
+            return res.status(404).json({ status: 404, message: 'Invalid Request - Bot not found.', error: botErr.message });
+          }
+        })
+        .catch(teamErr => {
+          log.warn(__filename, method, 'Unable to get Team');
+          return res.status(404).json({ status: 404, message: 'Invalid Request - Team not found.', error: teamErr.message });
+        });
+    })
+    .catch(mazeErr => {
+      log.warn(__filename, method, 'Unable to get Maze');
+      return res.status(404).json({ status: 404, message: 'Invalid Request - Maze not found.', error: mazeErr.message });
+    });
 };
 
 /**
@@ -183,10 +173,20 @@ export const processAction = async (req: Request, res: Response) => {
   log.force(__filename, 'Acquiring users language from the header: ',  languageHeader );
   let userLanguage = languageHeader.substring(0,2);
   log.force(__filename, 'User lanugage detected: ',  userLanguage );
-  var languageType = en.getInstance();
+  var languageType;
   //Enfure that userLanugage is a supported language first
-  if (userLanguage == ('en' || 'es'))
-  { languageType =  eval(`${userLanguage}.getInstance()`);}
+  switch (userLanguage){
+      case "es": {
+        languageType = lang.Es.getInstance();
+        log.force(__filename, "processAction(): ", "Detected Spanish as language, using es.ts for message strings");
+        break;
+      }
+      default: {
+        languageType = lang.En.getInstance();
+        log.force(__filename, "processAction(): ", "Defaulting to english, using en.ts for message strings");
+        break;
+      }
+  }
 
   // make sure that the request body has the minimum parameters defined
   if (!req.body.command || !req.body.direction || !req.body.gameId) {

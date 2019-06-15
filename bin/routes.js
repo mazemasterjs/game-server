@@ -14,6 +14,9 @@ var __importStar = (this && this.__importStar) || function (mod) {
     result["default"] = mod;
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const Config_1 = require("./Config");
 const logger_1 = require("@mazemasterjs/logger");
@@ -22,9 +25,11 @@ const Game_1 = require("@mazemasterjs/shared-library/Game");
 const fns = __importStar(require("./funcs"));
 const Enums_1 = require("@mazemasterjs/shared-library/Enums");
 const Action_1 = require("@mazemasterjs/shared-library/Action");
+const path_1 = __importDefault(require("path"));
 const actStand_1 = require("./controllers/actStand");
 const actLook_1 = require("./controllers/actLook");
 const actMove_1 = require("./controllers/actMove");
+const lang = __importStar(require("./lang/langIndex"));
 // set constant utility references
 const log = logger_1.Logger.getInstance();
 const config = Config_1.Config.getInstance();
@@ -47,52 +52,52 @@ exports.createGame = (req, res) => __awaiter(this, void 0, void 0, function* () 
     // set some vars from req parameters
     const mazeId = req.params.mazeId;
     const teamId = req.params.teamId;
-    const botId = req.params.botId + '';
-    const forceId = req.query.forceId + '';
+    const botId = req.params.botId;
+    const forceId = req.query.forceId;
     const method = `createGame(${mazeId}, ${teamId}, ${botId})`;
-    try {
-        // get maze - bail on fail
-        const maze = yield Cache_1.Cache.use()
-            .fetchOrGetItem(Cache_1.CACHE_TYPES.MAZE, mazeId)
-            .catch(mazeErr => {
-            log.warn(__filename, method, 'Unable to get maze');
-            throw mazeErr;
-        });
-        // get team - bail on fail
-        const team = yield Cache_1.Cache.use()
+    // get maze - bail on fail
+    return yield Cache_1.Cache.use()
+        .fetchOrGetItem(Cache_1.CACHE_TYPES.MAZE, mazeId)
+        .then(maze => {
+        Cache_1.Cache.use()
             .fetchOrGetItem(Cache_1.CACHE_TYPES.TEAM, teamId)
+            .then(team => {
+            if (botId && team && fns.findBot(team, botId)) {
+                // now check to see if an active game already exists in memory for this team or team/bot
+                const activeGameId = fns.findGame(teamId, botId);
+                if (activeGameId !== '') {
+                    return res.status(400).json({ status: 400, message: 'Invalid Request - An active game for team/bot already exists.', gameId: activeGameId });
+                }
+                else {
+                    // break this down into two steps so we can better tell where any errors come from
+                    const game = new Game_1.Game(maze, teamId, botId);
+                    // add a visit to the start cell of the maze since the player just walked in
+                    game.Maze.Cells[game.Maze.StartCell.row][game.Maze.StartCell.col].addVisit(0);
+                    // force-set the gameId if the query parameter was set
+                    if (forceId) {
+                        game.forceSetId(forceId);
+                    }
+                    // store the game on the cache
+                    Cache_1.Cache.use().storeItem(Cache_1.CACHE_TYPES.GAME, game);
+                    // return json game stub: game.Id, getUrl: `${config.EXT_URL_GAME}/get/${game.Id}
+                    return res.status(200).json({ status: 200, message: 'Game Created', game: game.getStub(`${config.EXT_URL_GAME}/get/`) });
+                }
+            }
+            else {
+                const botErr = new Error(`Bot not found in team`);
+                log.warn(__filename, method, 'Unable to get Bot');
+                return res.status(404).json({ status: 404, message: 'Invalid Request - Bot not found.', error: botErr.message });
+            }
+        })
             .catch(teamErr => {
-            log.warn(__filename, method, 'Unable to get team');
-            throw teamErr;
+            log.warn(__filename, method, 'Unable to get Team');
+            return res.status(404).json({ status: 404, message: 'Invalid Request - Team not found.', error: teamErr.message });
         });
-        // if a bot is given, verify it - bail on fail
-        if (botId !== '' && !fns.findBot(team, botId)) {
-            const botErr = new Error(`Bot (${botId}) not found in team (${teamId})`);
-            log.warn(__filename, method, 'Unable to find bot in team.');
-            throw botErr;
-        }
-        // now check to see if an active game already exists in memory for this team or team/bot
-        const activeGameId = fns.findGame(teamId, botId);
-        if (activeGameId !== '') {
-            return res.status(400).json({ status: 400, message: 'Invalid Request - An active game for team/bot already exists.', gameId: activeGameId });
-        }
-        // break this down into two steps so we can better tell where any errors come from
-        const game = new Game_1.Game(maze, teamId, botId);
-        // add a visit to the start cell of the maze since the player just walked in
-        game.Maze.Cells[game.Maze.StartCell.row][game.Maze.StartCell.col].addVisit(0);
-        // force-set the gameId if the query parameter was set
-        if (forceId !== undefined) {
-            game.forceSetId(forceId);
-        }
-        // store the game on the cache
-        Cache_1.Cache.use().storeItem(Cache_1.CACHE_TYPES.GAME, game);
-        // return json game stub: game.Id, getUrl: `${config.EXT_URL_GAME}/get/${game.Id}
-        return res.status(200).json({ status: 200, message: 'Game Created', game: game.getStub(`${config.EXT_URL_GAME}/get/`) });
-    }
-    catch (err) {
-        log.error(__filename, method, 'Game creation failed ->', err);
-        res.status(400).json({ status: 500, message: 'Game Creation Error', error: err.message });
-    }
+    })
+        .catch(mazeErr => {
+        log.warn(__filename, method, 'Unable to get Maze');
+        return res.status(404).json({ status: 404, message: 'Invalid Request - Maze not found.', error: mazeErr.message });
+    });
 });
 /**
  * Returns abandons a game currently in memory
@@ -166,6 +171,25 @@ exports.countGames = (req, res) => {
 exports.processAction = (req, res) => __awaiter(this, void 0, void 0, function* () {
     logRequest('processAction', req);
     let game;
+    //Gets the language header, and grabs the json with the appropriate language
+    let languageHeader = req.header('accept-language') + "";
+    log.force(__filename, 'Acquiring users language from the header: ', languageHeader);
+    let userLanguage = languageHeader.substring(0, 2);
+    log.force(__filename, 'User lanugage detected: ', userLanguage);
+    var languageType;
+    //Enfure that userLanugage is a supported language first
+    switch (userLanguage) {
+        case "es": {
+            languageType = lang.Es.getInstance();
+            log.force(__filename, "processAction(): ", "Detected Spanish as language, using es.ts for message strings");
+            break;
+        }
+        default: {
+            languageType = lang.En.getInstance();
+            log.force(__filename, "processAction(): ", "Defaulting to english, using en.ts for message strings");
+            break;
+        }
+    }
     // make sure that the request body has the minimum parameters defined
     if (!req.body.command || !req.body.direction || !req.body.gameId) {
         return res.status(400).json({
@@ -200,15 +224,15 @@ exports.processAction = (req, res) => __awaiter(this, void 0, void 0, function* 
     game.State = Enums_1.GAME_STATES.IN_PROGRESS;
     switch (action.command) {
         case Enums_1.COMMANDS.LOOK: {
-            return res.status(200).json(yield actLook_1.doLook(game));
+            return res.status(200).json(yield actLook_1.doLook(game, languageType));
         }
         case Enums_1.COMMANDS.MOVE: {
-            return yield res.status(200).json(yield actMove_1.doMove(game));
+            return yield res.status(200).json(yield actMove_1.doMove(game, languageType));
         }
         case Enums_1.COMMANDS.JUMP:
         case Enums_1.COMMANDS.SIT:
         case Enums_1.COMMANDS.STAND: {
-            return res.status(200).json(yield actStand_1.doStand(game));
+            return res.status(200).json(yield actStand_1.doStand(game, languageType));
         }
         case Enums_1.COMMANDS.WRITE: {
             const err = new Error(`The ${Enums_1.COMMANDS[action.command]} command has not been implemented yet.`);
@@ -228,6 +252,17 @@ exports.dumpCache = (req, res) => {
     logRequest('dumpCache - GAME', req);
     Cache_1.Cache.use().dumpCache(Cache_1.CACHE_TYPES.GAME);
     return res.status(200).json({ status: 200, message: 'OK' });
+};
+//Get the browsers language and return the proper lanugage file
+exports.getLanguage = (req, res) => {
+    const languageHeader = req.header('accept-language') + "";
+    let outfile;
+    const mylang = languageHeader.substring(0, 2);
+    log.force(__filename, 'fileFromLocale(): ', languageHeader);
+    log.force(__filename, 'fileFromLocale(): ', mylang);
+    outfile = "./lang/" + mylang + ".json";
+    outfile = path_1.default.resolve(outfile);
+    return res.sendFile(outfile);
 };
 /**
  * Liveness and Readiness probe for K8s/OpenShift.
