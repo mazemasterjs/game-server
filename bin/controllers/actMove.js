@@ -18,20 +18,21 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const fns = __importStar(require("../funcs"));
 const Config_1 = require("../Config");
 const Enums_1 = require("@mazemasterjs/shared-library/Enums");
+const util_1 = require("util");
 const funcs_1 = require("../funcs");
 const Maze_1 = require("@mazemasterjs/shared-library/Maze");
 const MazeLoc_1 = require("@mazemasterjs/shared-library/MazeLoc");
-const util_1 = require("util");
+const GameLang_1 = require("../GameLang");
 // need a config object for some of this
 const config = Config_1.Config.getInstance();
-function doMove(game, language) {
+function doMove(game, langCode) {
     return __awaiter(this, void 0, void 0, function* () {
         const method = `doMove(${game.Id})`;
         const action = game.Actions[game.Actions.length - 1];
         const engram = action.engram;
         const dir = action.direction;
         const maze = new Maze_1.Maze(game.Maze);
-        const messages = language.myInstance().messages;
+        const lang = GameLang_1.GameLang.getInstance(langCode);
         // grab the current score so we can update action with points earned or lost during this move
         const startScore = game.Score.getTotalScore();
         // seems that that embedded objects reliable... have to keep reinstantiating things??
@@ -41,7 +42,7 @@ function doMove(game, language) {
             fns.logDebug(__filename, method, 'Player tried to move while not standing.');
             // add the trophy for walking without standing
             fns.grantTrophy(game, Enums_1.TROPHY_IDS.SPINNING_YOUR_WHEELS);
-            action.outcomes.push(messages.actions.outcome.move.sitting);
+            action.outcomes.push(lang.actions.outcome.move.sitting);
             // finalize and return action
             return Promise.resolve(finalizeAction(game, maze, action, startScore));
         }
@@ -49,12 +50,12 @@ function doMove(game, language) {
         if (maze.getCell(pLoc).isDirOpen(dir)) {
             if (dir === Enums_1.DIRS.NORTH && pLoc.equals(game.Maze.StartCell)) {
                 fns.logDebug(__filename, method, 'Player moved north into the entrance (lava).');
-                engram.sight = messages.actions.engramDescriptions.sight.local.lava;
-                engram.smell = messages.actions.engramDescriptions.smell.local.lava;
-                engram.touch = messages.actions.engramDescriptions.touch.local.lava;
-                engram.taste = messages.actions.engramDescriptions.taste.local.lava;
-                engram.sound = messages.actions.engramDescriptions.sound.local.lava;
-                action.outcomes.push(messages.actions.outcome.lava);
+                engram.sight = lang.actions.engramDescriptions.sight.local.lava;
+                engram.smell = lang.actions.engramDescriptions.smell.local.lava;
+                engram.touch = lang.actions.engramDescriptions.touch.local.lava;
+                engram.taste = lang.actions.engramDescriptions.taste.local.lava;
+                engram.sound = lang.actions.engramDescriptions.sound.local.lava;
+                action.outcomes.push(lang.actions.outcome.lava);
                 finishGame(game, action, Enums_1.GAME_RESULTS.DEATH_LAVA);
             }
             else if (dir === Enums_1.DIRS.SOUTH && pLoc.equals(game.Maze.FinishCell)) {
@@ -64,7 +65,7 @@ function doMove(game, language) {
                 engram.touch = 'Cheese!';
                 engram.taste = 'Cheese!';
                 engram.sound = 'Cheese!';
-                action.outcomes.push(messages.actions.outcome.finish);
+                action.outcomes.push(lang.actions.outcome.finish);
                 // game over: WINNER or WIN_FLAWLESS
                 if (game.Score.MoveCount <= game.Maze.ShortestPathLength) {
                     finishGame(game, finalizeAction(game, maze, action, startScore), Enums_1.GAME_RESULTS.WIN_FLAWLESS);
@@ -81,11 +82,11 @@ function doMove(game, language) {
             // they tried to walk in a direction that has a wall
             fns.grantTrophy(game, Enums_1.TROPHY_IDS.YOU_FOUGHT_THE_WALL);
             game.Player.addState(Enums_1.PLAYER_STATES.SITTING);
-            engram.sight = util_1.format(messages.actions.engramDescriptions.sight.local.wall, Enums_1.DIRS[dir]); //`You get a very close up view of the wall to the ${DIRS[dir]}.`;
-            engram.touch = messages.actions.engramDescriptions.touch.local.wall;
-            engram.sound = messages.actions.engramDescriptions.sound.local.wall;
-            action.outcomes.push(util_1.format(messages.actions.outcome.wall.collide, Enums_1.DIRS[dir]));
-            action.outcomes.push(messages.actions.posture.stunned);
+            engram.sight = util_1.format(lang.actions.engramDescriptions.sight.local.wall, Enums_1.DIRS[dir]); // `You get a very close up view of the wall to the ${DIRS[dir]}.`;
+            engram.touch = lang.actions.engramDescriptions.touch.local.wall;
+            engram.sound = lang.actions.engramDescriptions.sound.local.wall;
+            action.outcomes.push(util_1.format(lang.actions.outcome.wall.collide, Enums_1.DIRS[dir]));
+            action.outcomes.push(lang.actions.posture.stunned);
         }
         // game continues - return the action (with outcomes and engram)
         return Promise.resolve(finalizeAction(game, maze, action, startScore));
@@ -111,6 +112,7 @@ function finalizeAction(game, maze, action, startScore) {
     fns.summarizeGame(action, game.Score);
     // TODO: text render - here now just for DEV/DEBUG purposess
     action.outcomes.push('DEBUG MAZE RENDER\r\n: ' + maze.generateTextRender(true, game.Player.Location));
+    fns.logDebug(__filename, 'finalizeAction(...)', '\r\n' + maze.generateTextRender(true, game.Player.Location));
     return action;
 }
 /**
@@ -214,7 +216,10 @@ function finishGame(game, lastAct, gameResult) {
         // Append a timestamp to any game.Id starting with the word 'FORCED' so the original IDs can
         // be re-used - very handy for testing and development
         if (game.Id.startsWith('FORCED')) {
-            game.forceSetId(`${game.Id}__${Date.now()}`);
+            const oldGameId = game.Id;
+            const newGameId = `${game.Id}__${Date.now()}`;
+            game.forceSetId(newGameId);
+            fns.logWarn(__filename, method, `Forced Game.Id changed from [${oldGameId}] to [${newGameId}]`);
         }
         return Promise.resolve(game);
     });

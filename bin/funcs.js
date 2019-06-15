@@ -295,7 +295,7 @@ exports.movePlayer = movePlayer;
 function grantTrophy(game, trophyId) {
     return __awaiter(this, void 0, void 0, function* () {
         const method = `grantTrophy(${game.Id}, ${Enums_1.TROPHY_IDS[trophyId]})`;
-        return yield Cache_1.Cache.use()
+        yield Cache_1.Cache.use()
             .fetchOrGetItem(Cache_1.CACHE_TYPES.TROPHY, Enums_1.TROPHY_IDS[trophyId])
             .then(item => {
             const trophy = item;
@@ -307,12 +307,12 @@ function grantTrophy(game, trophyId) {
             game.Score.addTrophy(trophyId);
             game.Score.addBonusPoints(trophy.BonusAward);
             logDebug(__filename, method, 'Trophy added.');
-            return Promise.resolve(game);
         })
             .catch(fetchError => {
-            logWarn(__filename, method, 'Unable to fetch trophy: ' + Enums_1.TROPHY_IDS[Enums_1.TROPHY_IDS.WISHFUL_DYING] + '. Error -> ' + fetchError.message);
-            return Promise.reject(fetchError);
+            game.Actions[game.Actions.length - 1].outcomes.push('Error adding add trophy ' + Enums_1.TROPHY_IDS[trophyId] + ' -> ' + fetchError.message);
+            logWarn(__filename, method, 'Unable to fetch trophy: ' + Enums_1.TROPHY_IDS[trophyId] + '. Error -> ' + fetchError.message);
         });
+        return Promise.resolve(game);
     });
 }
 exports.grantTrophy = grantTrophy;
@@ -378,4 +378,21 @@ function logError(file, method, msg, error) {
     log.error(file, method, msg, error);
 }
 exports.logError = logError;
+/**
+ * Checks for accept-language header and returns the 2-letter language code
+ * or returns 'en' if none found - default language will be english (en)
+ *
+ * @param req
+ */
+function getLanguage(req) {
+    const languageHeader = req.header('accept-language');
+    let userLanguage = 'en';
+    logDebug(__filename, 'getLanguage(req)', `Acquiring users language from the header: ${languageHeader}`);
+    if (languageHeader && languageHeader.length >= 2) {
+        userLanguage = languageHeader.substring(0, 2);
+        logDebug(__filename, 'getLanguage(req)', 'userLanguage is ' + userLanguage);
+    }
+    return userLanguage;
+}
+exports.getLanguage = getLanguage;
 //# sourceMappingURL=funcs.js.map

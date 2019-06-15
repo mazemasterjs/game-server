@@ -112,33 +112,29 @@ export class Cache {
     }
 
     fns.logTrace(__filename, method, 'Fetching item from cache...');
+    let item: Promise<any> = await this.fetchItem(cacheType, itemId)
+      .then(cacheItem => {
+        return Promise.resolve(cacheItem);
+      })
+      .catch(fetchError => {
+        fns.logTrace(__filename, method, fetchError.message + '-> Item not in cache, retrieving from service.');
+      });
 
-    try {
-      return Promise.resolve(Cache.use().fetchItem(cacheType, itemId));
-    } catch (fetchErr) {
-      log.warn(__filename, method, 'Fetch failed -> ' + fetchErr.message);
+    // not in cache so retrieve it from the appropriate service
+    if (item === undefined) {
+      item = await fns
+        .doGet(`${fns.getSvcUrl(cacheType)}/get?id=${itemId}`)
+        .then(itemArray => {
+          const cacheEntry = Cache.use().storeItem(cacheType, itemArray[0]);
+          return Promise.resolve(cacheEntry.item);
+        })
+        .catch(getError => {
+          log.warn(__filename, method, `${fns.getSvcUrl(cacheType)}/get?id=${itemId} failed -> ${getError.message}`);
+          return Promise.reject(getError);
+        });
     }
 
-    // didn't find it in the cache
-    fns.logTrace(__filename, method, 'Item not in cache, retrieving from service...');
-
-    // So retrieve it from the appropriate service
-    return await fns
-      .doGet(`${fns.getSvcUrl(cacheType)}/get?id=${itemId}`)
-      .then(itemArray => {
-        if (itemArray.length === 0) {
-          const notFoundError = new Error('Document not found.');
-          fns.logWarn(__filename, method, notFoundError.message);
-          return Promise.reject(notFoundError);
-        }
-        const cacheEntry = Cache.use().storeItem(cacheType, itemArray[0]);
-        // and return so we can continue
-        return Promise.resolve(cacheEntry.Item);
-      })
-      .catch(getError => {
-        log.warn(__filename, method, `${fns.getSvcUrl(cacheType)}/get?id=${itemId} failed -> ${getError.message}`);
-        return Promise.reject(getError);
-      });
+    return item; // item is a promise reject/resolve
   }
 
   /**

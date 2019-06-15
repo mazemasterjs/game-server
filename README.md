@@ -27,11 +27,22 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 
 ## TODO
 
-- [x] Implement percentage-based cache eviction routine that keeps a minimum amount of free-space available instead of the current FIFO model
-- [x] Ensure that cache entries for active games aren't evicted (add game state to value calculation?)
+- [ ] All language files are loaded on GameLang instantiation - This should be changed to load language files on demand
 - [ ] Add logic to automatically end games after a certain period of inactivity (set GAMES_STATES.ABANDONED)
+- [ ] Action scores / trophies are not returned with the actual action response for some reason... working on it (jd)
 
 ## Change Notes
+
+### v0.5.1
+
+- added async handling to actStand.ts
+- funcs.grantTrophy() now pushes an error message to the outcomes array if the trophy was not found
+- corrected promise rejection handling in Cache.use().fetchOrGetItem()
+- refactored the language support features
+  - moved es.ts and en.ts data into /data/es.json and /data/en.json
+  - refactored the iLanguage.ts and languageIndex.ts into a GameLang class and moved it to /src
+  - language-specific values loaded on GameLang's first .getInstance()
+  - Currently, all language files are loaded at once - this should probably be changed to an on-demand system
 
 ### v0.5.0
 

@@ -10,6 +10,7 @@ import { Config } from './Config';
 import { Game } from '@mazemasterjs/shared-library/Game';
 import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
 import { IGameStub } from '@mazemasterjs/shared-library/Interfaces/IGameStub';
+import { Request, Response } from 'express';
 import { LOG_LEVELS, Logger } from '@mazemasterjs/logger';
 import { Team } from '@mazemasterjs/shared-library/Team';
 
@@ -300,7 +301,7 @@ export function movePlayer(game: Game, act: IAction): Game {
 export async function grantTrophy(game: Game, trophyId: TROPHY_IDS): Promise<Game> {
   const method = `grantTrophy(${game.Id}, ${TROPHY_IDS[trophyId]})`;
 
-  return await Cache.use()
+  await Cache.use()
     .fetchOrGetItem(CACHE_TYPES.TROPHY, TROPHY_IDS[trophyId])
     .then(item => {
       const trophy: Trophy = item;
@@ -314,12 +315,13 @@ export async function grantTrophy(game: Game, trophyId: TROPHY_IDS): Promise<Gam
       game.Score.addTrophy(trophyId);
       game.Score.addBonusPoints(trophy.BonusAward);
       logDebug(__filename, method, 'Trophy added.');
-      return Promise.resolve(game);
     })
     .catch(fetchError => {
-      logWarn(__filename, method, 'Unable to fetch trophy: ' + TROPHY_IDS[TROPHY_IDS.WISHFUL_DYING] + '. Error -> ' + fetchError.message);
-      return Promise.reject(fetchError);
+      game.Actions[game.Actions.length - 1].outcomes.push('Error adding add trophy ' + TROPHY_IDS[trophyId] + ' -> ' + fetchError.message);
+      logWarn(__filename, method, 'Unable to fetch trophy: ' + TROPHY_IDS[trophyId] + '. Error -> ' + fetchError.message);
     });
+
+  return Promise.resolve(game);
 }
 
 /**
@@ -382,4 +384,24 @@ export function logWarn(file: string, method: string, msg: string) {
  */
 export function logError(file: string, method: string, msg: string, error: Error) {
   log.error(file, method, msg, error);
+}
+
+/**
+ * Checks for accept-language header and returns the 2-letter language code
+ * or returns 'en' if none found - default language will be english (en)
+ *
+ * @param req
+ */
+export function getLanguage(req: Request) {
+  const languageHeader = req.header('accept-language');
+
+  let userLanguage = 'en';
+  logDebug(__filename, 'getLanguage(req)', `Acquiring users language from the header: ${languageHeader}`);
+
+  if (languageHeader && languageHeader.length >= 2) {
+    userLanguage = languageHeader.substring(0, 2);
+    logDebug(__filename, 'getLanguage(req)', 'userLanguage is ' + userLanguage);
+  }
+
+  return userLanguage;
 }

@@ -17,13 +17,12 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const fns = __importStar(require("./funcs"));
 const Action_1 = require("@mazemasterjs/shared-library/Action");
-const actStand_1 = require("./controllers/actStand");
-const actLook_1 = require("./controllers/actLook");
-const actMove_1 = require("./controllers/actMove");
-const lang = __importStar(require("./lang/langIndex"));
 const Cache_1 = require("./Cache");
 const Enums_1 = require("@mazemasterjs/shared-library/Enums");
 const Config_1 = require("./Config");
+const actLook_1 = require("./controllers/actLook");
+const actMove_1 = require("./controllers/actMove");
+const actStand_1 = require("./controllers/actStand");
 const Game_1 = require("@mazemasterjs/shared-library/Game");
 const logger_1 = require("@mazemasterjs/logger");
 // set constant utility references
@@ -173,25 +172,6 @@ exports.countGames = (req, res) => {
 exports.processAction = (req, res) => __awaiter(this, void 0, void 0, function* () {
     logRequest('processAction', req);
     let game;
-    //Gets the language header, and grabs the json with the appropriate language
-    let languageHeader = req.header('accept-language') + "";
-    log.force(__filename, 'Acquiring users language from the header: ', languageHeader);
-    let userLanguage = languageHeader.substring(0, 2);
-    log.force(__filename, 'User lanugage detected: ', userLanguage);
-    var languageType;
-    //Enfure that userLanugage is a supported language first
-    switch (userLanguage) {
-        case "es": {
-            languageType = lang.Es.getInstance();
-            log.force(__filename, "processAction(): ", "Detected Spanish as language, using es.ts for message strings");
-            break;
-        }
-        default: {
-            languageType = lang.En.getInstance();
-            log.force(__filename, "processAction(): ", "Defaulting to english, using en.ts for message strings");
-            break;
-        }
-    }
     // make sure that the request body has the minimum parameters defined
     if (!req.body.command || !req.body.direction || !req.body.gameId) {
         return res.status(400).json({
@@ -204,17 +184,23 @@ exports.processAction = (req, res) => __awaiter(this, void 0, void 0, function* 
     const gameId = req.body.gameId;
     const cmd = fns.getCmdByName(req.body.command);
     const dir = fns.getDirByName(req.body.direction);
-    const msg = req.body.message + '';
-    // first attempt to get the game by the given Id - fetchItem will throw an
-    // error if the game is not found and we'll respond accordingly
+    const msg = req.body.message !== undefined ? req.body.message : '';
+    const langCode = fns.getLanguage(req);
+    // first attempt to get the game by the given Id - fetchItem() will
+    // reject the promise with an error if the game is not found in the game cache
     game = yield Cache_1.Cache.use()
         .fetchItem(Cache_1.CACHE_TYPES.GAME, gameId)
         .then(fetchedGame => {
         return fetchedGame;
     })
         .catch(fetchError => {
-        return res.status(404).json({ status: 404, message: 'Game Not Found', error: fetchError.message });
+        log.warn(__filename, req.path, `Invalid gameId (${gameId}) -> ${fetchError.message}`);
+        return null;
     });
+    // make sure a game was found
+    if (!game) {
+        return res.status(404).json({ status: 404, message: 'Game Not Found', gameId });
+    }
     // got a game - make sure it's not in an end-state: FINISHED, ABANDONDED, or ERROR
     if (game.State >= Enums_1.GAME_STATES.FINISHED) {
         log.warn(__filename, req.path, `Action sent to ${Enums_1.GAME_STATES[game.State]} game.`);
@@ -228,13 +214,13 @@ exports.processAction = (req, res) => __awaiter(this, void 0, void 0, function* 
     game.State = Enums_1.GAME_STATES.IN_PROGRESS;
     switch (action.command) {
         case Enums_1.COMMANDS.LOOK: {
-            return res.status(200).json(yield actLook_1.doLook(game, languageType));
+            return res.status(200).json(yield actLook_1.doLook(game, langCode));
         }
         case Enums_1.COMMANDS.MOVE: {
-            return yield res.status(200).json(yield actMove_1.doMove(game, languageType));
+            return yield res.status(200).json(yield actMove_1.doMove(game, langCode));
         }
         case Enums_1.COMMANDS.STAND: {
-            return res.status(200).json(yield actStand_1.doStand(game, languageType));
+            return res.status(200).json(yield actStand_1.doStand(game, langCode));
         }
         case Enums_1.COMMANDS.JUMP:
         case Enums_1.COMMANDS.SIT:
