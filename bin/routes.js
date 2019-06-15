@@ -217,10 +217,12 @@ exports.processAction = (req, res) => __awaiter(this, void 0, void 0, function* 
             return res.status(200).json(yield actLook_1.doLook(game, langCode));
         }
         case Enums_1.COMMANDS.MOVE: {
-            return yield res.status(200).json(yield actMove_1.doMove(game, langCode));
+            const actionResult = yield actMove_1.doMove(game, langCode);
+            return res.status(200).json(actionResult);
         }
         case Enums_1.COMMANDS.STAND: {
-            return res.status(200).json(yield actStand_1.doStand(game, langCode));
+            const actionResult = yield actStand_1.doStand(game, langCode);
+            return res.status(200).json(actionResult);
         }
         case Enums_1.COMMANDS.JUMP:
         case Enums_1.COMMANDS.SIT:

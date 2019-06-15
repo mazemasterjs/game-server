@@ -15,11 +15,9 @@ const config: Config = Config.getInstance();
 
 export async function doMove(game: Game, langCode: string): Promise<IAction> {
   const method = `doMove(${game.Id})`;
-  const action: IAction = game.Actions[game.Actions.length - 1];
-  const engram: Engram = action.engram;
-  const dir: DIRS = action.direction;
+  const engram: Engram = game.Actions[game.Actions.length - 1].engram;
+  const dir: DIRS = game.Actions[game.Actions.length - 1].direction;
   const maze: Maze = new Maze(game.Maze);
-
   const lang = GameLang.getInstance(langCode);
 
   // grab the current score so we can update action with points earned or lost during this move
@@ -33,12 +31,14 @@ export async function doMove(game: Game, langCode: string): Promise<IAction> {
     fns.logDebug(__filename, method, 'Player tried to move while not standing.');
 
     // add the trophy for walking without standing
-    fns.grantTrophy(game, TROPHY_IDS.SPINNING_YOUR_WHEELS);
+    game = await fns.grantTrophy(game, TROPHY_IDS.SPINNING_YOUR_WHEELS);
 
-    action.outcomes.push(lang.actions.outcome.move.sitting);
+    game.Actions[game.Actions.length - 1].outcomes.push(lang.actions.outcome.move.sitting);
 
     // finalize and return action
-    return Promise.resolve(finalizeAction(game, maze, action, startScore));
+    const finalAction = fns.finalizeAction(game, maze, startScore);
+    game.Actions[game.Actions.length - 1] = finalAction;
+    return Promise.resolve(finalAction);
   }
 
   // now check for start/finish cell win & lose conditions
@@ -50,8 +50,8 @@ export async function doMove(game: Game, langCode: string): Promise<IAction> {
       engram.touch = lang.actions.engramDescriptions.touch.local.lava;
       engram.taste = lang.actions.engramDescriptions.taste.local.lava;
       engram.sound = lang.actions.engramDescriptions.sound.local.lava;
-      action.outcomes.push(lang.actions.outcome.lava);
-      finishGame(game, action, GAME_RESULTS.DEATH_LAVA);
+      game.Actions[game.Actions.length - 1].outcomes.push(lang.actions.outcome.lava);
+      finishGame(game, GAME_RESULTS.DEATH_LAVA);
     } else if (dir === DIRS.SOUTH && pLoc.equals(game.Maze.FinishCell)) {
       fns.logDebug(__filename, method, 'Player moved south into the exit (cheese).');
       engram.sight = 'Cheese!';
@@ -59,20 +59,20 @@ export async function doMove(game: Game, langCode: string): Promise<IAction> {
       engram.touch = 'Cheese!';
       engram.taste = 'Cheese!';
       engram.sound = 'Cheese!';
-      action.outcomes.push(lang.actions.outcome.finish);
+      game.Actions[game.Actions.length - 1].outcomes.push(lang.actions.outcome.finish);
 
       // game over: WINNER or WIN_FLAWLESS
       if (game.Score.MoveCount <= game.Maze.ShortestPathLength) {
-        finishGame(game, finalizeAction(game, maze, action, startScore), GAME_RESULTS.WIN_FLAWLESS);
+        finishGame(game, GAME_RESULTS.WIN_FLAWLESS);
       } else {
-        finishGame(game, finalizeAction(game, maze, action, startScore), GAME_RESULTS.WIN);
+        finishGame(game, GAME_RESULTS.WIN);
       }
     } else {
-      game = fns.movePlayer(game, action);
+      game = fns.movePlayer(game, game.Actions[game.Actions.length - 1]);
     }
   } else {
     // they tried to walk in a direction that has a wall
-    fns.grantTrophy(game, TROPHY_IDS.YOU_FOUGHT_THE_WALL);
+    game = await fns.grantTrophy(game, TROPHY_IDS.YOU_FOUGHT_THE_WALL);
 
     game.Player.addState(PLAYER_STATES.SITTING);
 
@@ -80,39 +80,12 @@ export async function doMove(game: Game, langCode: string): Promise<IAction> {
     engram.touch = lang.actions.engramDescriptions.touch.local.wall;
     engram.sound = lang.actions.engramDescriptions.sound.local.wall;
 
-    action.outcomes.push(format(lang.actions.outcome.wall.collide, DIRS[dir]));
-    action.outcomes.push(lang.actions.posture.stunned);
+    game.Actions[game.Actions.length - 1].outcomes.push(format(lang.actions.outcome.wall.collide, DIRS[dir]));
+    game.Actions[game.Actions.length - 1].outcomes.push(lang.actions.posture.stunned);
   }
 
   // game continues - return the action (with outcomes and engram)
-  return Promise.resolve(finalizeAction(game, maze, action, startScore));
-}
-
-/**
- * Aggregates some commmon scoring and debugging
- *
- * @param game
- * @param maze
- * @param action
- * @param startScore
- * @param finishScore
- */
-function finalizeAction(game: Game, maze: Maze, action: IAction, startScore: number): IAction {
-  // increment move counters
-  game.Score.addMove();
-  action.moveCount++;
-
-  // track the score change from this one move
-  action.score = game.Score.getTotalScore() - startScore;
-
-  // TODO: Remove summarize from every every move - here now for DEV/DEBUG  purposes
-  fns.summarizeGame(action, game.Score);
-
-  // TODO: text render - here now just for DEV/DEBUG purposess
-  action.outcomes.push('DEBUG MAZE RENDER\r\n: ' + maze.generateTextRender(true, game.Player.Location));
-  fns.logDebug(__filename, 'finalizeAction(...)', '\r\n' + maze.generateTextRender(true, game.Player.Location));
-
-  return action;
+  return Promise.resolve(fns.finalizeAction(game, maze, startScore));
 }
 
 /**
@@ -148,7 +121,7 @@ async function saveScore(game: Game): Promise<boolean> {
  * @param gameResult
  * @returns Promise<Game>
  */
-async function finishGame(game: Game, lastAct: IAction, gameResult: GAME_RESULTS): Promise<Game> {
+async function finishGame(game: Game, gameResult: GAME_RESULTS): Promise<Game> {
   const method = `finishGame(${game.Id}, ${GAME_RESULTS[gameResult]})`;
 
   // update the basic game state & result fields
@@ -159,24 +132,10 @@ async function finishGame(game: Game, lastAct: IAction, gameResult: GAME_RESULTS
     case GAME_RESULTS.WIN_FLAWLESS: {
       // add bonus WIN_FLAWLESS if the game was perfect
       // there is no break here on purpose - flawless winner also gets a CHEDDAR_DINNER
-      await fns
-        .grantTrophy(game, TROPHY_IDS.FLAWLESS_VICTORY)
-        .then(() => {
-          fns.logDebug(__filename, method, 'FLAWLESS_VICTORY awarded to score for game ' + game.Id);
-        })
-        .catch(trophyErr => {
-          fns.logWarn(__filename, method, 'Unable to add FLAWLESS_VICTORY trophy to score. Error -> ' + trophyErr);
-        });
+      game = await fns.grantTrophy(game, TROPHY_IDS.FLAWLESS_VICTORY);
     }
     case GAME_RESULTS.WIN: {
-      await fns
-        .grantTrophy(game, TROPHY_IDS.CHEDDAR_DINNER)
-        .then(() => {
-          fns.logDebug(__filename, method, 'CHEDDAR_DINNER awarded to score for game ' + game.Id);
-        })
-        .catch(trophyErr => {
-          fns.logWarn(__filename, method, 'Unable to add CHEDDAR_DINNER trophy to score. Error -> ' + trophyErr);
-        });
+      fns.grantTrophy(game, TROPHY_IDS.CHEDDAR_DINNER);
       break;
     }
     case GAME_RESULTS.DEATH_LAVA: {
@@ -210,8 +169,12 @@ async function finishGame(game: Game, lastAct: IAction, gameResult: GAME_RESULTS
   }
 
   // Summarize and log game result
-  fns.summarizeGame(lastAct, game.Score);
-  logDebug(__filename, method, `Game Over. Game Result: [${GAME_RESULTS[gameResult]}] Final Outcomes:\r\n + ${lastAct.outcomes.join('\r\n')}`);
+  fns.summarizeGame(game.Actions[game.Actions.length - 1], game.Score);
+  logDebug(
+    __filename,
+    method,
+    `Game Over. Game Result: [${GAME_RESULTS[gameResult]}] Final Outcomes:\r\n + ${game.Actions[game.Actions.length - 1].outcomes.join('\r\n')}`,
+  );
 
   // save the game's score
   saveScore(game);

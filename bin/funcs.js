@@ -237,7 +237,7 @@ function getCmdByName(cmdName) {
 exports.getCmdByName = getCmdByName;
 /**
  * Handles updating the player's location, associated maze cell visit/backtrack
- * counters, and updates the Score.MoveCount.
+ * counters.  MoveCount / action.MoveCount are handled in finalizeAction.
  *
  * @param game: Game - the current game
  * @param action: IAction - the pre-validated IAction behind this move
@@ -267,9 +267,6 @@ function movePlayer(game, act) {
             break;
         }
     }
-    // increment the move counters
-    game.Score.addMove();
-    act.moveCount++;
     const cell = game.Maze.Cells[game.Player.Location.row][game.Player.Location.col];
     // until blindness or something is added, always see exits
     act.engram.sight = 'You see exits: ' + game.Maze.Cells[pLoc.row][pLoc.col].listExits();
@@ -395,4 +392,27 @@ function getLanguage(req) {
     return userLanguage;
 }
 exports.getLanguage = getLanguage;
+/**
+ * Aggregates some commmon scoring and debugging
+ *
+ * @param game
+ * @param maze
+ * @param action
+ * @param startScore
+ * @param finishScore
+ */
+function finalizeAction(game, maze, startScore) {
+    // increment move counters
+    game.Score.addMove();
+    game.Actions[game.Actions.length - 1].moveCount++;
+    // track the score change from this one move
+    game.Actions[game.Actions.length - 1].score = game.Score.getTotalScore() - startScore;
+    // TODO: Remove summarize from every every move - here now for DEV/DEBUG  purposes
+    summarizeGame(game.Actions[game.Actions.length - 1], game.Score);
+    // TODO: text render - here now just for DEV/DEBUG purposess
+    game.Actions[game.Actions.length - 1].outcomes.push('DEBUG MAZE RENDER\r\n: ' + maze.generateTextRender(true, game.Player.Location));
+    logDebug(__filename, 'finalizeAction(...)', '\r\n' + maze.generateTextRender(true, game.Player.Location));
+    return game.Actions[game.Actions.length - 1];
+}
+exports.finalizeAction = finalizeAction;
 //# sourceMappingURL=funcs.js.map

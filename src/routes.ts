@@ -226,10 +226,12 @@ export const processAction = async (req: Request, res: Response) => {
       return res.status(200).json(await doLook(game, langCode));
     }
     case COMMANDS.MOVE: {
-      return await res.status(200).json(await doMove(game, langCode));
+      const actionResult = await doMove(game, langCode);
+      return res.status(200).json(actionResult);
     }
     case COMMANDS.STAND: {
-      return res.status(200).json(await doStand(game, langCode));
+      const actionResult = await doStand(game, langCode);
+      return res.status(200).json(actionResult);
     }
     case COMMANDS.JUMP:
     case COMMANDS.SIT:

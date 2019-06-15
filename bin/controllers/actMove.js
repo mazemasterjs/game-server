@@ -28,9 +28,8 @@ const config = Config_1.Config.getInstance();
 function doMove(game, langCode) {
     return __awaiter(this, void 0, void 0, function* () {
         const method = `doMove(${game.Id})`;
-        const action = game.Actions[game.Actions.length - 1];
-        const engram = action.engram;
-        const dir = action.direction;
+        const engram = game.Actions[game.Actions.length - 1].engram;
+        const dir = game.Actions[game.Actions.length - 1].direction;
         const maze = new Maze_1.Maze(game.Maze);
         const lang = GameLang_1.GameLang.getInstance(langCode);
         // grab the current score so we can update action with points earned or lost during this move
@@ -41,10 +40,12 @@ function doMove(game, langCode) {
         if (!(game.Player.State & Enums_1.PLAYER_STATES.STANDING)) {
             fns.logDebug(__filename, method, 'Player tried to move while not standing.');
             // add the trophy for walking without standing
-            fns.grantTrophy(game, Enums_1.TROPHY_IDS.SPINNING_YOUR_WHEELS);
-            action.outcomes.push(lang.actions.outcome.move.sitting);
+            game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.SPINNING_YOUR_WHEELS);
+            game.Actions[game.Actions.length - 1].outcomes.push(lang.actions.outcome.move.sitting);
             // finalize and return action
-            return Promise.resolve(finalizeAction(game, maze, action, startScore));
+            const finalAction = fns.finalizeAction(game, maze, startScore);
+            game.Actions[game.Actions.length - 1] = finalAction;
+            return Promise.resolve(finalAction);
         }
         // now check for start/finish cell win & lose conditions
         if (maze.getCell(pLoc).isDirOpen(dir)) {
@@ -55,8 +56,8 @@ function doMove(game, langCode) {
                 engram.touch = lang.actions.engramDescriptions.touch.local.lava;
                 engram.taste = lang.actions.engramDescriptions.taste.local.lava;
                 engram.sound = lang.actions.engramDescriptions.sound.local.lava;
-                action.outcomes.push(lang.actions.outcome.lava);
-                finishGame(game, action, Enums_1.GAME_RESULTS.DEATH_LAVA);
+                game.Actions[game.Actions.length - 1].outcomes.push(lang.actions.outcome.lava);
+                finishGame(game, Enums_1.GAME_RESULTS.DEATH_LAVA);
             }
             else if (dir === Enums_1.DIRS.SOUTH && pLoc.equals(game.Maze.FinishCell)) {
                 fns.logDebug(__filename, method, 'Player moved south into the exit (cheese).');
@@ -65,56 +66,34 @@ function doMove(game, langCode) {
                 engram.touch = 'Cheese!';
                 engram.taste = 'Cheese!';
                 engram.sound = 'Cheese!';
-                action.outcomes.push(lang.actions.outcome.finish);
+                game.Actions[game.Actions.length - 1].outcomes.push(lang.actions.outcome.finish);
                 // game over: WINNER or WIN_FLAWLESS
                 if (game.Score.MoveCount <= game.Maze.ShortestPathLength) {
-                    finishGame(game, finalizeAction(game, maze, action, startScore), Enums_1.GAME_RESULTS.WIN_FLAWLESS);
+                    finishGame(game, Enums_1.GAME_RESULTS.WIN_FLAWLESS);
                 }
                 else {
-                    finishGame(game, finalizeAction(game, maze, action, startScore), Enums_1.GAME_RESULTS.WIN);
+                    finishGame(game, Enums_1.GAME_RESULTS.WIN);
                 }
             }
             else {
-                game = fns.movePlayer(game, action);
+                game = fns.movePlayer(game, game.Actions[game.Actions.length - 1]);
             }
         }
         else {
             // they tried to walk in a direction that has a wall
-            fns.grantTrophy(game, Enums_1.TROPHY_IDS.YOU_FOUGHT_THE_WALL);
+            game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.YOU_FOUGHT_THE_WALL);
             game.Player.addState(Enums_1.PLAYER_STATES.SITTING);
             engram.sight = util_1.format(lang.actions.engramDescriptions.sight.local.wall, Enums_1.DIRS[dir]); // `You get a very close up view of the wall to the ${DIRS[dir]}.`;
             engram.touch = lang.actions.engramDescriptions.touch.local.wall;
             engram.sound = lang.actions.engramDescriptions.sound.local.wall;
-            action.outcomes.push(util_1.format(lang.actions.outcome.wall.collide, Enums_1.DIRS[dir]));
-            action.outcomes.push(lang.actions.posture.stunned);
+            game.Actions[game.Actions.length - 1].outcomes.push(util_1.format(lang.actions.outcome.wall.collide, Enums_1.DIRS[dir]));
+            game.Actions[game.Actions.length - 1].outcomes.push(lang.actions.posture.stunned);
         }
         // game continues - return the action (with outcomes and engram)
-        return Promise.resolve(finalizeAction(game, maze, action, startScore));
+        return Promise.resolve(fns.finalizeAction(game, maze, startScore));
     });
 }
 exports.doMove = doMove;
-/**
- * Aggregates some commmon scoring and debugging
- *
- * @param game
- * @param maze
- * @param action
- * @param startScore
- * @param finishScore
- */
-function finalizeAction(game, maze, action, startScore) {
-    // increment move counters
-    game.Score.addMove();
-    action.moveCount++;
-    // track the score change from this one move
-    action.score = game.Score.getTotalScore() - startScore;
-    // TODO: Remove summarize from every every move - here now for DEV/DEBUG  purposes
-    fns.summarizeGame(action, game.Score);
-    // TODO: text render - here now just for DEV/DEBUG purposess
-    action.outcomes.push('DEBUG MAZE RENDER\r\n: ' + maze.generateTextRender(true, game.Player.Location));
-    fns.logDebug(__filename, 'finalizeAction(...)', '\r\n' + maze.generateTextRender(true, game.Player.Location));
-    return action;
-}
 /**
  * Attempts to call the score service to save a game score in the
  * database's scores collection
@@ -149,7 +128,7 @@ function saveScore(game) {
  * @param gameResult
  * @returns Promise<Game>
  */
-function finishGame(game, lastAct, gameResult) {
+function finishGame(game, gameResult) {
     return __awaiter(this, void 0, void 0, function* () {
         const method = `finishGame(${game.Id}, ${Enums_1.GAME_RESULTS[gameResult]})`;
         // update the basic game state & result fields
@@ -159,24 +138,10 @@ function finishGame(game, lastAct, gameResult) {
             case Enums_1.GAME_RESULTS.WIN_FLAWLESS: {
                 // add bonus WIN_FLAWLESS if the game was perfect
                 // there is no break here on purpose - flawless winner also gets a CHEDDAR_DINNER
-                yield fns
-                    .grantTrophy(game, Enums_1.TROPHY_IDS.FLAWLESS_VICTORY)
-                    .then(() => {
-                    fns.logDebug(__filename, method, 'FLAWLESS_VICTORY awarded to score for game ' + game.Id);
-                })
-                    .catch(trophyErr => {
-                    fns.logWarn(__filename, method, 'Unable to add FLAWLESS_VICTORY trophy to score. Error -> ' + trophyErr);
-                });
+                game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.FLAWLESS_VICTORY);
             }
             case Enums_1.GAME_RESULTS.WIN: {
-                yield fns
-                    .grantTrophy(game, Enums_1.TROPHY_IDS.CHEDDAR_DINNER)
-                    .then(() => {
-                    fns.logDebug(__filename, method, 'CHEDDAR_DINNER awarded to score for game ' + game.Id);
-                })
-                    .catch(trophyErr => {
-                    fns.logWarn(__filename, method, 'Unable to add CHEDDAR_DINNER trophy to score. Error -> ' + trophyErr);
-                });
+                fns.grantTrophy(game, Enums_1.TROPHY_IDS.CHEDDAR_DINNER);
                 break;
             }
             case Enums_1.GAME_RESULTS.DEATH_LAVA: {
@@ -209,8 +174,8 @@ function finishGame(game, lastAct, gameResult) {
             }
         }
         // Summarize and log game result
-        fns.summarizeGame(lastAct, game.Score);
-        funcs_1.logDebug(__filename, method, `Game Over. Game Result: [${Enums_1.GAME_RESULTS[gameResult]}] Final Outcomes:\r\n + ${lastAct.outcomes.join('\r\n')}`);
+        fns.summarizeGame(game.Actions[game.Actions.length - 1], game.Score);
+        funcs_1.logDebug(__filename, method, `Game Over. Game Result: [${Enums_1.GAME_RESULTS[gameResult]}] Final Outcomes:\r\n + ${game.Actions[game.Actions.length - 1].outcomes.join('\r\n')}`);
         // save the game's score
         saveScore(game);
         // Append a timestamp to any game.Id starting with the word 'FORCED' so the original IDs can

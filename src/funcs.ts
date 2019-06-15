@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { Cell } from '@mazemasterjs/shared-library/Cell';
+import { Maze } from '@mazemasterjs/shared-library/Maze';
 import { MazeLoc } from '@mazemasterjs/shared-library/MazeLoc';
 import { Score } from '@mazemasterjs/shared-library/Score';
 import { Trophy } from '@mazemasterjs/shared-library/Trophy';
@@ -236,7 +237,7 @@ export function getCmdByName(cmdName: string): number {
 
 /**
  * Handles updating the player's location, associated maze cell visit/backtrack
- * counters, and updates the Score.MoveCount.
+ * counters.  MoveCount / action.MoveCount are handled in finalizeAction.
  *
  * @param game: Game - the current game
  * @param action: IAction - the pre-validated IAction behind this move
@@ -267,10 +268,6 @@ export function movePlayer(game: Game, act: IAction): Game {
       break;
     }
   }
-
-  // increment the move counters
-  game.Score.addMove();
-  act.moveCount++;
 
   const cell: Cell = game.Maze.Cells[game.Player.Location.row][game.Player.Location.col];
 
@@ -404,4 +401,31 @@ export function getLanguage(req: Request) {
   }
 
   return userLanguage;
+}
+
+/**
+ * Aggregates some commmon scoring and debugging
+ *
+ * @param game
+ * @param maze
+ * @param action
+ * @param startScore
+ * @param finishScore
+ */
+export function finalizeAction(game: Game, maze: Maze, startScore: number): IAction {
+  // increment move counters
+  game.Score.addMove();
+  game.Actions[game.Actions.length - 1].moveCount++;
+
+  // track the score change from this one move
+  game.Actions[game.Actions.length - 1].score = game.Score.getTotalScore() - startScore;
+
+  // TODO: Remove summarize from every every move - here now for DEV/DEBUG  purposes
+  summarizeGame(game.Actions[game.Actions.length - 1], game.Score);
+
+  // TODO: text render - here now just for DEV/DEBUG purposess
+  game.Actions[game.Actions.length - 1].outcomes.push('DEBUG MAZE RENDER\r\n: ' + maze.generateTextRender(true, game.Player.Location));
+  logDebug(__filename, 'finalizeAction(...)', '\r\n' + maze.generateTextRender(true, game.Player.Location));
+
+  return game.Actions[game.Actions.length - 1];
 }
