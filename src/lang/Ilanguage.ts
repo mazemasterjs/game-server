@@ -1,9 +1,6 @@
 import en from './en';
-export class Ilanguage {
-    public getInstance(): Ilanguage
-    {if (this.instance === undefined) 
-        {this.instance = new Ilanguage();}
-     return this.instance};
+export abstract class Ilanguage {
+    public abstract myInstance(): Ilanguage
     messages = {
         "language" : "",
         "actions" : {

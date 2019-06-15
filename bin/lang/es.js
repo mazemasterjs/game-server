@@ -206,6 +206,9 @@ class es extends Ilanguage_1.default {
     /**
    * Instantiate and/or returns class instance
    */
+    myInstance() {
+        return es.getInstance();
+    }
     static getInstance() {
         if (this.instance === undefined) {
             this.instance = new es();

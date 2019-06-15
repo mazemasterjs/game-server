@@ -11,11 +11,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const Cache_1 = require("./Cache");
 const axios_1 = __importDefault(require("axios"));
-const logger_1 = require("@mazemasterjs/logger");
-const Config_1 = require("./Config");
+const Cache_1 = require("./Cache");
 const Enums_1 = require("@mazemasterjs/shared-library/Enums");
+const Config_1 = require("./Config");
+const logger_1 = require("@mazemasterjs/logger");
 const log = logger_1.Logger.getInstance();
 const config = Config_1.Config.getInstance();
 /**

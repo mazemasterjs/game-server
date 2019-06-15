@@ -9,7 +9,7 @@ class Ilanguage {
                     "",
                     "",
                     "",
-                    "You have no idea where you're going and, in your confusion, you trip over your own feet and fall to the ground."],
+                    ""],
                 "nullJumps": ["",
                     "",
                     "",
@@ -198,13 +198,6 @@ class Ilanguage {
             }
         };
     }
-    getInstance() {
-        if (this.instance === undefined) {
-            this.instance = new Ilanguage();
-        }
-        return this.instance;
-    }
-    ;
     ;
 }
 exports.Ilanguage = Ilanguage;

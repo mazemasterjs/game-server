@@ -4,6 +4,9 @@ export class es extends Ilanguage{
     /**
    * Instantiate and/or returns class instance
    */
+  public myInstance(){
+      return es.getInstance();
+  }
   public static getInstance(): es {
     if (this.instance === undefined) {
       this.instance = new es();

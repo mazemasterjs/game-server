@@ -24,9 +24,6 @@ router.get('/count', routes.countGames);
 router.delete('/abandon/:gameId', routes.abandonGame);
 router.get('/cache/dump', routes.dumpCache); // TODO: Remove this debugging route
 
-// get the users lanugage
-router.get('/language', routes.getLanguage);
-
 // map the live/ready probes
 router.get('/probes/live', routes.livenessProbe);
 router.get('/probes/ready', routes.readinessProbe);

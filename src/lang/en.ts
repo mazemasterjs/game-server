@@ -3,6 +3,10 @@ export class en extends Ilanguage {
     /**
    * Instantiate and/or returns class instance
    */
+    public myInstance() {
+        return en.getInstance();
+    }
+
   public static getInstance() : Ilanguage{
     if (this.instance === undefined) {
       this.instance = new en();
@@ -28,11 +32,11 @@ export class en extends Ilanguage {
               "You jump around. Jump around. Jump up, jump up, and get down.",
               "You decide to try to do a back flip and fail miserably, landing in a heap on the floor."],
           "engrams" : {
-              "touch": "feel",
-              "sight" : "see",
-              "sound" : "hear",
-              "smell" : "smell",
-              "taste" : "taste"
+              "touch": "feel : ",
+              "sight" : "see : ",
+              "sound" : "hear : ",
+              "smell" : "smell : ",
+              "taste" : "taste : "
           },
           "engramDescriptions" : {
                   "touch" :{
@@ -54,12 +58,12 @@ export class en extends Ilanguage {
                   },
                   "sight" :{
                       "local" : { 
-                                "exit" : "You see exits to the: ",
+                                "exit" : "You see exits to the: [%s]",
                               "entrance" : "You see the entrace to the [%s]. It is slowly filling with lava!",
                               "stun" : "You see the stars in your eyes start to twinkle out as you recover from being stunned.",
                               "lava" : "The last thing you see is the lava.  It's almost pretty up close.",
                               "end" : "The cold, harsh lights of the lab are almost blinding, but you see the shadow of a giant approaching.",
-                              "wall" : "You see stars as you crash headlong into the wall to the [%s].",
+                              "wall" : `You get a very close up view of the wall to the [%s].`,
                               "look" : "You see that you are [%s] in a room with [%s] to the [%s].",
                               "pit" : "There is huge, impossibly deep, impossibly dark pit right under your feet.",
                               "fire" : "Searingly bright yellow-orange gouts of flame shoot up from the floor beneath you."
@@ -178,7 +182,7 @@ export class en extends Ilanguage {
           "outcome" : {
               "wall" :  {
                   "look" : "You state intently at the wall to the [%s] and wonder why you wasted a turn",
-                  "collide" : "You walked into the wall to the %s. Ouch! The impact knocks you off of your feet."
+                  "collide" : "You walk headlong into the wall to the [%s], which knocks you down."
   
               },
               "lava" : "You step into the lava and, well... Let's just say: Game over.",

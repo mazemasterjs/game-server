@@ -21,11 +21,11 @@ class en extends Ilanguage_1.default {
                     "You jump around. Jump around. Jump up, jump up, and get down.",
                     "You decide to try to do a back flip and fail miserably, landing in a heap on the floor."],
                 "engrams": {
-                    "touch": "feel",
-                    "sight": "see",
-                    "sound": "hear",
-                    "smell": "smell",
-                    "taste": "taste"
+                    "touch": "feel : ",
+                    "sight": "see : ",
+                    "sound": "hear : ",
+                    "smell": "smell : ",
+                    "taste": "taste : "
                 },
                 "engramDescriptions": {
                     "touch": {
@@ -46,12 +46,12 @@ class en extends Ilanguage_1.default {
                     },
                     "sight": {
                         "local": {
-                            "exit": "You see exits to the: ",
+                            "exit": "You see exits to the: [%s]",
                             "entrance": "You see the entrace to the [%s]. It is slowly filling with lava!",
                             "stun": "You see the stars in your eyes start to twinkle out as you recover from being stunned.",
                             "lava": "The last thing you see is the lava.  It's almost pretty up close.",
                             "end": "The cold, harsh lights of the lab are almost blinding, but you see the shadow of a giant approaching.",
-                            "wall": "You see stars as you crash headlong into the wall to the [%s].",
+                            "wall": `You get a very close up view of the wall to the [%s].`,
                             "look": "You see that you are [%s] in a room with [%s] to the [%s].",
                             "pit": "There is huge, impossibly deep, impossibly dark pit right under your feet.",
                             "fire": "Searingly bright yellow-orange gouts of flame shoot up from the floor beneath you."
@@ -160,7 +160,7 @@ class en extends Ilanguage_1.default {
                 "outcome": {
                     "wall": {
                         "look": "You state intently at the wall to the [%s] and wonder why you wasted a turn",
-                        "collide": "You walked into the wall to the %s. Ouch! The impact knocks you off of your feet."
+                        "collide": "You walk headlong into the wall to the [%s], which knocks you down."
                     },
                     "lava": "You step into the lava and, well... Let's just say: Game over.",
                     "entrance": "You gaze longingly at the entrance to the [%s], wishing you could go out the way you came in from",
@@ -206,6 +206,9 @@ class en extends Ilanguage_1.default {
     /**
    * Instantiate and/or returns class instance
    */
+    myInstance() {
+        return en.getInstance();
+    }
     static getInstance() {
         if (this.instance === undefined) {
             this.instance = new en();
