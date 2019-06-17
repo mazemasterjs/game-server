@@ -104,7 +104,7 @@
           "start": "You smell the sharp, metallic odor of molten rock coming from door to the [%s]."
         },
         "ambient": {
-          "base": "You smell the faint odor of [%]s.",
+          "base": "You smell the faint odor of [%s].",
           "start": "something hot, metallic, and burning",
           "end": "clean, fresh air",
           "pit": "cold earth and decay",

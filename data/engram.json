@@ -1,0 +1,18 @@
+{
+  "entities": {
+    "lava": {
+      "sight": [{ "adjective": "red", "intensity": 50 }, { "adjective": "smoke", "intensity": 25 }],
+      "sound": [{ "adjective": "sizzle", "intensity": 25 }, { "adjective": "pop", "intensity": 25 }],
+      "smell": [{ "adjective": "sulfer", "intensity": 35 }],
+      "touch": [{ "adjective": "hot", "intensity": 100 }],
+      "taste": [{ "adjective": "nothing", "intensity": 0 }]
+    },
+    "smoke": {
+      "sight": { "color": "red" },
+      "sound": "sizzle",
+      "smell": "sulfer",
+      "touch": "hot",
+      "taste": "chicken"
+    }
+  }
+}
