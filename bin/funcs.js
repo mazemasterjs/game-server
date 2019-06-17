@@ -220,6 +220,9 @@ function getCmdByName(cmdName) {
         case 'STAND': {
             return Enums_1.COMMANDS.STAND;
         }
+        case 'TURN': {
+            return Enums_1.COMMANDS.TURN;
+        }
         case 'WRITE': {
             return Enums_1.COMMANDS.WRITE;
         }

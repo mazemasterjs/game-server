@@ -9,6 +9,7 @@ import { doStand } from './controllers/actStand';
 import { Game } from '@mazemasterjs/shared-library/Game';
 import { LOG_LEVELS, Logger } from '@mazemasterjs/logger';
 import { Request, Response } from 'express';
+import { doTurn } from './controllers/actTurn';
 
 // set constant utility references
 const log = Logger.getInstance();
@@ -231,6 +232,10 @@ export const processAction = async (req: Request, res: Response) => {
     }
     case COMMANDS.STAND: {
       const actionResult = await doStand(game, langCode);
+      return res.status(200).json(actionResult);
+    }
+    case COMMANDS.TURN: {
+      const actionResult = await doTurn(game, langCode);
       return res.status(200).json(actionResult);
     }
     case COMMANDS.JUMP:

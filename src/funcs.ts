@@ -220,6 +220,9 @@ export function getCmdByName(cmdName: string): number {
     case 'STAND': {
       return COMMANDS.STAND;
     }
+    case 'TURN': {
+      return COMMANDS.TURN;
+    }
     case 'WRITE': {
       return COMMANDS.WRITE;
     }
