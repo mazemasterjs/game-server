@@ -43,9 +43,7 @@ function doMove(game, langCode) {
             game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.SPINNING_YOUR_WHEELS);
             game.Actions[game.Actions.length - 1].outcomes.push(lang.actions.outcome.move.sitting);
             // finalize and return action
-            const finalAction = fns.finalizeAction(game, maze, startScore);
-            game.Actions[game.Actions.length - 1] = finalAction;
-            return Promise.resolve(finalAction);
+            return Promise.resolve(fns.finalizeAction(game, maze, startScore));
         }
         // now check for start/finish cell win & lose conditions
         if (maze.getCell(pLoc).isDirOpen(dir)) {
