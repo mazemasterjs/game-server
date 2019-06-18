@@ -275,7 +275,8 @@ export function movePlayer(game: Game, act: IAction): Game {
   const cell: Cell = game.Maze.Cells[game.Player.Location.row][game.Player.Location.col];
 
   // until blindness or something is added, always see exits
-  act.engram.sight = 'You see exits: ' + game.Maze.Cells[pLoc.row][pLoc.col].listExits();
+  // commented for testing purposes
+  // act.engram.sight = 'You see exits: ' + game.Maze.Cells[pLoc.row][pLoc.col].listExits();
 
   // check for backtracking
   if (game.Maze.Cells[game.Player.Location.row][game.Player.Location.col].VisitCount > 0) {

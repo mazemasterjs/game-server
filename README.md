@@ -33,11 +33,15 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 
 ## Change Notes
 
+### v0.6.1
+- characters vision is limited by darkness sight intensity in engram.json
+- characters can see traps from a distance depending on the traps sight intensity
 
 ### v0.6.0
--player characters now have a facing direction
--player characters can now see forward indefinately until a wall gets in the way
--player characters can now change the cardinal direction they are facing (no relative turning yet!)
+
+- player characters now have a facing direction
+- player characters can now see forward indefinately until a wall gets in the way
+- player characters can now change the cardinal direction they are facing (no relative turning yet!)
 
 ### v0.5.1
 

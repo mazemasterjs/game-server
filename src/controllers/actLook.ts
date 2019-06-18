@@ -1,17 +1,18 @@
+import CellBase from '@mazemasterjs/shared-library/CellBase';
 import { Engram } from '@mazemasterjs/shared-library/Engram';
-import { format } from 'util';
 import { Game } from '@mazemasterjs/shared-library/Game';
 import { GameLang } from '../GameLang';
 import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
 import { Maze } from '@mazemasterjs/shared-library/Maze';
-import { DIRS } from '@mazemasterjs/shared-library/Enums';
-import CellBase from '@mazemasterjs/shared-library/CellBase';
+import { CELL_TRAPS, DIRS } from '@mazemasterjs/shared-library/Enums';
+import { format } from 'util';
 import path from 'path';
 import fs from 'fs';
 import { Player } from '@mazemasterjs/shared-library/Player';
 import MazeLoc from '@mazemasterjs/shared-library/MazeLoc';
-import Logger from '@mazemasterjs/logger';
+import Logger, { LOG_LEVELS } from '@mazemasterjs/logger';
 import { getDirByName } from '../funcs'
+import getSelectedBitNames from '@mazemasterjs/shared-library/Helpers';
 
 export function doLook(game: Game, langCode: string): IAction {
   const engram: Engram = new Engram();
@@ -22,7 +23,7 @@ export function doLook(game: Game, langCode: string): IAction {
 
   const maze: Maze = new Maze(game.Maze);
   const playerLoc: MazeLoc = new MazeLoc(game.Player.Location.row, game.Player.Location.col);
-  engram.sight = game.Player.Facing + " : " + lookForward(game, langCode, cell, engram, 0).sight;
+  engram.sight = "You see exits: " + game.Maze.Cells[game.Player.Location.row][game.Player.Location.col];// lookForward(game, langCode, cell, engram, 0).sight;
   engram.smell = lang.actions.engrams.smell + lang.nothing;
   engram.touch = lang.actions.engrams.touch + lang.nothing;
   engram.taste = lang.actions.engrams.taste + lang.nothing;
@@ -43,19 +44,62 @@ export function doLook(game: Game, langCode: string): IAction {
   return action;
 }
 
-export function lookForward(game: Game, lang: string, cell: CellBase, engram: Engram, distance: number): Engram {
-  let engramNext: Engram = new Engram;
+export function lookForward(game: Game, lang: string, cell: CellBase, engram: Engram, distance: number, data: any): Engram {
   const log = Logger.getInstance();
-  if (distance === 0) {engramNext.sight = game.Player.Facing + " : "}
-  engramNext.sight ="";
-  const file = path.resolve(`./data/engram.json`);
-  const data = JSON.parse(fs.readFileSync(file, 'UTF-8'));
-  
-  const direction = game.Player.Facing;
+  let cellEmpty = true;
+  // Makes a new maze  and maze locations so it can determine the next cell to look at later
   const maze: Maze = new Maze(game.Maze);
-  const lookCell: MazeLoc = new MazeLoc(cell.Location.row, cell.Location.col);
+  const currentCell: MazeLoc = new MazeLoc(cell.Location.row, cell.Location.col);
   let nextCell: MazeLoc = new MazeLoc(cell.Location.row, cell.Location.col);
-  if (maze.getCell(lookCell).isDirOpen(direction)){
+  // Gets the players direction and prefixs the sight engram with the characters direction
+  const direction = game.Player.Facing;
+  if (distance === 0) {engram.sight = `${DIRS[direction]}` + " : ";}
+  log.debug(__filename,"DEBUG: engram.json: ", data.entities.BEARTRAP.sight.intensity);
+
+  // Looks to see if the current cell contains a trap
+  if (!(maze.getCell(currentCell).Traps === 0 && distance>0)){
+    const trapType : string = CELL_TRAPS[maze.getCell(currentCell).Traps];
+    switch(trapType){
+      case "PIT":
+          {
+            if ((data.entities.PIT.sight.intensity - (distance*10) ) >= 0 ){
+              engram.sight += data.entities.PIT.sight.adjective;
+              cellEmpty = false;
+            }
+            break;
+          }
+      case "BEARTRAP":
+          {
+            if ((data.entities.BEARTRAP.sight.intensity - (distance*10) ) >= 0 ){
+              engram.sight += data.entities.BEARTRAP.sight.adjective;
+              cellEmpty = false;
+            }
+            break;
+          }
+      case "TARPIT":
+          {
+            if ((data.entities.TARPIT.sight.intensity - (distance*10) ) >= 0 ){
+              engram.sight += data.entities.TARPIT.sight.adjective;
+              cellEmpty = false;
+            }
+            break;
+          }
+      case "FLAMETHOWER":
+          {
+            if ((data.entities.FLAMETHOWER.sight.intensity - (distance*10) ) >= 0 ){
+              engram.sight += data.entities.FLAMETHOWER.sight.adjective;
+              cellEmpty = false;
+            }
+            break;
+          }
+      default:
+          log.debug(__filename,"lookForward(): ", "Unidentified trap detected");
+          break;
+    }
+  }
+
+  // Looks to see if there is an opening in the direction the character is facing, and if so looks into the next cell over
+  if (maze.getCell(currentCell).isDirOpen(direction) && (distance*10 <= data.entities.DARKNESS.sight.intensity)){
       switch(direction){
         case DIRS.NORTH:
           nextCell = new MazeLoc(cell.Location.row - 1, cell.Location.col);
@@ -72,14 +116,17 @@ export function lookForward(game: Game, lang: string, cell: CellBase, engram: En
         default:
           break;
       }
-      engramNext.sight += "[OPEN]"
-      engramNext = lookForward(game,lang,maze.getCell(nextCell),engramNext,distance++);
+      // An empty cell yields no additional information
+      if (cellEmpty && distance>0) {engram.sight += " ... "};
+      engram = lookForward(game,lang,maze.getCell(nextCell),engram,++distance, data);
     }
-    else // if (!(game.Maze.getCell(lookCell).isOpen(direction)) && ((data.entities.wall.sight.intensity/10)< distance))
+    else if (!(maze.getCell(currentCell).isDirOpen(direction)))
     {
       engram.sight += data.entities.wall.sight.adjective;
     }
-    engram.sight += engramNext.sight;
+    else {
+      engram.sight += data.entities.DARKNESS.sight.adjective;
+    }
     return engram;
 
 }

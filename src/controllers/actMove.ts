@@ -9,6 +9,9 @@ import { logDebug } from '../funcs';
 import { Maze } from '@mazemasterjs/shared-library/Maze';
 import { MazeLoc } from '@mazemasterjs/shared-library/MazeLoc';
 import { GameLang } from '../GameLang';
+import { lookForward } from './actLook';
+import path from 'path';
+import fs from 'fs';
 
 // need a config object for some of this
 const config: Config = Config.getInstance();
@@ -68,6 +71,12 @@ export async function doMove(game: Game, langCode: string): Promise<IAction> {
         finishGame(game, GAME_RESULTS.WIN);
       }
     } else {
+      // Grab the appropriate engram file
+      const file = path.resolve(`./data/engram.json`);
+      const data = JSON.parse(fs.readFileSync(file, 'UTF-8'));
+      // Changes the facing of the player and looks in that direction
+      game.Player.Facing = dir;
+      engram.sight = lookForward(game,lang, game.Maze.Cells[game.Player.Location.row][game.Player.Location.col],engram,0, data).sight;
       game = fns.movePlayer(game, game.Actions[game.Actions.length - 1]);
     }
   } else {
@@ -75,8 +84,7 @@ export async function doMove(game: Game, langCode: string): Promise<IAction> {
     game = await fns.grantTrophy(game, TROPHY_IDS.YOU_FOUGHT_THE_WALL);
 
     game.Player.addState(PLAYER_STATES.SITTING);
-
-    engram.sight = format(lang.actions.engramDescriptions.sight.local.wall, DIRS[dir]); // `You get a very close up view of the wall to the ${DIRS[dir]}.`;
+    
     engram.touch = lang.actions.engramDescriptions.touch.local.wall;
     engram.sound = lang.actions.engramDescriptions.sound.local.wall;
 

@@ -14,6 +14,9 @@ var __importStar = (this && this.__importStar) || function (mod) {
     result["default"] = mod;
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const fns = __importStar(require("../funcs"));
 const Config_1 = require("../Config");
@@ -23,6 +26,8 @@ const funcs_1 = require("../funcs");
 const Maze_1 = require("@mazemasterjs/shared-library/Maze");
 const MazeLoc_1 = require("@mazemasterjs/shared-library/MazeLoc");
 const GameLang_1 = require("../GameLang");
+const path_1 = __importDefault(require("path"));
+const fs_1 = __importDefault(require("fs"));
 // need a config object for some of this
 const config = Config_1.Config.getInstance();
 function doMove(game, langCode) {
@@ -76,6 +81,12 @@ function doMove(game, langCode) {
                 }
             }
             else {
+                // Grab the appropriate engram file
+                const file = path_1.default.resolve(`./data/engram.json`);
+                const data = JSON.parse(fs_1.default.readFileSync(file, 'UTF-8'));
+                // Changes the facing of the player and looks in that direction
+                game.Player.Facing = dir;
+                //engram.sight = lookForward(game,lang, game.Maze.Cells[game.Player.Location.row][game.Player.Location.col],engram,0, data).sight;
                 game = fns.movePlayer(game, game.Actions[game.Actions.length - 1]);
             }
         }
@@ -83,7 +94,6 @@ function doMove(game, langCode) {
             // they tried to walk in a direction that has a wall
             game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.YOU_FOUGHT_THE_WALL);
             game.Player.addState(Enums_1.PLAYER_STATES.SITTING);
-            engram.sight = util_1.format(lang.actions.engramDescriptions.sight.local.wall, Enums_1.DIRS[dir]); // `You get a very close up view of the wall to the ${DIRS[dir]}.`;
             engram.touch = lang.actions.engramDescriptions.touch.local.wall;
             engram.sound = lang.actions.engramDescriptions.sound.local.wall;
             game.Actions[game.Actions.length - 1].outcomes.push(util_1.format(lang.actions.outcome.wall.collide, Enums_1.DIRS[dir]));

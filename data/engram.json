@@ -27,6 +27,50 @@
       "smell" : [{"adjective" : "cheesy", "intensity" : 100}],
       "touch" : [{"adjective" : "soft", "intensity" : 0}],
       "taste" : [{"adjective" : "chese", "intensity" : 0}]
-    } 
+    },
+    "PIT" :{
+      "sight" : {"adjective" : "PIT", "intensity": 30},
+      "sound" : {"adjective" : "WIND", "intensity" : 50},
+      "smell" : {"adjective" : "none", "intensity" : 0},
+      "touch" : {"adjective" : "none", "intensity" : 0},
+      "taste" : {"adjective" : "none", "intensity" : 0}
+    },
+    "BEARTRAP" :{
+      "sight" : {"adjective" : "BEARTRAP", "intensity": 20},
+      "sound" : {"adjective" : "none", "intensity" : 0},
+      "smell" : {"adjective" : "none", "intensity" : 0},
+      "touch" : {"adjective" : "PAIN", "intensity" : 10},
+      "taste" : {"adjective" : "METALLIC", "intensity" : 0}
+    },
+    "TARPIT" :{
+      "sight" : {"adjective" : "TAR", "intensity": 20},
+      "sound" : {"adjective" : "BUBBLING", "intensity" : 0},
+      "smell" : {"adjective" : "TAR", "intensity" : 0},
+      "touch" : {"adjective" : "STICKY", "intensity" : 10},
+      "taste" : {"adjective" : "TAR", "intensity" : 0}
+    },
+    "FLAMETHROWER" :{
+      "sight" : {"adjective" : "PUDDLE", "intensity": 20},
+      "sound" : {"adjective" : "HISSING", "intensity" : 10},
+      "smell" : {"adjective" : "KEROSENE", "intensity" : 40},
+      "touch" : {"adjective" : "WET", "intensity" : 10},
+      "taste" : {"adjective" : "BURNT", "intensity" : 0}
+    },
+    "DARKNESS" : {
+      "sight" : {"adjective" : "DARKNESS...", "intensity": 30},
+      "sound" : {"adjective" : "none", "intensity" : 0},
+      "smell" : {"adjective" : "none", "intensity" : 0},
+      "touch" : {"adjective" : "none", "intensity" : 0},
+      "taste" : {"adjective" : "none", "intensity" : 0}
+    }
+  },
+  "direction":{
+    "NONE" : "NONE",
+    "NORTH" : "NORTH",
+    "SOUTH" : "SOUTH",
+    "EAST" : "EAST",
+    "WEST" : "WEST",
+    "LEFT" : "LEFT",
+    "RIGHT" : "RIGHT"
   }
 }

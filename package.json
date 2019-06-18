@@ -1,10 +1,10 @@
 {
   "name": "game-server",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "MazeMasterJS Game Server",
   "main": "./bin/server.js",
   "scripts": {
-    "start": "node ./bin/server.js",
+    "start": "node -r dotenv/config ./bin/server.js",
     "scan": "sonar-scanner.bat",
     "watch": "nodemon -r dotenv/config bin/server.js -w bin/**/*.js",
     "local": "node -r dotenv/config bin/server.js",
