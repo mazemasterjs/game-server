@@ -39,9 +39,7 @@ export async function doMove(game: Game, langCode: string): Promise<IAction> {
     game.Actions[game.Actions.length - 1].outcomes.push(lang.actions.outcome.move.sitting);
 
     // finalize and return action
-    const finalAction = fns.finalizeAction(game, maze, startScore);
-    game.Actions[game.Actions.length - 1] = finalAction;
-    return Promise.resolve(finalAction);
+    return Promise.resolve(fns.finalizeAction(game, maze, startScore));
   }
 
   // now check for start/finish cell win & lose conditions

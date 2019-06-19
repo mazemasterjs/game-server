@@ -427,9 +427,10 @@ export function finalizeAction(game: Game, maze: Maze, startScore: number): IAct
   // TODO: Remove summarize from every every move - here now for DEV/DEBUG  purposes
   summarizeGame(game.Actions[game.Actions.length - 1], game.Score);
 
-  // TODO: text render - here now just for DEV/DEBUG purposess
-  game.Actions[game.Actions.length - 1].outcomes.push('DEBUG MAZE RENDER\r\n: ' + maze.generateTextRender(true, game.Player.Location));
-  logDebug(__filename, 'finalizeAction(...)', '\r\n' + maze.generateTextRender(true, game.Player.Location));
+  // TODO: text render - here now just for DEV/DEBUG purposess - it should always be the LAST outcome, too
+  const textRender = maze.generateTextRender(true, game.Player.Location);
+  game.Actions[game.Actions.length - 1].outcomes.push(textRender);
+  logDebug(__filename, 'finalizeAction(...)', '\r\n' + textRender);
 
   return game.Actions[game.Actions.length - 1];
 }
