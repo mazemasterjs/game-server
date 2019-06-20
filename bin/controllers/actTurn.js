@@ -14,17 +14,12 @@ var __importStar = (this && this.__importStar) || function (mod) {
     result["default"] = mod;
     return result;
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const fns = __importStar(require("../funcs"));
 const funcs_1 = require("../funcs");
 const Maze_1 = require("@mazemasterjs/shared-library/Maze");
 const Enums_1 = require("@mazemasterjs/shared-library/Enums");
 const actLook_1 = require("./actLook");
-const path_1 = __importDefault(require("path"));
-const fs_1 = __importDefault(require("fs"));
 function doTurn(game, langCode) {
     return __awaiter(this, void 0, void 0, function* () {
         funcs_1.logDebug(__filename, `doTurn(${game.Id})`, 'Player has issued the Turn command.');
@@ -34,33 +29,55 @@ function doTurn(game, langCode) {
         const action = game.Actions[game.Actions.length - 1];
         const direction = action.direction;
         const engram = game.Actions[game.Actions.length - 1].engram;
-        // Grab the appropriate engram file
-        const file = path_1.default.resolve(`./data/engram.json`);
-        const data = JSON.parse(fs_1.default.readFileSync(file, 'UTF-8'));
+        // Turns left or right
         switch (direction) {
-            case Enums_1.DIRS.NORTH: {
-                game.Player.Facing = Enums_1.DIRS.NORTH;
-                action.outcomes.push('You turn to the North.');
+            case Enums_1.DIRS.LEFT: {
+                switch (game.Player.Facing) {
+                    case Enums_1.DIRS.NORTH:
+                        game.Player.Facing = Enums_1.DIRS.WEST;
+                        action.outcomes.push('You turn to the left.');
+                        break;
+                    case Enums_1.DIRS.WEST:
+                        game.Player.Facing = Enums_1.DIRS.SOUTH;
+                        action.outcomes.push('You turn to the left.');
+                        break;
+                    case Enums_1.DIRS.SOUTH:
+                        game.Player.Facing = Enums_1.DIRS.EAST;
+                        action.outcomes.push('You turn to the left.');
+                        break;
+                    case Enums_1.DIRS.EAST:
+                        game.Player.Facing = Enums_1.DIRS.NORTH;
+                        action.outcomes.push('You turn to the left.');
+                        break;
+                }
                 break;
-            }
-            case Enums_1.DIRS.SOUTH: {
-                game.Player.Facing = Enums_1.DIRS.SOUTH;
-                action.outcomes.push('You turn to the South.');
+            } // end case DIRS.LEFT
+            case Enums_1.DIRS.RIGHT: {
+                switch (game.Player.Facing) {
+                    case Enums_1.DIRS.NORTH:
+                        game.Player.Facing = Enums_1.DIRS.EAST;
+                        action.outcomes.push('You turn to the Right.');
+                        break;
+                    case Enums_1.DIRS.WEST:
+                        game.Player.Facing = Enums_1.DIRS.NORTH;
+                        action.outcomes.push('You turn to the Right.');
+                        break;
+                    case Enums_1.DIRS.SOUTH:
+                        game.Player.Facing = Enums_1.DIRS.WEST;
+                        action.outcomes.push('You turn to the Right.');
+                        break;
+                    case Enums_1.DIRS.EAST:
+                        game.Player.Facing = Enums_1.DIRS.SOUTH;
+                        action.outcomes.push('You turn to the Rightt.');
+                        break;
+                }
                 break;
-            }
-            case Enums_1.DIRS.EAST: {
-                game.Player.Facing = Enums_1.DIRS.EAST;
-                action.outcomes.push('You turn to the East.');
-                break;
-            }
-            case Enums_1.DIRS.WEST: {
-                game.Player.Facing = Enums_1.DIRS.WEST;
-                action.outcomes.push('You turn to the West.');
-                break;
+            } // end case DIRS.RIGHT
+            default: {
+                action.outcomes.push('You turn 360 degrees and moonwalk in place');
             }
         }
-        const newEngram = actLook_1.lookForward(game, langCode, game.Maze.Cells[game.Player.Location.row][game.Player.Location.col], engram, 0, data);
-        action.engram.sight = newEngram.sight;
+        action.engram.sight += actLook_1.doLook(game, langCode);
         // finalize the game action
         game.Actions[game.Actions.length - 1] = fns.finalizeAction(game, maze, startScore);
         return Promise.resolve(game.Actions[game.Actions.length - 1]);

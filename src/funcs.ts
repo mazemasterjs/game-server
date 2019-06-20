@@ -191,6 +191,12 @@ export function getDirByName(dirName: string): number {
     case 'NONE': {
       return DIRS.NONE;
     }
+    case 'LEFT': {
+      return DIRS.LEFT;
+    }
+    case 'RIGHT': {
+      return DIRS.RIGHT;
+    }
     default:
       log.warn(__filename, `getDirByName(${dirName})`, 'Invalid direction received, returning DIRS.NONE.');
       return DIRS.NONE;

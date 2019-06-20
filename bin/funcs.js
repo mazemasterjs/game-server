@@ -191,6 +191,12 @@ function getDirByName(dirName) {
         case 'NONE': {
             return Enums_1.DIRS.NONE;
         }
+        case 'LEFT': {
+            return Enums_1.DIRS.LEFT;
+        }
+        case 'RIGHT': {
+            return Enums_1.DIRS.RIGHT;
+        }
         default:
             log.warn(__filename, `getDirByName(${dirName})`, 'Invalid direction received, returning DIRS.NONE.');
             return Enums_1.DIRS.NONE;
@@ -272,7 +278,8 @@ function movePlayer(game, act) {
     }
     const cell = game.Maze.Cells[game.Player.Location.row][game.Player.Location.col];
     // until blindness or something is added, always see exits
-    act.engram.sight = 'You see exits: ' + game.Maze.Cells[pLoc.row][pLoc.col].listExits();
+    // commented for testing purposes
+    // act.engram.sight = 'You see exits: ' + game.Maze.Cells[pLoc.row][pLoc.col].listExits();
     // check for backtracking
     if (game.Maze.Cells[game.Player.Location.row][game.Player.Location.col].VisitCount > 0) {
         game.Score.addBacktrack();

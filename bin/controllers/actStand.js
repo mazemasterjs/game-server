@@ -16,36 +16,35 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const fns = __importStar(require("../funcs"));
-const util_1 = require("util");
-const GameLang_1 = require("../GameLang");
 const funcs_1 = require("../funcs");
 const Maze_1 = require("@mazemasterjs/shared-library/Maze");
 const Enums_1 = require("@mazemasterjs/shared-library/Enums");
+const actLook_1 = require("./actLook");
 function doStand(game, langCode) {
     return __awaiter(this, void 0, void 0, function* () {
         funcs_1.logDebug(__filename, `doStand(${game.Id})`, 'Player has issued the STAND command.');
         const cell = game.Maze.Cells[game.Player.Location.row][game.Player.Location.col];
         const maze = new Maze_1.Maze(game.Maze);
         const startScore = game.Score.getTotalScore();
-        const lang = GameLang_1.GameLang.getInstance(langCode);
+        const engram = game.Actions[game.Actions.length - 1].engram;
         // note the lava to the north if in the start cell
         if (cell.Location.equals(game.Maze.StartCell)) {
-            game.Actions[game.Actions.length - 1].engram.sight = lang.actions.engramDescriptions.sight.local.entrance;
+            engram.sight = 'LAVA NORTH';
         }
         if (!!(game.Player.State & Enums_1.PLAYER_STATES.STANDING)) {
             // TODO: Add trophy STANDING_AROUND once it's pushed live
             game = yield funcs_1.grantTrophy(game, Enums_1.TROPHY_IDS.STANDING_AROUND);
-            game.Actions[game.Actions.length - 1].outcomes.push(lang.actions.outcome.stand.standing);
+            game.Actions[game.Actions.length - 1].outcomes.push('STANDING');
         }
         else {
             // execute the stand command
             game.Player.addState(Enums_1.PLAYER_STATES.STANDING);
             // TODO: Add trophy TAKING_A_STAND once it's pushed live
             game = yield funcs_1.grantTrophy(game, Enums_1.TROPHY_IDS.TAKING_A_STAND);
-            game.Actions[game.Actions.length - 1].outcomes.push(lang.actions.outcome.stand.sitting);
+            game.Actions[game.Actions.length - 1].outcomes.push('STAND HARDER');
         }
-        // list exits
-        game.Actions[game.Actions.length - 1].engram.sight = util_1.format(lang.actions.engramDescriptions.sight.local.exit, cell.listExits());
+        // look ahead and one space around
+        game.Actions[game.Actions.length - 1].engram.sight = actLook_1.doLook(game, langCode).engram.sight;
         // finalize the game action
         game.Actions[game.Actions.length - 1] = fns.finalizeAction(game, maze, startScore);
         return Promise.resolve(game.Actions[game.Actions.length - 1]);

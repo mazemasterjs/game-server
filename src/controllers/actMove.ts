@@ -9,7 +9,7 @@ import { logDebug } from '../funcs';
 import { Maze } from '@mazemasterjs/shared-library/Maze';
 import { MazeLoc } from '@mazemasterjs/shared-library/MazeLoc';
 import { GameLang } from '../GameLang';
-import { lookForward } from './actLook';
+import { lookForward, doLook } from './actLook';
 import path from 'path';
 import fs from 'fs';
 
@@ -46,11 +46,7 @@ export async function doMove(game: Game, langCode: string): Promise<IAction> {
   if (maze.getCell(pLoc).isDirOpen(dir)) {
     if (dir === DIRS.NORTH && pLoc.equals(game.Maze.StartCell)) {
       fns.logDebug(__filename, method, 'Player moved north into the entrance (lava).');
-      engram.sight = lang.actions.engramDescriptions.sight.local.lava;
-      engram.smell = lang.actions.engramDescriptions.smell.local.lava;
-      engram.touch = lang.actions.engramDescriptions.touch.local.lava;
-      engram.taste = lang.actions.engramDescriptions.taste.local.lava;
-      engram.sound = lang.actions.engramDescriptions.sound.local.lava;
+      engram.sight += 'LAVA to the NORTH';
       game.Actions[game.Actions.length - 1].outcomes.push(lang.actions.outcome.lava);
       finishGame(game, GAME_RESULTS.DEATH_LAVA);
     } else if (dir === DIRS.SOUTH && pLoc.equals(game.Maze.FinishCell)) {
@@ -69,25 +65,20 @@ export async function doMove(game: Game, langCode: string): Promise<IAction> {
         finishGame(game, GAME_RESULTS.WIN);
       }
     } else {
-      // Grab the appropriate engram file
-      const file = path.resolve(`./data/engram.json`);
-      const data = JSON.parse(fs.readFileSync(file, 'UTF-8'));
       // Changes the facing of the player and looks in that direction
       game.Player.Facing = dir;
-      engram.sight = lookForward(game,lang, game.Maze.Cells[game.Player.Location.row][game.Player.Location.col],engram,0, data).sight;
+      // engram.sight = lookForward(game, lang, game.Maze.Cells[game.Player.Location.row][game.Player.Location.col], engram, dir, 0).sight;
       game = fns.movePlayer(game, game.Actions[game.Actions.length - 1]);
+      doLook(game, lang);
     }
   } else {
     // they tried to walk in a direction that has a wall
     game = await fns.grantTrophy(game, TROPHY_IDS.YOU_FOUGHT_THE_WALL);
 
     game.Player.addState(PLAYER_STATES.SITTING);
-    
-    engram.touch = lang.actions.engramDescriptions.touch.local.wall;
-    engram.sound = lang.actions.engramDescriptions.sound.local.wall;
 
-    game.Actions[game.Actions.length - 1].outcomes.push(format(lang.actions.outcome.wall.collide, DIRS[dir]));
-    game.Actions[game.Actions.length - 1].outcomes.push(lang.actions.posture.stunned);
+    game.Actions[game.Actions.length - 1].outcomes.push(format('You crash into the wall to the [%s]', DIRS[dir]));
+    game.Actions[game.Actions.length - 1].outcomes.push('STUNNED');
   }
 
   // game continues - return the action (with outcomes and engram)

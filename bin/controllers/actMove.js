@@ -14,9 +14,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
     result["default"] = mod;
     return result;
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const fns = __importStar(require("../funcs"));
 const Config_1 = require("../Config");
@@ -26,8 +23,7 @@ const funcs_1 = require("../funcs");
 const Maze_1 = require("@mazemasterjs/shared-library/Maze");
 const MazeLoc_1 = require("@mazemasterjs/shared-library/MazeLoc");
 const GameLang_1 = require("../GameLang");
-const path_1 = __importDefault(require("path"));
-const fs_1 = __importDefault(require("fs"));
+const actLook_1 = require("./actLook");
 // need a config object for some of this
 const config = Config_1.Config.getInstance();
 function doMove(game, langCode) {
@@ -54,11 +50,7 @@ function doMove(game, langCode) {
         if (maze.getCell(pLoc).isDirOpen(dir)) {
             if (dir === Enums_1.DIRS.NORTH && pLoc.equals(game.Maze.StartCell)) {
                 fns.logDebug(__filename, method, 'Player moved north into the entrance (lava).');
-                engram.sight = lang.actions.engramDescriptions.sight.local.lava;
-                engram.smell = lang.actions.engramDescriptions.smell.local.lava;
-                engram.touch = lang.actions.engramDescriptions.touch.local.lava;
-                engram.taste = lang.actions.engramDescriptions.taste.local.lava;
-                engram.sound = lang.actions.engramDescriptions.sound.local.lava;
+                engram.sight += 'LAVA to the NORTH';
                 game.Actions[game.Actions.length - 1].outcomes.push(lang.actions.outcome.lava);
                 finishGame(game, Enums_1.GAME_RESULTS.DEATH_LAVA);
             }
@@ -79,23 +71,19 @@ function doMove(game, langCode) {
                 }
             }
             else {
-                // Grab the appropriate engram file
-                const file = path_1.default.resolve(`./data/engram.json`);
-                const data = JSON.parse(fs_1.default.readFileSync(file, 'UTF-8'));
                 // Changes the facing of the player and looks in that direction
                 game.Player.Facing = dir;
-                //engram.sight = lookForward(game,lang, game.Maze.Cells[game.Player.Location.row][game.Player.Location.col],engram,0, data).sight;
+                // engram.sight = lookForward(game, lang, game.Maze.Cells[game.Player.Location.row][game.Player.Location.col], engram, dir, 0).sight;
                 game = fns.movePlayer(game, game.Actions[game.Actions.length - 1]);
+                actLook_1.doLook(game, lang);
             }
         }
         else {
             // they tried to walk in a direction that has a wall
             game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.YOU_FOUGHT_THE_WALL);
             game.Player.addState(Enums_1.PLAYER_STATES.SITTING);
-            engram.touch = lang.actions.engramDescriptions.touch.local.wall;
-            engram.sound = lang.actions.engramDescriptions.sound.local.wall;
-            game.Actions[game.Actions.length - 1].outcomes.push(util_1.format(lang.actions.outcome.wall.collide, Enums_1.DIRS[dir]));
-            game.Actions[game.Actions.length - 1].outcomes.push(lang.actions.posture.stunned);
+            game.Actions[game.Actions.length - 1].outcomes.push(util_1.format('You crash into the wall to the [%s]', Enums_1.DIRS[dir]));
+            game.Actions[game.Actions.length - 1].outcomes.push('STUNNED');
         }
         // game continues - return the action (with outcomes and engram)
         return Promise.resolve(fns.finalizeAction(game, maze, startScore));

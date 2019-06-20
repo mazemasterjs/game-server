@@ -7,7 +7,7 @@ import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
 import { Maze } from '@mazemasterjs/shared-library/Maze';
 import { DIRS, PLAYER_STATES, TROPHY_IDS } from '@mazemasterjs/shared-library/Enums';
 import { Engram } from '@mazemasterjs/shared-library/Engram';
-import {lookForward} from './actLook';
+import { lookForward, doLook } from './actLook';
 import path from 'path';
 import fs from 'fs';
 
@@ -17,37 +17,58 @@ export async function doTurn(game: Game, langCode: string): Promise<IAction> {
   const startScore = game.Score.getTotalScore();
   const method = `doTurn(${game.Id})`;
   const action = game.Actions[game.Actions.length - 1];
-  const direction  = action.direction;
+  const direction = action.direction;
   const engram: Engram = game.Actions[game.Actions.length - 1].engram;
-  // Grab the appropriate engram file
-  const file = path.resolve(`./data/engram.json`);
-  const data = JSON.parse(fs.readFileSync(file, 'UTF-8'));
-
+  // Turns left or right
   switch (direction) {
-    case DIRS.NORTH: {
-      game.Player.Facing = DIRS.NORTH;
-      action.outcomes.push('You turn to the North.');
+    case DIRS.LEFT: {
+      switch (game.Player.Facing) {
+        case DIRS.NORTH:
+          game.Player.Facing = action.direction = DIRS.WEST;
+          action.outcomes.push('You turn to the left.');
+          break;
+        case DIRS.WEST:
+          game.Player.Facing = action.direction = DIRS.SOUTH;
+          action.outcomes.push('You turn to the left.');
+          break;
+        case DIRS.SOUTH:
+          game.Player.Facing = action.direction = DIRS.EAST;
+          action.outcomes.push('You turn to the left.');
+          break;
+        case DIRS.EAST:
+          game.Player.Facing = action.direction = DIRS.NORTH;
+          action.outcomes.push('You turn to the left.');
+          break;
+      }
       break;
-    }
-    case DIRS.SOUTH: {
-      game.Player.Facing = DIRS.SOUTH
-      action.outcomes.push('You turn to the South.');
+    } // end case DIRS.LEFT
+    case DIRS.RIGHT: {
+      switch (game.Player.Facing) {
+        case DIRS.NORTH:
+          game.Player.Facing = action.direction = DIRS.EAST;
+          action.outcomes.push('You turn to the Right.');
+          break;
+        case DIRS.WEST:
+          game.Player.Facing = action.direction = DIRS.NORTH;
+          action.outcomes.push('You turn to the Right.');
+          break;
+        case DIRS.SOUTH:
+          game.Player.Facing = action.direction = DIRS.WEST;
+          action.outcomes.push('You turn to the Right.');
+          break;
+        case DIRS.EAST:
+          game.Player.Facing = action.direction = DIRS.SOUTH;
+          action.outcomes.push('You turn to the Rightt.');
+          break;
+      }
       break;
-    }
-    case DIRS.EAST: {
-      game.Player.Facing = DIRS.EAST
-      action.outcomes.push('You turn to the East.');
-      break;
-    }
-    case DIRS.WEST: {
-      game.Player.Facing = DIRS.WEST;
-      action.outcomes.push('You turn to the West.');
-      break;
+    } // end case DIRS.RIGHT
+    default: {
+      action.outcomes.push('You turn 360 degrees and moonwalk in place');
     }
   }
-  const newEngram = lookForward(game,langCode,game.Maze.Cells[game.Player.Location.row][game.Player.Location.col],engram, 0, data);
 
-  action.engram.sight = newEngram.sight;
+  action.engram.sight += doLook(game, langCode);
   // finalize the game action
   game.Actions[game.Actions.length - 1] = fns.finalizeAction(game, maze, startScore);
 

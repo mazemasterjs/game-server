@@ -30,10 +30,17 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 - [x] Fix Action scores / trophies not being returned with the actual action response
 - [ ] All language files are loaded on GameLang instantiation - This should be changed to load language files on demand
 - [ ] Add logic to automatically end games after a certain period of inactivity (set GAMES_STATES.ABANDONED)
+- [ ] When a character turns walls are detected where there should not be
+- [ ] Peripheral vision is seeing more cells further than it should be
 
 ## Change Notes
 
+### v0.6.2
+
+- characters look forward in the direction the are facing, and one cell in their peripheral vision, and darkness behind them
+
 ### v0.6.1
+
 - characters vision is limited by darkness sight intensity in engram.json
 - characters can see traps from a distance depending on the traps sight intensity
 
