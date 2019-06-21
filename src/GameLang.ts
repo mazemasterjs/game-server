@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import Logger from '@mazemasterjs/logger';
-const log = Logger.getInstance();
+import { logTrace } from './funcs';
 
 export class GameLang {
   public static getInstance(langCode: string) {
@@ -18,7 +18,7 @@ export class GameLang {
     });
 
     if (lang === undefined) {
-      log.warn(__filename, method, `No language defined for code '${langCode}' - defaulting to English (en)!`);
+      logTrace(__filename, method, `No language defined for code '${langCode}' - defaulting to English (en)!`);
       return this.languages.find(item => {
         return item.language === 'en';
       });
