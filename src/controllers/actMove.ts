@@ -19,7 +19,10 @@ const config: Config = Config.getInstance();
 export async function doMove(game: Game, langCode: string): Promise<IAction> {
   const method = `doMove(${game.Id})`;
   const engram: Engram = game.Actions[game.Actions.length - 1].engram;
-  const dir: DIRS = game.Actions[game.Actions.length - 1].direction;
+  let dir: DIRS = game.Actions[game.Actions.length - 1].direction;
+  if (dir === 0) {
+    dir = game.Actions[game.Actions.length - 1].direction = game.Player.Facing;
+  }
   const maze: Maze = new Maze(game.Maze);
   const lang = GameLang.getInstance(langCode);
 
@@ -36,7 +39,7 @@ export async function doMove(game: Game, langCode: string): Promise<IAction> {
     // add the trophy for walking without standing
     game = await fns.grantTrophy(game, TROPHY_IDS.SPINNING_YOUR_WHEELS);
 
-    game.Actions[game.Actions.length - 1].outcomes.push(lang.actions.outcome.move.sitting);
+    game.Actions[game.Actions.length - 1].outcomes.push('You cannot move while sitting!');
 
     // finalize and return action
     return Promise.resolve(fns.finalizeAction(game, maze, startScore));
@@ -47,7 +50,7 @@ export async function doMove(game: Game, langCode: string): Promise<IAction> {
     if (dir === DIRS.NORTH && pLoc.equals(game.Maze.StartCell)) {
       fns.logDebug(__filename, method, 'Player moved north into the entrance (lava).');
       engram.sight += 'LAVA to the NORTH';
-      game.Actions[game.Actions.length - 1].outcomes.push(lang.actions.outcome.lava);
+      game.Actions[game.Actions.length - 1].outcomes.push('Walked into lava, you DIED!');
       finishGame(game, GAME_RESULTS.DEATH_LAVA);
     } else if (dir === DIRS.SOUTH && pLoc.equals(game.Maze.FinishCell)) {
       fns.logDebug(__filename, method, 'Player moved south into the exit (cheese).');
@@ -56,7 +59,7 @@ export async function doMove(game: Game, langCode: string): Promise<IAction> {
       engram.touch = 'Cheese!';
       engram.taste = 'Cheese!';
       engram.sound = 'Cheese!';
-      game.Actions[game.Actions.length - 1].outcomes.push(lang.actions.outcome.finish);
+      game.Actions[game.Actions.length - 1].outcomes.push('YOU WIN');
 
       // game over: WINNER or WIN_FLAWLESS
       if (game.Score.MoveCount <= game.Maze.ShortestPathLength) {
@@ -69,7 +72,13 @@ export async function doMove(game: Game, langCode: string): Promise<IAction> {
       game.Player.Facing = dir;
       // engram.sight = lookForward(game, lang, game.Maze.Cells[game.Player.Location.row][game.Player.Location.col], engram, dir, 0).sight;
       game = fns.movePlayer(game, game.Actions[game.Actions.length - 1]);
-      doLook(game, lang);
+      // doLook(game, lang);
+      // gather senses
+      // const senseEngram: Engram = fns.getAmbientEngrams(game, langCode, engram, game.Maze.Cells[game.Player.Location.row][game.Player.Location.col], 0);
+      // engram.smell = fns.getAmbientEngrams(game, langCode, engram, game.Maze.Cells[game.Player.Location.row][game.Player.Location.col], 0).smell;
+      // engram.sound = senseEngram.sound;
+      // engram.taste = senseEngram.taste;
+      // engram.touch = senseEngram.touch;
     }
   } else {
     // they tried to walk in a direction that has a wall

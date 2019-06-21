@@ -23,14 +23,16 @@ const funcs_1 = require("../funcs");
 const Maze_1 = require("@mazemasterjs/shared-library/Maze");
 const MazeLoc_1 = require("@mazemasterjs/shared-library/MazeLoc");
 const GameLang_1 = require("../GameLang");
-const actLook_1 = require("./actLook");
 // need a config object for some of this
 const config = Config_1.Config.getInstance();
 function doMove(game, langCode) {
     return __awaiter(this, void 0, void 0, function* () {
         const method = `doMove(${game.Id})`;
         const engram = game.Actions[game.Actions.length - 1].engram;
-        const dir = game.Actions[game.Actions.length - 1].direction;
+        let dir = game.Actions[game.Actions.length - 1].direction;
+        if (dir === 0) {
+            dir = game.Actions[game.Actions.length - 1].direction = game.Player.Facing;
+        }
         const maze = new Maze_1.Maze(game.Maze);
         const lang = GameLang_1.GameLang.getInstance(langCode);
         // grab the current score so we can update action with points earned or lost during this move
@@ -42,7 +44,7 @@ function doMove(game, langCode) {
             fns.logDebug(__filename, method, 'Player tried to move while not standing.');
             // add the trophy for walking without standing
             game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.SPINNING_YOUR_WHEELS);
-            game.Actions[game.Actions.length - 1].outcomes.push(lang.actions.outcome.move.sitting);
+            game.Actions[game.Actions.length - 1].outcomes.push('You cannot move while sitting!');
             // finalize and return action
             return Promise.resolve(fns.finalizeAction(game, maze, startScore));
         }
@@ -51,7 +53,7 @@ function doMove(game, langCode) {
             if (dir === Enums_1.DIRS.NORTH && pLoc.equals(game.Maze.StartCell)) {
                 fns.logDebug(__filename, method, 'Player moved north into the entrance (lava).');
                 engram.sight += 'LAVA to the NORTH';
-                game.Actions[game.Actions.length - 1].outcomes.push(lang.actions.outcome.lava);
+                game.Actions[game.Actions.length - 1].outcomes.push('Walked into lava, you DIED!');
                 finishGame(game, Enums_1.GAME_RESULTS.DEATH_LAVA);
             }
             else if (dir === Enums_1.DIRS.SOUTH && pLoc.equals(game.Maze.FinishCell)) {
@@ -61,7 +63,7 @@ function doMove(game, langCode) {
                 engram.touch = 'Cheese!';
                 engram.taste = 'Cheese!';
                 engram.sound = 'Cheese!';
-                game.Actions[game.Actions.length - 1].outcomes.push(lang.actions.outcome.finish);
+                game.Actions[game.Actions.length - 1].outcomes.push('YOU WIN');
                 // game over: WINNER or WIN_FLAWLESS
                 if (game.Score.MoveCount <= game.Maze.ShortestPathLength) {
                     finishGame(game, Enums_1.GAME_RESULTS.WIN_FLAWLESS);
@@ -75,7 +77,13 @@ function doMove(game, langCode) {
                 game.Player.Facing = dir;
                 // engram.sight = lookForward(game, lang, game.Maze.Cells[game.Player.Location.row][game.Player.Location.col], engram, dir, 0).sight;
                 game = fns.movePlayer(game, game.Actions[game.Actions.length - 1]);
-                actLook_1.doLook(game, lang);
+                // doLook(game, lang);
+                // gather senses
+                const senseEngram = fns.getAmbientEngrams(game, langCode, engram, game.Maze.Cells[game.Player.Location.row][game.Player.Location.col], 0);
+                engram.smell = fns.getAmbientEngrams(game, langCode, engram, game.Maze.Cells[game.Player.Location.row][game.Player.Location.col], 0).smell;
+                engram.sound = senseEngram.sound;
+                engram.taste = senseEngram.taste;
+                engram.touch = senseEngram.touch;
             }
         }
         else {

@@ -44,7 +44,13 @@ function doStand(game, langCode) {
             game.Actions[game.Actions.length - 1].outcomes.push('STAND HARDER');
         }
         // look ahead and one space around
-        game.Actions[game.Actions.length - 1].engram.sight = actLook_1.doLook(game, langCode).engram.sight;
+        engram.sight = actLook_1.doLook(game, langCode).engram.sight;
+        // gather senses
+        const senseEngram = fns.getAmbientEngrams(game, langCode, engram, cell, 0);
+        engram.smell = fns.getAmbientEngrams(game, langCode, engram, cell, 0).smell;
+        engram.sound = senseEngram.sound;
+        engram.taste = senseEngram.taste;
+        engram.touch = senseEngram.touch;
         // finalize the game action
         game.Actions[game.Actions.length - 1] = fns.finalizeAction(game, maze, startScore);
         return Promise.resolve(game.Actions[game.Actions.length - 1]);

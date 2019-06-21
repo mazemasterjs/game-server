@@ -30,10 +30,15 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 - [x] Fix Action scores / trophies not being returned with the actual action response
 - [ ] All language files are loaded on GameLang instantiation - This should be changed to load language files on demand
 - [ ] Add logic to automatically end games after a certain period of inactivity (set GAMES_STATES.ABANDONED)
-- [ ] When a character turns walls are detected where there should not be
-- [ ] Peripheral vision is seeing more cells further than it should be
+- [x] When a character turns walls are detected where there should not be
+- [x] Peripheral vision is seeing more cells further than it should be
+- [ ] Senses besides sight not working correctly
 
 ## Change Notes
+
+### v0.6.3
+
+- added basis for other engram senses
 
 ### v0.6.2
 

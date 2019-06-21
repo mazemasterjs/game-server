@@ -34,19 +34,19 @@ function doTurn(game, langCode) {
             case Enums_1.DIRS.LEFT: {
                 switch (game.Player.Facing) {
                     case Enums_1.DIRS.NORTH:
-                        game.Player.Facing = Enums_1.DIRS.WEST;
+                        game.Player.Facing = action.direction = Enums_1.DIRS.WEST;
                         action.outcomes.push('You turn to the left.');
                         break;
                     case Enums_1.DIRS.WEST:
-                        game.Player.Facing = Enums_1.DIRS.SOUTH;
+                        game.Player.Facing = action.direction = Enums_1.DIRS.SOUTH;
                         action.outcomes.push('You turn to the left.');
                         break;
                     case Enums_1.DIRS.SOUTH:
-                        game.Player.Facing = Enums_1.DIRS.EAST;
+                        game.Player.Facing = action.direction = Enums_1.DIRS.EAST;
                         action.outcomes.push('You turn to the left.');
                         break;
                     case Enums_1.DIRS.EAST:
-                        game.Player.Facing = Enums_1.DIRS.NORTH;
+                        game.Player.Facing = action.direction = Enums_1.DIRS.NORTH;
                         action.outcomes.push('You turn to the left.');
                         break;
                 }
@@ -55,19 +55,19 @@ function doTurn(game, langCode) {
             case Enums_1.DIRS.RIGHT: {
                 switch (game.Player.Facing) {
                     case Enums_1.DIRS.NORTH:
-                        game.Player.Facing = Enums_1.DIRS.EAST;
+                        game.Player.Facing = action.direction = Enums_1.DIRS.EAST;
                         action.outcomes.push('You turn to the Right.');
                         break;
                     case Enums_1.DIRS.WEST:
-                        game.Player.Facing = Enums_1.DIRS.NORTH;
+                        game.Player.Facing = action.direction = Enums_1.DIRS.NORTH;
                         action.outcomes.push('You turn to the Right.');
                         break;
                     case Enums_1.DIRS.SOUTH:
-                        game.Player.Facing = Enums_1.DIRS.WEST;
+                        game.Player.Facing = action.direction = Enums_1.DIRS.WEST;
                         action.outcomes.push('You turn to the Right.');
                         break;
                     case Enums_1.DIRS.EAST:
-                        game.Player.Facing = Enums_1.DIRS.SOUTH;
+                        game.Player.Facing = action.direction = Enums_1.DIRS.SOUTH;
                         action.outcomes.push('You turn to the Rightt.');
                         break;
                 }

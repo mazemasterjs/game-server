@@ -104,23 +104,23 @@
         "BEARTRAP": {
             "sight": {
                 "adjective": "BEARTRAP",
-                "intensity": 20
+                "intensity": 100000
             },
             "sound": {
                 "adjective": "none",
-                "intensity": 0
+                "intensity": 100000
             },
             "smell": {
                 "adjective": "none",
-                "intensity": 0
+                "intensity": 100000
             },
             "touch": {
                 "adjective": "PAIN",
-                "intensity": 10
+                "intensity": 1000000
             },
             "taste": {
                 "adjective": "METALLIC",
-                "intensity": 0
+                "intensity": 1000000
             }
         },
         "TARPIT": {
@@ -169,8 +169,8 @@
         },
         "DARKNESS": {
             "sight": {
-                "adjective": "DARKNESS...",
-                "intensity": 30
+                "adjective": "DARKNESS",
+                "intensity": 20
             },
             "sound": {
                 "adjective": "none",

@@ -26,29 +26,29 @@ export function doLook(game: Game, langCode: string): IAction {
   switch (game.Player.Facing) {
     case DIRS.NORTH: {
       engram.sight += lookForward(game, langCode, cell, engram, DIRS.NORTH, 0).sight;
-      engram.sight += lookForward(game, langCode, cell, engram, DIRS.EAST, 0, 1).sight;
-      engram.sight += lookForward(game, langCode, cell, engram, DIRS.SOUTH, 0, 0).sight;
-      engram.sight += lookForward(game, langCode, cell, engram, DIRS.WEST, 0, 1).sight;
+      engram.sight += lookForward(game, langCode, cell, engram, DIRS.EAST, 0, 2).sight;
+      // engram.sight += ` BEHIND: [${DIRS[game.Player.Facing]}] `;
+      engram.sight += lookForward(game, langCode, cell, engram, DIRS.WEST, 0, 2).sight;
       break;
     }
     case DIRS.EAST: {
-      engram.sight += lookForward(game, langCode, cell, engram, DIRS.NORTH, 0, 1).sight;
+      engram.sight += lookForward(game, langCode, cell, engram, DIRS.NORTH, 0, 2).sight;
       engram.sight += lookForward(game, langCode, cell, engram, DIRS.EAST, 0).sight;
-      engram.sight += lookForward(game, langCode, cell, engram, DIRS.SOUTH, 0, 1).sight;
-      engram.sight += lookForward(game, langCode, cell, engram, DIRS.WEST, 0, 0).sight;
+      engram.sight += lookForward(game, langCode, cell, engram, DIRS.SOUTH, 0, 2).sight;
+      // engram.sight += ` BEHIND: [${DIRS[game.Player.Facing]}] `;
       break;
     }
     case DIRS.SOUTH: {
-      engram.sight += lookForward(game, langCode, cell, engram, DIRS.NORTH, 0, 0).sight;
-      engram.sight += lookForward(game, langCode, cell, engram, DIRS.EAST, 0, 1).sight;
+      //  engram.sight += ` BEHIND: [${DIRS[game.Player.Facing]}] `;
+      engram.sight += lookForward(game, langCode, cell, engram, DIRS.EAST, 0, 2).sight;
       engram.sight += lookForward(game, langCode, cell, engram, DIRS.SOUTH, 0).sight;
-      engram.sight += lookForward(game, langCode, cell, engram, DIRS.WEST, 0, 1).sight;
+      engram.sight += lookForward(game, langCode, cell, engram, DIRS.WEST, 0, 2).sight;
       break;
     }
     case DIRS.WEST: {
-      engram.sight += lookForward(game, langCode, cell, engram, DIRS.NORTH, 0, 1).sight;
-      engram.sight += lookForward(game, langCode, cell, engram, DIRS.EAST, 0, 0).sight;
-      engram.sight += lookForward(game, langCode, cell, engram, DIRS.SOUTH, 0, 1).sight;
+      engram.sight += lookForward(game, langCode, cell, engram, DIRS.NORTH, 0, 2).sight;
+      // engram.sight += ` BEHIND: [${DIRS[game.Player.Facing]}] `;
+      engram.sight += lookForward(game, langCode, cell, engram, DIRS.SOUTH, 0, 2).sight;
       engram.sight += lookForward(game, langCode, cell, engram, DIRS.WEST, 0).sight;
       break;
     }
@@ -69,12 +69,13 @@ export function doLook(game: Game, langCode: string): IAction {
   return action;
 }
 
-export function lookForward(game: Game, lang: string, cell: CellBase, engram: Engram, dir: DIRS, distance: number, maxDistance: number = 10): Engram {
+export function lookForward(game: Game, lang: string, cell: CellBase, engram: Engram, dir: DIRS, distance: number, maxDistance?: number): Engram {
   const log = Logger.getInstance();
   const data = GameLang.getInstance(lang);
   let cellEmpty = true;
   const currentCell = game.Maze.Cells[cell.Location.row][cell.Location.col];
   let nextCell = currentCell;
+  maxDistance = maxDistance === undefined ? 10 : maxDistance;
   // Gets the players direction and prepends the sight engram with the characters direction
   if (distance === 0 && DIRS[dir] === DIRS[game.Player.Facing]) {
     engram.sight = `FACING: [${DIRS[dir]} : `;
@@ -109,8 +110,8 @@ export function lookForward(game: Game, lang: string, cell: CellBase, engram: En
         break;
       }
       case 'FLAMETHOWER': {
-        if (data.entities.FLAMETHOWER.sight.intensity - distance * 10 >= 0) {
-          engram.sight += data.entities.FLAMETHOWER.sight.adjective;
+        if (data.entities.FLAMETHROWER.sight.intensity - distance * 10 >= 0) {
+          engram.sight += data.entities.FLAMETHROWER.sight.adjective;
           cellEmpty = false;
         }
         break;
@@ -130,12 +131,12 @@ export function lookForward(game: Game, lang: string, cell: CellBase, engram: En
         }
         break;
       case DIRS.EAST:
-        if (currentCell.Location.col + 1 <= game.Maze.Width) {
+        if (currentCell.Location.col + 1 <= game.Maze.Width - 1) {
           nextCell = game.Maze.Cells[currentCell.Location.row][currentCell.Location.col + 1];
         }
         break;
       case DIRS.SOUTH:
-        if (currentCell.Location.row + 1 <= game.Maze.Height) {
+        if (currentCell.Location.row + 1 <= game.Maze.Height - 1) {
           nextCell = game.Maze.Cells[currentCell.Location.row + 1][currentCell.Location.col];
         }
         break;
@@ -151,7 +152,7 @@ export function lookForward(game: Game, lang: string, cell: CellBase, engram: En
     if (cellEmpty && distance > 0 && distance <= maxDistance) {
       engram.sight += ' ... ';
     }
-    engram = lookForward(game, lang, nextCell, engram, dir, ++distance);
+    engram = lookForward(game, lang, nextCell, engram, dir, ++distance, maxDistance);
   } // end if (currentCell.isDirOpen(dir) && distance * 10 <= data.entities.DARKNESS.sight.intensity && distance < maxDistance)
   else if (!currentCell.isDirOpen(dir) && distance < maxDistance) {
     if (cellEmpty && distance !== 0) {

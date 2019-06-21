@@ -6,7 +6,8 @@ import { grantTrophy, logDebug } from '../funcs';
 import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
 import { Maze } from '@mazemasterjs/shared-library/Maze';
 import { PLAYER_STATES, TROPHY_IDS } from '@mazemasterjs/shared-library/Enums';
-import { lookForward, doLook } from './actLook';
+import { doLook } from './actLook';
+import { Engram } from '@mazemasterjs/shared-library/Engram';
 
 export async function doStand(game: Game, langCode: string): Promise<IAction> {
   logDebug(__filename, `doStand(${game.Id})`, 'Player has issued the STAND command.');
@@ -34,7 +35,13 @@ export async function doStand(game: Game, langCode: string): Promise<IAction> {
   }
 
   // look ahead and one space around
-  game.Actions[game.Actions.length - 1].engram.sight = doLook(game, langCode).engram.sight;
+  engram.sight = doLook(game, langCode).engram.sight;
+  // gather senses
+  // const senseEngram: Engram = fns.getAmbientEngrams(game, langCode, engram, cell, 0);
+  // engram.smell = fns.getAmbientEngrams(game, langCode, engram, cell, 0).smell;
+  // engram.sound = senseEngram.sound;
+  // engram.taste = senseEngram.taste;
+  // engram.touch = senseEngram.touch;
 
   // finalize the game action
   game.Actions[game.Actions.length - 1] = fns.finalizeAction(game, maze, startScore);

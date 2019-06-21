@@ -6,7 +6,7 @@ import { Score } from '@mazemasterjs/shared-library/Score';
 import { Trophy } from '@mazemasterjs/shared-library/Trophy';
 import { AxiosResponse } from 'axios';
 import { Cache, CACHE_TYPES } from './Cache';
-import { COMMANDS, DIRS, GAME_RESULTS, GAME_STATES, TROPHY_IDS } from '@mazemasterjs/shared-library/Enums';
+import { COMMANDS, DIRS, GAME_RESULTS, GAME_STATES, TROPHY_IDS, CELL_TRAPS } from '@mazemasterjs/shared-library/Enums';
 import { Config } from './Config';
 import { Game } from '@mazemasterjs/shared-library/Game';
 import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
@@ -14,6 +14,10 @@ import { IGameStub } from '@mazemasterjs/shared-library/Interfaces/IGameStub';
 import { Request, Response } from 'express';
 import { LOG_LEVELS, Logger } from '@mazemasterjs/logger';
 import { Team } from '@mazemasterjs/shared-library/Team';
+import { Engram } from '@mazemasterjs/shared-library/Engram';
+import GameLang from './GameLang';
+import CellBase from '@mazemasterjs/shared-library/CellBase';
+import { getSelectedBitNames } from '@mazemasterjs/shared-library/Helpers';
 
 const log = Logger.getInstance();
 const config = Config.getInstance();
@@ -276,7 +280,7 @@ export function movePlayer(game: Game, act: IAction): Game {
       act.outcomes.push('You move to the West.');
       break;
     }
-  }
+  } // end switch(act.direction)
 
   const cell: Cell = game.Maze.Cells[game.Player.Location.row][game.Player.Location.col];
 
@@ -439,4 +443,113 @@ export function finalizeAction(game: Game, maze: Maze, startScore: number): IAct
   logDebug(__filename, 'finalizeAction(...)', '\r\n' + textRender);
 
   return game.Actions[game.Actions.length - 1];
+}
+
+export function getAmbientEngrams(game: Game, lang: string, engram: Engram, cell: CellBase, distance: number, lastDir: DIRS = DIRS.NONE): Engram {
+  const log = Logger.getInstance();
+  const data = GameLang.getInstance(lang);
+  const currentCell = game.Maze.Cells[cell.Location.row][cell.Location.col];
+  let nextCell = currentCell;
+  if (distance < 30) {
+    let engramNext: Engram;
+    if (cell.Location.row - 1 >= 0 && currentCell.isDirOpen(DIRS.NORTH) && DIRS.NORTH !== lastDir) {
+      nextCell = game.Maze.Cells[cell.Location.row - 1][cell.Location.col];
+      engramNext = getAmbientEngrams(game, lang, engram, nextCell, ++distance, DIRS.NORTH);
+      engram.smell += engramNext.smell;
+      engram.sound += engramNext.sound;
+      engram.touch += engram.touch;
+    }
+    if (cell.Location.row + 1 < game.Maze.Height && currentCell.isDirOpen(DIRS.SOUTH) && DIRS.SOUTH !== lastDir) {
+      nextCell = game.Maze.Cells[cell.Location.row + 1][cell.Location.col];
+      engramNext = getAmbientEngrams(game, lang, engram, nextCell, ++distance, DIRS.SOUTH);
+      engram.smell += engramNext.smell;
+      engram.sound += engramNext.sound;
+      engram.touch += engram.touch;
+    }
+
+    if (cell.Location.col + 1 < game.Maze.Width && currentCell.isDirOpen(DIRS.EAST) && DIRS.EAST !== lastDir) {
+      nextCell = game.Maze.Cells[cell.Location.row][cell.Location.col + 1];
+      engramNext = getAmbientEngrams(game, lang, engram, nextCell, ++distance, DIRS.EAST);
+      engram.smell += engramNext.smell;
+      engram.sound += engramNext.sound;
+      engram.touch += engram.touch;
+    }
+
+    if (cell.Location.col - 1 >= 0 && currentCell.isDirOpen(DIRS.WEST) && DIRS.WEST !== lastDir) {
+      nextCell = game.Maze.Cells[cell.Location.row][cell.Location.col - 1];
+      engramNext = getAmbientEngrams(game, lang, engram, nextCell, ++distance, DIRS.WEST);
+      engram.smell += engramNext.smell;
+      engram.sound += engramNext.sound;
+      engram.touch += engram.touch;
+    }
+  } // end if
+
+  if (!(currentCell.Traps === 0)) {
+    const trapType: string = CELL_TRAPS[currentCell.Traps];
+
+    switch (trapType) {
+      case 'PIT': {
+        if (data.entities.PIT.smell.intensity - distance * 10 > 0) {
+          engram.smell += data.entities.PIT.smell.adjective + distance;
+        }
+        if (data.entities.PIT.sound.intensity - distance * 10 > 0) {
+          engram.sound += data.entities.PIT.sound.adjective + distance;
+        }
+        if (data.entities.PIT.taste.intensity - distance * 10 > 0) {
+          engram.taste += data.entities.PIT.taste.adjective + distance;
+        }
+        if (data.entities.PIT.touch.intensity - distance * 10 > 0) {
+          engram.touch += data.entities.PIT.touch.adjective + distance;
+        }
+        break;
+      } // end case 'PIT'
+      case 'BEARTRAP': {
+        if (data.entities.BEARTRAP.smell.intensity - distance * 10 > 0) {
+          engram.smell += data.entities.BEARTRAP.smell.adjective + distance;
+        }
+        if (data.entities.BEARTRAP.sound.intensity - distance * 10 > 0) {
+          engram.sound += data.entities.BEARTRAP.sound.adjective + distance;
+        }
+        if (data.entities.BEARTRAP.taste.intensity - distance * 10 > 0) {
+          engram.taste += data.entities.BEARTRAP.taste.adjective + distance;
+        }
+        if (data.entities.BEARTRAP.touch.intensity - distance * 10 > 0) {
+          engram.touch += data.entities.BEARTRAP.touch.adjective + distance;
+        }
+        break;
+      } // end case 'BEARTRAP'
+      case 'TARPIT': {
+        if (data.entities.TARPIT.smell.intensity - distance * 10 > 0) {
+          engram.smell += data.entities.TARPIT.smell.adjective + distance;
+        }
+        if (data.entities.TARPIT.sound.intensity - distance * 10 > 0) {
+          engram.sound += data.entities.TARPIT.sound.adjective + distance;
+        }
+        if (data.entities.TARPIT.taste.intensity - distance * 10 > 0) {
+          engram.taste += data.entities.TARPIT.taste.adjective + distance;
+        }
+        if (data.entities.TARPIT.touch.intensity - distance * 10 > 0) {
+          engram.touch += data.entities.TARPIT.touch.adjective + distance;
+        }
+        break;
+      } // end case 'TARPIT'
+      case 'FLAMETHROWER': {
+        if (data.entities.FLAMETHROWER.smell.intensity - distance * 10 > 0) {
+          engram.smell += data.entities.FLAMETHROWER.smell.adjective + distance;
+        }
+        if (data.entities.FLAMETHROWER.sound.intensity - distance * 10 > 0) {
+          engram.sound += data.entities.FLAMETHROWER.sound.adjective + distance;
+        }
+        if (data.entities.FLAMETHROWER.taste.intensity - distance * 10 > 0) {
+          engram.taste += data.entities.FLAMETHROWER.taste.adjective + distance;
+        }
+        if (data.entities.FLAMETHROWER.touch.intensity - distance * 10 > 0) {
+          engram.touch += data.entities.FLAMETHROWER.touch.adjective + distance;
+        }
+        break;
+      } // end case 'FLAMETHROWER'
+    } // end switch(traptype)
+  } // end if(!(currentCell.Traps === 0 )
+  const pos: MazeLoc = new MazeLoc(cell.Location.row, cell.Location.col);
+  return engram;
 }
