@@ -18,6 +18,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const fns = __importStar(require("../funcs"));
 const Config_1 = require("../Config");
 const Enums_1 = require("@mazemasterjs/shared-library/Enums");
+const Engram_1 = require("@mazemasterjs/shared-library/Engram");
 const util_1 = require("util");
 const funcs_1 = require("../funcs");
 const Maze_1 = require("@mazemasterjs/shared-library/Maze");
@@ -79,11 +80,8 @@ function doMove(game, langCode) {
                 game = fns.movePlayer(game, game.Actions[game.Actions.length - 1]);
                 // doLook(game, lang);
                 // gather senses
-                // const senseEngram: Engram = fns.getAmbientEngrams(game, langCode, engram, game.Maze.Cells[game.Player.Location.row][game.Player.Location.col], 0);
-                // engram.smell = fns.getAmbientEngrams(game, langCode, engram, game.Maze.Cells[game.Player.Location.row][game.Player.Location.col], 0).smell;
-                // engram.sound = senseEngram.sound;
-                // engram.taste = senseEngram.taste;
-                // engram.touch = senseEngram.touch;
+                const cell = game.Maze.Cells[game.Player.Location.row][game.Player.Location.col];
+                engram.smell = fns.getSmell(game, maze, langCode, new Engram_1.Engram(), cell, 0);
             }
         }
         else {

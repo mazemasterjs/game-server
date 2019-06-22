@@ -6,7 +6,7 @@ import { Score } from '@mazemasterjs/shared-library/Score';
 import { Trophy } from '@mazemasterjs/shared-library/Trophy';
 import { AxiosResponse } from 'axios';
 import { Cache, CACHE_TYPES } from './Cache';
-import { CELL_TRAPS, COMMANDS, DIRS, GAME_RESULTS, GAME_STATES, TROPHY_IDS } from '@mazemasterjs/shared-library/Enums';
+import { CELL_TAGS, CELL_TRAPS, COMMANDS, DIRS, GAME_RESULTS, GAME_STATES, TROPHY_IDS } from '@mazemasterjs/shared-library/Enums';
 import { Cell } from '@mazemasterjs/shared-library/Cell';
 import { Game } from '@mazemasterjs/shared-library/Game';
 import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
@@ -448,110 +448,76 @@ export function finalizeAction(game: Game, maze: Maze, startScore: number): IAct
   return game.Actions[game.Actions.length - 1];
 }
 
-export function getAmbientEngrams(game: Game, lang: string, engram: Engram, cell: CellBase, distance: number, lastDir: DIRS = DIRS.NONE): Engram {
+export function getSmell(game: Game, maze: Maze, lang: string, engram: Engram, cell: CellBase, distance: number, cameFrom: DIRS = DIRS.NONE): string {
+  const method = `getSmell(${game.Id}, ${maze.Id}, ${lang}, [Engram], (${cell.Location.row}x${cell.Location.col}), ${distance}, ${cameFrom})`;
+  logTrace(__filename, method, 'Entering getSmell()...');
   const data = GameLang.getInstance(lang);
-  const currentCell = game.Maze.Cells[cell.Location.row][cell.Location.col];
-  let nextCell = currentCell;
-  if (distance < 30) {
-    let engramNext: Engram;
-    if (cell.Location.row - 1 >= 0 && currentCell.isDirOpen(DIRS.NORTH) && DIRS.NORTH !== lastDir) {
-      nextCell = game.Maze.Cells[cell.Location.row - 1][cell.Location.col];
-      engramNext = getAmbientEngrams(game, lang, engram, nextCell, ++distance, DIRS.NORTH);
-      engram.smell += engramNext.smell;
-      engram.sound += engramNext.sound;
-      engram.touch += engram.touch;
-    }
-    if (cell.Location.row + 1 < game.Maze.Height && currentCell.isDirOpen(DIRS.SOUTH) && DIRS.SOUTH !== lastDir) {
-      nextCell = game.Maze.Cells[cell.Location.row + 1][cell.Location.col];
-      engramNext = getAmbientEngrams(game, lang, engram, nextCell, ++distance, DIRS.SOUTH);
-      engram.smell += engramNext.smell;
-      engram.sound += engramNext.sound;
-      engram.touch += engram.touch;
-    }
+  const currentCell = maze.getCell(cell.Location);
+  const x = currentCell.Location.col;
+  const y = currentCell.Location.row;
+  const height = game.Maze.Height;
+  const width = game.Maze.Width;
 
-    if (cell.Location.col + 1 < game.Maze.Width && currentCell.isDirOpen(DIRS.EAST) && DIRS.EAST !== lastDir) {
-      nextCell = game.Maze.Cells[cell.Location.row][cell.Location.col + 1];
-      engramNext = getAmbientEngrams(game, lang, engram, nextCell, ++distance, DIRS.EAST);
-      engram.smell += engramNext.smell;
-      engram.sound += engramNext.sound;
-      engram.touch += engram.touch;
-    }
+  if (!!(currentCell.Tags & CELL_TAGS.START)) {
+    // smell - north would be lava
+  }
 
-    if (cell.Location.col - 1 >= 0 && currentCell.isDirOpen(DIRS.WEST) && DIRS.WEST !== lastDir) {
-      nextCell = game.Maze.Cells[cell.Location.row][cell.Location.col - 1];
-      engramNext = getAmbientEngrams(game, lang, engram, nextCell, ++distance, DIRS.WEST);
-      engram.smell += engramNext.smell;
-      engram.sound += engramNext.sound;
-      engram.touch += engram.touch;
-    }
-  } // end if
+  if (!!(currentCell.Tags & CELL_TAGS.FINISH)) {
+    // smell - south :: smell is cheese
+  }
 
-  if (!(currentCell.Traps === 0)) {
-    const trapType: string = CELL_TRAPS[currentCell.Traps];
+  if (currentCell.isDirOpen(DIRS.NORTH) && cameFrom !== DIRS.NORTH && y - 1 >= 0) {
+    const nextCell = maze.getNeighbor(currentCell, DIRS.NORTH);
+    logTrace(__filename, method, 'Smelling to the north.');
+    engram.smell = getSmell(game, maze, lang, engram, nextCell, ++distance, DIRS.SOUTH);
+  }
+  if (currentCell.isDirOpen(DIRS.SOUTH) && cameFrom !== DIRS.SOUTH && y + 1 < height) {
+    const nextCell = maze.getNeighbor(currentCell, DIRS.SOUTH);
+    logTrace(__filename, method, 'Smelling to the south.');
+    engram.smell = getSmell(game, maze, lang, engram, nextCell, ++distance, DIRS.NORTH);
+  }
+  if (currentCell.isDirOpen(DIRS.EAST) && cameFrom !== DIRS.EAST && x + 1 <= width) {
+    const nextCell = maze.getNeighbor(currentCell, DIRS.EAST);
+    logTrace(__filename, method, 'Smelling to the east.');
+    engram.smell = getSmell(game, maze, lang, engram, nextCell, ++distance, DIRS.WEST);
+  }
+  if (currentCell.isDirOpen(DIRS.WEST) && cameFrom !== DIRS.WEST && x - 1 >= 0) {
+    const nextCell = maze.getNeighbor(currentCell, DIRS.WEST);
+    logTrace(__filename, method, 'Smelling to the west.');
+    engram.smell = getSmell(game, maze, lang, engram, nextCell, ++distance, DIRS.EAST);
+  }
 
+  // TODO: CELL_TRAPS is a bitwise enumeration - this doesn't support bitwise
+  if (currentCell.Traps !== CELL_TRAPS.NONE) {
+    const trapType = currentCell.Traps;
+    logTrace(__filename, method, `${CELL_TRAPS[trapType]} detected in cell: ${currentCell.Location.toString()}`);
     switch (trapType) {
-      case 'PIT': {
-        if (data.entities.PIT.smell.intensity - distance * 10 > 0) {
-          engram.smell += data.entities.PIT.smell.adjective + distance;
+      case CELL_TRAPS.PIT: {
+        if (data.entities.PIT.smell.intensity >= distance * 10) {
+          engram.smell += data.entities.PIT.smell.adjective;
         }
-        if (data.entities.PIT.sound.intensity - distance * 10 > 0) {
-          engram.sound += data.entities.PIT.sound.adjective + distance;
+      }
+      case CELL_TRAPS.BEARTRAP: {
+        if (data.entities.BEARTRAP.smell.intensity >= distance * 10) {
+          engram.smell += data.entities.BEARTRAP.smell.adjective;
         }
-        if (data.entities.PIT.taste.intensity - distance * 10 > 0) {
-          engram.taste += data.entities.PIT.taste.adjective + distance;
-        }
-        if (data.entities.PIT.touch.intensity - distance * 10 > 0) {
-          engram.touch += data.entities.PIT.touch.adjective + distance;
-        }
-        break;
-      } // end case 'PIT'
-      case 'BEARTRAP': {
-        if (data.entities.BEARTRAP.smell.intensity - distance * 10 > 0) {
-          engram.smell += data.entities.BEARTRAP.smell.adjective + distance;
-        }
-        if (data.entities.BEARTRAP.sound.intensity - distance * 10 > 0) {
-          engram.sound += data.entities.BEARTRAP.sound.adjective + distance;
-        }
-        if (data.entities.BEARTRAP.taste.intensity - distance * 10 > 0) {
-          engram.taste += data.entities.BEARTRAP.taste.adjective + distance;
-        }
-        if (data.entities.BEARTRAP.touch.intensity - distance * 10 > 0) {
-          engram.touch += data.entities.BEARTRAP.touch.adjective + distance;
+      }
+      case CELL_TRAPS.TARPIT: {
+        if (data.entities.TARPIT.smell.intensity >= distance * 10) {
+          engram.smell += data.entities.TARPIT.smell.adjective;
         }
         break;
-      } // end case 'BEARTRAP'
-      case 'TARPIT': {
-        if (data.entities.TARPIT.smell.intensity - distance * 10 > 0) {
-          engram.smell += data.entities.TARPIT.smell.adjective + distance;
-        }
-        if (data.entities.TARPIT.sound.intensity - distance * 10 > 0) {
-          engram.sound += data.entities.TARPIT.sound.adjective + distance;
-        }
-        if (data.entities.TARPIT.taste.intensity - distance * 10 > 0) {
-          engram.taste += data.entities.TARPIT.taste.adjective + distance;
-        }
-        if (data.entities.TARPIT.touch.intensity - distance * 10 > 0) {
-          engram.touch += data.entities.TARPIT.touch.adjective + distance;
+      }
+      case CELL_TRAPS.FLAMETHOWER: {
+        if (data.entities.FLAMETHROWER.smell.intensity >= distance * 10) {
+          engram.smell += data.entities.FLAMETHROWER.smell.adjective;
         }
         break;
-      } // end case 'TARPIT'
-      case 'FLAMETHROWER': {
-        if (data.entities.FLAMETHROWER.smell.intensity - distance * 10 > 0) {
-          engram.smell += data.entities.FLAMETHROWER.smell.adjective + distance;
-        }
-        if (data.entities.FLAMETHROWER.sound.intensity - distance * 10 > 0) {
-          engram.sound += data.entities.FLAMETHROWER.sound.adjective + distance;
-        }
-        if (data.entities.FLAMETHROWER.taste.intensity - distance * 10 > 0) {
-          engram.taste += data.entities.FLAMETHROWER.taste.adjective + distance;
-        }
-        if (data.entities.FLAMETHROWER.touch.intensity - distance * 10 > 0) {
-          engram.touch += data.entities.FLAMETHROWER.touch.adjective + distance;
-        }
-        break;
-      } // end case 'FLAMETHROWER'
-    } // end switch(traptype)
-  } // end if(!(currentCell.Traps === 0 )
-  const pos: MazeLoc = new MazeLoc(cell.Location.row, cell.Location.col);
-  return engram;
+      }
+      default: {
+        logTrace(__filename, method, 'No traps detected in cell ' + currentCell.Location.toString());
+      }
+    } // end switch
+  } // end if
+  return engram.smell;
 }

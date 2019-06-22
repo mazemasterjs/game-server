@@ -20,6 +20,7 @@ const funcs_1 = require("../funcs");
 const Maze_1 = require("@mazemasterjs/shared-library/Maze");
 const Enums_1 = require("@mazemasterjs/shared-library/Enums");
 const actLook_1 = require("./actLook");
+const Engram_1 = require("@mazemasterjs/shared-library/Engram");
 function doStand(game, langCode) {
     return __awaiter(this, void 0, void 0, function* () {
         funcs_1.logDebug(__filename, `doStand(${game.Id})`, 'Player has issued the STAND command.');
@@ -28,9 +29,9 @@ function doStand(game, langCode) {
         const startScore = game.Score.getTotalScore();
         const engram = game.Actions[game.Actions.length - 1].engram;
         // note the lava to the north if in the start cell
-        if (cell.Location.equals(game.Maze.StartCell)) {
-            engram.sight = 'LAVA NORTH';
-        }
+        // if (cell.Location.equals(game.Maze.StartCell)) {
+        //   engram.sight = 'LAVA NORTH';
+        // }
         if (!!(game.Player.State & Enums_1.PLAYER_STATES.STANDING)) {
             // TODO: Add trophy STANDING_AROUND once it's pushed live
             game = yield funcs_1.grantTrophy(game, Enums_1.TROPHY_IDS.STANDING_AROUND);
@@ -46,11 +47,7 @@ function doStand(game, langCode) {
         // look ahead and one space around
         engram.sight = actLook_1.doLook(game, langCode).engram.sight;
         // gather senses
-        // const senseEngram: Engram = fns.getAmbientEngrams(game, langCode, engram, cell, 0);
-        // engram.smell = fns.getAmbientEngrams(game, langCode, engram, cell, 0).smell;
-        // engram.sound = senseEngram.sound;
-        // engram.taste = senseEngram.taste;
-        // engram.touch = senseEngram.touch;
+        engram.smell = fns.getSmell(game, maze, langCode, new Engram_1.Engram(), cell, 0);
         // finalize the game action
         game.Actions[game.Actions.length - 1] = fns.finalizeAction(game, maze, startScore);
         return Promise.resolve(game.Actions[game.Actions.length - 1]);

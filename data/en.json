@@ -68,7 +68,7 @@
             }],
             "smell": [{
                 "adjective": "cheesy",
-                "intensity": 100
+                "intensity": 1000
             }],
             "touch": [{
                 "adjective": "soft",
@@ -90,7 +90,7 @@
             },
             "smell": {
                 "adjective": "none",
-                "intensity": 0
+                "intensity": 10000
             },
             "touch": {
                 "adjective": "none",
@@ -126,11 +126,11 @@
         "TARPIT": {
             "sight": {
                 "adjective": "TAR",
-                "intensity": 20
+                "intensity": 10000
             },
             "sound": {
                 "adjective": "BUBBLING",
-                "intensity": 0
+                "intensity": 10000
             },
             "smell": {
                 "adjective": "TAR",
@@ -156,7 +156,7 @@
             },
             "smell": {
                 "adjective": "KEROSENE",
-                "intensity": 40
+                "intensity": 4000
             },
             "touch": {
                 "adjective": "WET",

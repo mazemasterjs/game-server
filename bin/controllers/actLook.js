@@ -48,7 +48,7 @@ function doLook(game, langCode) {
             break;
         }
     } // end switch(game.Player.Facing)
-    action.engram = engram;
+    action.engram.sight = engram.sight;
     if (cell.Location.equals(game.Maze.StartCell)) {
         action.outcomes.push('You see the entrace filled with lava');
         action.outcomes.push('North is lava');

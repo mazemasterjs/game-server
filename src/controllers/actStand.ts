@@ -17,9 +17,9 @@ export async function doStand(game: Game, langCode: string): Promise<IAction> {
   const engram = game.Actions[game.Actions.length - 1].engram;
 
   // note the lava to the north if in the start cell
-  if (cell.Location.equals(game.Maze.StartCell)) {
-    engram.sight = 'LAVA NORTH';
-  }
+  // if (cell.Location.equals(game.Maze.StartCell)) {
+  //   engram.sight = 'LAVA NORTH';
+  // }
 
   if (!!(game.Player.State & PLAYER_STATES.STANDING)) {
     // TODO: Add trophy STANDING_AROUND once it's pushed live
@@ -37,11 +37,7 @@ export async function doStand(game: Game, langCode: string): Promise<IAction> {
   // look ahead and one space around
   engram.sight = doLook(game, langCode).engram.sight;
   // gather senses
-  // const senseEngram: Engram = fns.getAmbientEngrams(game, langCode, engram, cell, 0);
-  // engram.smell = fns.getAmbientEngrams(game, langCode, engram, cell, 0).smell;
-  // engram.sound = senseEngram.sound;
-  // engram.taste = senseEngram.taste;
-  // engram.touch = senseEngram.touch;
+  engram.smell = fns.getSmell(game, maze, langCode, new Engram(), cell, 0);
 
   // finalize the game action
   game.Actions[game.Actions.length - 1] = fns.finalizeAction(game, maze, startScore);

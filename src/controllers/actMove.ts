@@ -9,6 +9,7 @@ import { logDebug } from '../funcs';
 import { Maze } from '@mazemasterjs/shared-library/Maze';
 import { MazeLoc } from '@mazemasterjs/shared-library/MazeLoc';
 import { GameLang } from '../GameLang';
+import { Player } from '@mazemasterjs/shared-library/Player';
 
 // need a config object for some of this
 const config: Config = Config.getInstance();
@@ -71,11 +72,8 @@ export async function doMove(game: Game, langCode: string): Promise<IAction> {
       game = fns.movePlayer(game, game.Actions[game.Actions.length - 1]);
       // doLook(game, lang);
       // gather senses
-      // const senseEngram: Engram = fns.getAmbientEngrams(game, langCode, engram, game.Maze.Cells[game.Player.Location.row][game.Player.Location.col], 0);
-      // engram.smell = fns.getAmbientEngrams(game, langCode, engram, game.Maze.Cells[game.Player.Location.row][game.Player.Location.col], 0).smell;
-      // engram.sound = senseEngram.sound;
-      // engram.taste = senseEngram.taste;
-      // engram.touch = senseEngram.touch;
+      const cell = game.Maze.Cells[game.Player.Location.row][game.Player.Location.col];
+      engram.smell = fns.getSmell(game, maze, langCode, new Engram(), cell, 0);
     }
   } else {
     // they tried to walk in a direction that has a wall
