@@ -1,11 +1,7 @@
 import * as routes from './routes';
 import express from 'express';
-import Config from './Config';
 
 export const router = express.Router();
-
-// load the service config
-const config = Config.getInstance();
 
 // existing games
 router.get('/get', routes.listGames);

@@ -79,11 +79,11 @@ function doMove(game, langCode) {
                 game = fns.movePlayer(game, game.Actions[game.Actions.length - 1]);
                 // doLook(game, lang);
                 // gather senses
-                const senseEngram = fns.getAmbientEngrams(game, langCode, engram, game.Maze.Cells[game.Player.Location.row][game.Player.Location.col], 0);
-                engram.smell = fns.getAmbientEngrams(game, langCode, engram, game.Maze.Cells[game.Player.Location.row][game.Player.Location.col], 0).smell;
-                engram.sound = senseEngram.sound;
-                engram.taste = senseEngram.taste;
-                engram.touch = senseEngram.touch;
+                // const senseEngram: Engram = fns.getAmbientEngrams(game, langCode, engram, game.Maze.Cells[game.Player.Location.row][game.Player.Location.col], 0);
+                // engram.smell = fns.getAmbientEngrams(game, langCode, engram, game.Maze.Cells[game.Player.Location.row][game.Player.Location.col], 0).smell;
+                // engram.sound = senseEngram.sound;
+                // engram.taste = senseEngram.taste;
+                // engram.touch = senseEngram.touch;
             }
         }
         else {

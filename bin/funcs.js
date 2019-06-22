@@ -11,11 +11,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const Config_1 = require("./Config");
 const axios_1 = __importDefault(require("axios"));
 const MazeLoc_1 = require("@mazemasterjs/shared-library/MazeLoc");
 const Cache_1 = require("./Cache");
 const Enums_1 = require("@mazemasterjs/shared-library/Enums");
-const Config_1 = require("./Config");
 const logger_1 = require("@mazemasterjs/logger");
 const GameLang_1 = __importDefault(require("./GameLang"));
 const log = logger_1.Logger.getInstance();
@@ -234,9 +234,9 @@ function getCmdByName(cmdName) {
         case 'WRITE': {
             return Enums_1.COMMANDS.WRITE;
         }
-        // case 'QUIT': {
-        //   return COMMANDS.QUIT;
-        // }
+        case 'QUIT': {
+            return Enums_1.COMMANDS.QUIT;
+        }
         case 'NONE': {
             return Enums_1.COMMANDS.NONE;
         }
@@ -420,16 +420,20 @@ function finalizeAction(game, maze, startScore) {
     // track the score change from this one move
     game.Actions[game.Actions.length - 1].score = game.Score.getTotalScore() - startScore;
     // TODO: Remove summarize from every every move - here now for DEV/DEBUG  purposes
-    summarizeGame(game.Actions[game.Actions.length - 1], game.Score);
+    // summarizeGame(game.Actions[game.Actions.length - 1], game.Score);
     // TODO: text render - here now just for DEV/DEBUG purposess - it should always be the LAST outcome, too
-    const textRender = maze.generateTextRender(true, game.Player.Location);
-    game.Actions[game.Actions.length - 1].outcomes.push(textRender);
-    logDebug(__filename, 'finalizeAction(...)', '\r\n' + textRender);
+    try {
+        const textRender = maze.generateTextRender(true, game.Player.Location);
+        game.Actions[game.Actions.length - 1].outcomes.push(textRender);
+        logDebug(__filename, 'finalizeAction(...)', '\r\n' + textRender);
+    }
+    catch (renderError) {
+        logError(__filename, 'finalizeAction(...)', 'Unable to generate text render of maze ->', renderError);
+    }
     return game.Actions[game.Actions.length - 1];
 }
 exports.finalizeAction = finalizeAction;
 function getAmbientEngrams(game, lang, engram, cell, distance, lastDir = Enums_1.DIRS.NONE) {
-    const log = logger_1.Logger.getInstance();
     const data = GameLang_1.default.getInstance(lang);
     const currentCell = game.Maze.Cells[cell.Location.row][cell.Location.col];
     let nextCell = currentCell;

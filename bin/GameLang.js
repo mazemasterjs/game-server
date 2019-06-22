@@ -5,8 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
-const logger_1 = __importDefault(require("@mazemasterjs/logger"));
-const log = logger_1.default.getInstance();
+const funcs_1 = require("./funcs");
 class GameLang {
     constructor() { }
     static getInstance(langCode) {
@@ -20,7 +19,7 @@ class GameLang {
             return item.language === langCode;
         });
         if (lang === undefined) {
-            log.warn(__filename, method, `No language defined for code '${langCode}' - defaulting to English (en)!`);
+            funcs_1.logTrace(__filename, method, `No language defined for code '${langCode}' - defaulting to English (en)!`);
             return this.languages.find(item => {
                 return item.language === 'en';
             });

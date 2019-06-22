@@ -1,13 +1,13 @@
+import { Config } from './Config';
 import axios from 'axios';
-import { Cell } from '@mazemasterjs/shared-library/Cell';
 import { Maze } from '@mazemasterjs/shared-library/Maze';
 import { MazeLoc } from '@mazemasterjs/shared-library/MazeLoc';
 import { Score } from '@mazemasterjs/shared-library/Score';
 import { Trophy } from '@mazemasterjs/shared-library/Trophy';
 import { AxiosResponse } from 'axios';
 import { Cache, CACHE_TYPES } from './Cache';
-import { COMMANDS, DIRS, GAME_RESULTS, GAME_STATES, TROPHY_IDS, CELL_TRAPS } from '@mazemasterjs/shared-library/Enums';
-import { Config } from './Config';
+import { CELL_TRAPS, COMMANDS, DIRS, GAME_RESULTS, GAME_STATES, TROPHY_IDS } from '@mazemasterjs/shared-library/Enums';
+import { Cell } from '@mazemasterjs/shared-library/Cell';
 import { Game } from '@mazemasterjs/shared-library/Game';
 import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
 import { IGameStub } from '@mazemasterjs/shared-library/Interfaces/IGameStub';
@@ -17,7 +17,6 @@ import { Team } from '@mazemasterjs/shared-library/Team';
 import { Engram } from '@mazemasterjs/shared-library/Engram';
 import GameLang from './GameLang';
 import CellBase from '@mazemasterjs/shared-library/CellBase';
-import { getSelectedBitNames } from '@mazemasterjs/shared-library/Helpers';
 
 const log = Logger.getInstance();
 const config = Config.getInstance();
@@ -236,9 +235,9 @@ export function getCmdByName(cmdName: string): number {
     case 'WRITE': {
       return COMMANDS.WRITE;
     }
-    // case 'QUIT': {
-    //   return COMMANDS.QUIT;
-    // }
+    case 'QUIT': {
+      return COMMANDS.QUIT;
+    }
     case 'NONE': {
       return COMMANDS.NONE;
     }
@@ -435,18 +434,21 @@ export function finalizeAction(game: Game, maze: Maze, startScore: number): IAct
   game.Actions[game.Actions.length - 1].score = game.Score.getTotalScore() - startScore;
 
   // TODO: Remove summarize from every every move - here now for DEV/DEBUG  purposes
-  summarizeGame(game.Actions[game.Actions.length - 1], game.Score);
+  // summarizeGame(game.Actions[game.Actions.length - 1], game.Score);
 
   // TODO: text render - here now just for DEV/DEBUG purposess - it should always be the LAST outcome, too
-  const textRender = maze.generateTextRender(true, game.Player.Location);
-  game.Actions[game.Actions.length - 1].outcomes.push(textRender);
-  logDebug(__filename, 'finalizeAction(...)', '\r\n' + textRender);
+  try {
+    const textRender = maze.generateTextRender(true, game.Player.Location);
+    game.Actions[game.Actions.length - 1].outcomes.push(textRender);
+    logDebug(__filename, 'finalizeAction(...)', '\r\n' + textRender);
+  } catch (renderError) {
+    logError(__filename, 'finalizeAction(...)', 'Unable to generate text render of maze ->', renderError);
+  }
 
   return game.Actions[game.Actions.length - 1];
 }
 
 export function getAmbientEngrams(game: Game, lang: string, engram: Engram, cell: CellBase, distance: number, lastDir: DIRS = DIRS.NONE): Engram {
-  const log = Logger.getInstance();
   const data = GameLang.getInstance(lang);
   const currentCell = game.Maze.Cells[cell.Location.row][cell.Location.col];
   let nextCell = currentCell;

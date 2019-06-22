@@ -15,13 +15,13 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const actMove_1 = require("./controllers/actMove");
 const fns = __importStar(require("./funcs"));
-const Action_1 = require("@mazemasterjs/shared-library/Action");
 const Cache_1 = require("./Cache");
 const Enums_1 = require("@mazemasterjs/shared-library/Enums");
 const Config_1 = require("./Config");
 const actLook_1 = require("./controllers/actLook");
-const actMove_1 = require("./controllers/actMove");
+const Action_1 = require("@mazemasterjs/shared-library/Action");
 const actStand_1 = require("./controllers/actStand");
 const Game_1 = require("@mazemasterjs/shared-library/Game");
 const logger_1 = require("@mazemasterjs/logger");
@@ -82,20 +82,25 @@ exports.createGame = (req, res) => __awaiter(this, void 0, void 0, function* () 
                     if (forceId) {
                         game.forceSetId(forceId);
                     }
-                    // store the game on the cache
+                    // store the game on the  cache
                     Cache_1.Cache.use().storeItem(Cache_1.CACHE_TYPES.GAME, game);
+                    // add initial game action
+                    const firstAction = new Action_1.Action(Enums_1.COMMANDS.WAIT, Enums_1.DIRS.NONE, 'You are sitting near the entrance to the maze.');
+                    game.addAction(firstAction);
                     // return json game stub: game.Id, getUrl: `${config.EXT_URL_GAME}/get/${game.Id}
-                    return res.status(200).json({ status: 200, message: 'Game Created', game: game.getStub(`${config.EXT_URL_GAME}/get/`) });
+                    return res
+                        .status(200)
+                        .json({ status: 200, message: 'Game Created', game: game.getStub(config.EXT_URL_GAME), action: fns.finalizeAction(game, maze, 0) });
                 }
             }
         })
             .catch(teamErr => {
-            log.warn(__filename, method, 'Unable to get Team');
+            log.warn(__filename, method, 'Unable to get Team -> ' + teamErr);
             return res.status(404).json({ status: 404, message: 'Invalid Request - Team not found.', error: teamErr.message });
         });
     })
         .catch(mazeErr => {
-        log.warn(__filename, method, 'Unable to get Maze');
+        log.warn(__filename, method, 'Unable to get Maze -> ' + mazeErr);
         return res.status(404).json({ status: 404, message: 'Invalid Request - Maze not found.', error: mazeErr.message });
     });
 });
@@ -135,7 +140,7 @@ exports.getGame = (req, res) => {
     return Cache_1.Cache.use()
         .fetchItem(Cache_1.CACHE_TYPES.GAME, req.params.gameId)
         .then(game => {
-        return res.status(200).json(game.getStub(config.EXT_URL_GAME));
+        return res.status(200).json(game);
     })
         .catch(fetchError => {
         res.status(404).json({ status: 404, message: 'Game Not Found', error: fetchError.message });

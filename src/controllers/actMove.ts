@@ -9,9 +9,6 @@ import { logDebug } from '../funcs';
 import { Maze } from '@mazemasterjs/shared-library/Maze';
 import { MazeLoc } from '@mazemasterjs/shared-library/MazeLoc';
 import { GameLang } from '../GameLang';
-import { lookForward, doLook } from './actLook';
-import path from 'path';
-import fs from 'fs';
 
 // need a config object for some of this
 const config: Config = Config.getInstance();
