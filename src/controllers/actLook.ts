@@ -3,7 +3,6 @@ import { Engram } from '@mazemasterjs/shared-library/Engram';
 import { Game } from '@mazemasterjs/shared-library/Game';
 import { GameLang } from '../GameLang';
 import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
-import { Maze } from '@mazemasterjs/shared-library/Maze';
 import { CELL_TRAPS, DIRS } from '@mazemasterjs/shared-library/Enums';
 import { format } from 'util';
 import path from 'path';
@@ -19,9 +18,10 @@ export function doLook(game: Game, langCode: string): IAction {
   const cell = game.Maze.Cells[game.Player.Location.row][game.Player.Location.col];
   const action = game.Actions[game.Actions.length - 1];
   const preMoveScore = game.Score.getTotalScore();
+
   // Grab the appropriate engram file
-  const maze: Maze = new Maze(game.Maze);
   const playerLoc: MazeLoc = new MazeLoc(game.Player.Location.row, game.Player.Location.col);
+
   // Look forward in the direcgtion the player is looking, and one cell in the periphery
   switch (game.Player.Facing) {
     case DIRS.NORTH: {
@@ -64,7 +64,7 @@ export function doLook(game: Game, langCode: string): IAction {
   action.score = game.Score.getTotalScore() - preMoveScore;
 
   // TODO: text render - here now just for DEV/DEBUG purposes
-  action.outcomes.push(maze.generateTextRender(true, game.Player.Location));
+  action.outcomes.push(game.Maze.generateTextRender(true, game.Player.Location));
 
   return action;
 }

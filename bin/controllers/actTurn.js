@@ -17,13 +17,11 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const fns = __importStar(require("../funcs"));
 const funcs_1 = require("../funcs");
-const Maze_1 = require("@mazemasterjs/shared-library/Maze");
 const Enums_1 = require("@mazemasterjs/shared-library/Enums");
 const actLook_1 = require("./actLook");
 function doTurn(game, langCode) {
     return __awaiter(this, void 0, void 0, function* () {
         funcs_1.logDebug(__filename, `doTurn(${game.Id})`, 'Player has issued the Turn command.');
-        const maze = new Maze_1.Maze(game.Maze);
         const startScore = game.Score.getTotalScore();
         const method = `doTurn(${game.Id})`;
         const action = game.Actions[game.Actions.length - 1];
@@ -79,7 +77,7 @@ function doTurn(game, langCode) {
         }
         action.engram.sight += actLook_1.doLook(game, langCode);
         // finalize the game action
-        game.Actions[game.Actions.length - 1] = fns.finalizeAction(game, maze, startScore);
+        game.Actions[game.Actions.length - 1] = fns.finalizeAction(game, startScore);
         return Promise.resolve(game.Actions[game.Actions.length - 1]);
     });
 }

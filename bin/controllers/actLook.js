@@ -5,7 +5,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const Engram_1 = require("@mazemasterjs/shared-library/Engram");
 const GameLang_1 = require("../GameLang");
-const Maze_1 = require("@mazemasterjs/shared-library/Maze");
 const Enums_1 = require("@mazemasterjs/shared-library/Enums");
 const MazeLoc_1 = __importDefault(require("@mazemasterjs/shared-library/MazeLoc"));
 const logger_1 = __importDefault(require("@mazemasterjs/logger"));
@@ -15,7 +14,6 @@ function doLook(game, langCode) {
     const action = game.Actions[game.Actions.length - 1];
     const preMoveScore = game.Score.getTotalScore();
     // Grab the appropriate engram file
-    const maze = new Maze_1.Maze(game.Maze);
     const playerLoc = new MazeLoc_1.default(game.Player.Location.row, game.Player.Location.col);
     // Look forward in the direcgtion the player is looking, and one cell in the periphery
     switch (game.Player.Facing) {
@@ -56,7 +54,7 @@ function doLook(game, langCode) {
     // track the score change from this one move
     action.score = game.Score.getTotalScore() - preMoveScore;
     // TODO: text render - here now just for DEV/DEBUG purposes
-    action.outcomes.push(maze.generateTextRender(true, game.Player.Location));
+    action.outcomes.push(game.Maze.generateTextRender(true, game.Player.Location));
     return action;
 }
 exports.doLook = doLook;

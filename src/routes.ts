@@ -84,7 +84,7 @@ export const createGame = async (req: Request, res: Response) => {
               // return json game stub: game.Id, getUrl: `${config.EXT_URL_GAME}/get/${game.Id}
               return res
                 .status(200)
-                .json({ status: 200, message: 'Game Created', game: game.getStub(config.EXT_URL_GAME), action: fns.finalizeAction(game, maze, 0) });
+                .json({ status: 200, message: 'Game Created', game: game.getStub(config.EXT_URL_GAME), action: fns.finalizeAction(game, 0) });
             }
           }
         })

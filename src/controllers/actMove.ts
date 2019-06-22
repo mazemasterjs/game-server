@@ -6,9 +6,9 @@ import { format } from 'util';
 import { Game } from '@mazemasterjs/shared-library/Game';
 import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
 import { logDebug } from '../funcs';
-import { Maze } from '@mazemasterjs/shared-library/Maze';
 import { MazeLoc } from '@mazemasterjs/shared-library/MazeLoc';
 import { GameLang } from '../GameLang';
+import { doLook } from './actLook';
 import { Player } from '@mazemasterjs/shared-library/Player';
 
 // need a config object for some of this
@@ -21,7 +21,6 @@ export async function doMove(game: Game, langCode: string): Promise<IAction> {
   if (dir === 0) {
     dir = game.Actions[game.Actions.length - 1].direction = game.Player.Facing;
   }
-  const maze: Maze = new Maze(game.Maze);
   const lang = GameLang.getInstance(langCode);
 
   // grab the current score so we can update action with points earned or lost during this move
@@ -40,11 +39,11 @@ export async function doMove(game: Game, langCode: string): Promise<IAction> {
     game.Actions[game.Actions.length - 1].outcomes.push('You cannot move while sitting!');
 
     // finalize and return action
-    return Promise.resolve(fns.finalizeAction(game, maze, startScore));
+    return Promise.resolve(fns.finalizeAction(game, startScore));
   }
 
   // now check for start/finish cell win & lose conditions
-  if (maze.getCell(pLoc).isDirOpen(dir)) {
+  if (game.Maze.getCell(pLoc).isDirOpen(dir)) {
     if (dir === DIRS.NORTH && pLoc.equals(game.Maze.StartCell)) {
       fns.logDebug(__filename, method, 'Player moved north into the entrance (lava).');
       engram.sight += 'LAVA to the NORTH';
@@ -70,10 +69,10 @@ export async function doMove(game: Game, langCode: string): Promise<IAction> {
       game.Player.Facing = dir;
       // engram.sight = lookForward(game, lang, game.Maze.Cells[game.Player.Location.row][game.Player.Location.col], engram, dir, 0).sight;
       game = fns.movePlayer(game, game.Actions[game.Actions.length - 1]);
-      // doLook(game, lang);
+      engram.sight = doLook(game, lang).engram.sight;
       // gather senses
       const cell = game.Maze.Cells[game.Player.Location.row][game.Player.Location.col];
-      engram.smell = fns.getSmell(game, maze, langCode, new Engram(), cell, 0);
+      engram.smell = fns.getSmell(game, langCode, new Engram(), cell, 0);
     }
   } else {
     // they tried to walk in a direction that has a wall
@@ -86,7 +85,7 @@ export async function doMove(game: Game, langCode: string): Promise<IAction> {
   }
 
   // game continues - return the action (with outcomes and engram)
-  return Promise.resolve(fns.finalizeAction(game, maze, startScore));
+  return Promise.resolve(fns.finalizeAction(game, startScore));
 }
 
 /**

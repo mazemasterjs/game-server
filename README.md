@@ -36,6 +36,10 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 
 ## Change Notes
 
+### v0.6.5
+
+-
+
 ### v0.6.4
 
 - smelling the maze when the player stands or moves
