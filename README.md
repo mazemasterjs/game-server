@@ -33,12 +33,21 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 - [x] When a character turns walls are detected where there should not be
 - [x] Peripheral vision is seeing more cells further than it should be
 - [ ] Senses besides sight not working correctly
+- [ ] Direction of what is being heard not working correctly
+- [ ] Distance of what is being heard not working correctly
 
 ## Change Notes
 
+### v0.6.6
+
+- Added hearing
+- direction, and distance to the target being heard
+
 ### v0.6.5
 
--
+- Changes trophies
+- Updated maze libary
+- Changes to support shared library 1.9.5
 
 ### v0.6.4
 

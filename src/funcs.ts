@@ -459,10 +459,16 @@ export function getSmell(game: Game, lang: string, engram: Engram, cell: CellBas
 
   if (!!(currentCell.Tags & CELL_TAGS.START)) {
     // smell - north would be lava
+    if (data.entities.lava.smell.intensity >= distance * 10) {
+      engram.smell += data.entities.lava.smell.adjective;
+    }
   }
 
   if (!!(currentCell.Tags & CELL_TAGS.FINISH)) {
     // smell - south :: smell is cheese
+    if (data.entities.cheese.smell.intensity >= distance * 10) {
+      engram.smell += data.entities.cheese.smell.adjective;
+    }
   }
 
   if (currentCell.isDirOpen(DIRS.NORTH) && cameFrom !== DIRS.NORTH && y - 1 >= 0) {
@@ -493,23 +499,23 @@ export function getSmell(game: Game, lang: string, engram: Engram, cell: CellBas
     switch (trapType) {
       case CELL_TRAPS.PIT: {
         if (data.entities.PIT.smell.intensity >= distance * 10) {
-          engram.smell += data.entities.PIT.smell.adjective;
+          engram.smell += `[${distance}:${data.entities.PIT.smell.adjective}]`;
         }
       }
       case CELL_TRAPS.MOUSETRAP: {
-        if (data.entities.BEARTRAP.smell.intensity >= distance * 10) {
-          engram.smell += data.entities.BEARTRAP.smell.adjective;
+        if (data.entities.MOUSETRAP.smell.intensity >= distance * 10) {
+          engram.smell += `[${distance}:${data.entities.MOUSETRAP.smell.adjective}]`;
         }
       }
       case CELL_TRAPS.TARPIT: {
         if (data.entities.TARPIT.smell.intensity >= distance * 10) {
-          engram.smell += data.entities.TARPIT.smell.adjective;
+          engram.smell += `[${distance}:${data.entities.TARPIT.smell.adjective}]`;
         }
         break;
       }
       case CELL_TRAPS.FLAMETHROWER: {
         if (data.entities.FLAMETHROWER.smell.intensity >= distance * 10) {
-          engram.smell += data.entities.FLAMETHROWER.smell.adjective;
+          engram.smell += `[${distance}:${data.entities.FLAMETHROWER.smell.adjective}]`;
         }
         break;
       }
@@ -527,4 +533,101 @@ export function getSmell(game: Game, lang: string, engram: Engram, cell: CellBas
     } // end switch
   } // end if
   return engram.smell;
+}
+
+export function getSound(game: Game, lang: string, engram: Engram, cell: CellBase): string {
+  const method = `getSound(${game.Id}, ${game.Maze.Id}, ${lang}, [Engram], (${cell.Location.row}x${cell.Location.col}))`;
+  logTrace(__filename, method, 'Entering getSound()...');
+  const data = GameLang.getInstance(lang);
+  let currentCell = game.Maze.getCell(cell.Location);
+  const xPlayer = game.Maze.getCell(game.Player.Location).Location.col;
+  const yPlayer = game.Maze.getCell(game.Player.Location).Location.row;
+  const height = game.Maze.Height;
+  const width = game.Maze.Width;
+  let x: number;
+  let y: number;
+  let pos: MazeLoc;
+  let distance: number;
+  for (y = yPlayer - 4; y < yPlayer + 4; y++) {
+    for (x = xPlayer - 4; x < xPlayer + 4; x++) {
+      if (x >= 0 && x < width && y >= 0 && y < height) {
+        logTrace(__filename, method, `Entering getSound() for [${x},${y}]`);
+        pos = new MazeLoc(y, x);
+        currentCell = game.Maze.getCell(pos);
+        distance = Math.abs(Math.sqrt(((x - xPlayer) ^ 2) + ((y - yPlayer) ^ 2)));
+        if (!!(currentCell.Tags & CELL_TAGS.START)) {
+          if (data.entities.lava.sound.intensity >= distance) {
+            engram.sound += `[${calcDirection(x, y, xPlayer, yPlayer)}: ${distance}:${data.entities.lava.sound.adjective}]`;
+          }
+        }
+
+        if (!!(currentCell.Tags & CELL_TAGS.FINISH)) {
+          if (data.entities.cheese.sound.intensity >= distance) {
+            engram.sound += `[${calcDirection(x, y, xPlayer, yPlayer)}:${distance}:${data.entities.cheese.sound.adjective}]`;
+          }
+        }
+        // TODO: CELL_TRAPS is a bitwise enumeration - this doesn't support bitwise
+        if (currentCell.Traps !== CELL_TRAPS.NONE) {
+          const trapType = currentCell.Traps;
+          logTrace(__filename, method, `${CELL_TRAPS[trapType]} detected in cell: ${currentCell.Location.toString()}`);
+          switch (trapType) {
+            case CELL_TRAPS.PIT: {
+              if (data.entities.PIT.sound.intensity >= distance * 10) {
+                engram.sound += `[${distance}:${data.entities.PIT.sound.adjective}]`;
+              }
+              break;
+            }
+            case CELL_TRAPS.MOUSETRAP: {
+              if (data.entities.MOUSETRAP.sound.intensity >= distance * 10) {
+                engram.sound += `[${distance}:${data.entities.MOUSETRAP.sound.adjective}]`;
+              }
+              break;
+            }
+            case CELL_TRAPS.TARPIT: {
+              if (data.entities.TARPIT.sound.intensity >= distance * 10) {
+                engram.sound += `[${distance}:${data.entities.TARPIT.sound.adjective}]`;
+              }
+              break;
+            }
+            case CELL_TRAPS.FLAMETHROWER: {
+              if (data.entities.FLAMETHROWER.sound.intensity >= distance * 10) {
+                engram.sound += `[${distance}:${data.entities.FLAMETHROWER.sound.adjective}]`;
+              }
+              break;
+            }
+            case CELL_TRAPS.FRAGILE_FLOOR:
+            case CELL_TRAPS.POISON_DART:
+            case CELL_TRAPS.TELEPORTER:
+            case CELL_TRAPS.DEADFALL: {
+              logTrace(__filename, method, `Trap Type ${CELL_TRAPS[trapType]} not implemented.`);
+              break;
+            }
+
+            default: {
+              logTrace(__filename, method, 'No traps detected in cell ' + currentCell.Location.toString());
+            }
+          } // end switch
+        } // end if
+      } // end if without bounds of maze
+    } // end for(x)
+  } // end for(y)
+  return engram.sound;
+}
+
+export function calcDirection(x1: number, y1: number, x2: number, y2: number): string {
+  const angle1 = calcAngleDegrees(x1, y1);
+  const angle2 = calcAngleDegrees(x2, y2);
+  const dirAngle = Math.abs(angle1 - angle2);
+  if (dirAngle > 90) {
+    return 'NORTH';
+  }
+  if (dirAngle <= 90) {
+    return 'SOUTH';
+  }
+
+  return 'NONE';
+}
+
+function calcAngleDegrees(x: number, y: number) {
+  return (Math.atan2(y, x) * 180) / Math.PI;
 }

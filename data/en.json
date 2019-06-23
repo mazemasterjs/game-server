@@ -6,25 +6,22 @@
                 "adjective": "red",
                 "intensity": 50
             },
-            "sound": [{
+            "sound": {
                 "adjective": "sizzle",
-                "intensity": 25
-            }, {
-                "adjective": "pop",
-                "intensity": 25
-            }],
-            "smell": [{
-                "adjective": "sulfer",
-                "intensity": 35
-            }],
-            "touch": [{
+                "intensity": 2500
+            },
+            "smell": {
+                "adjective": "sulphur",
+                "intensity": 3500
+            },
+            "touch": {
                 "adjective": "hot",
                 "intensity": 100
-            }],
-            "taste": [{
+            },
+            "taste": {
                 "adjective": "nothing",
                 "intensity": 0
-            }]
+            }
         },
         "smoke": {
             "sight": {
@@ -40,44 +37,44 @@
                 "adjective": "WALL",
                 "intensity": 30
             },
-            "sound": [{
+            "sound": {
                 "adjective": "none",
                 "intensity": 0
-            }],
-            "smell": [{
+            },
+            "smell": {
                 "adjective": "earth",
                 "intensity": 10
-            }],
-            "touch": [{
+            },
+            "touch": {
                 "adjective": "solid",
                 "intensity": 0
-            }],
-            "taste": [{
+            },
+            "taste": {
                 "adjective": "dirt",
                 "intensity": 0
-            }]
+            }
         },
         "cheese": {
-            "sight": [{
+            "sight": {
                 "adjective": "golden",
                 "intensity": 30
-            }],
-            "sound": [{
-                "adjective": "none",
-                "intensity": 0
-            }],
-            "smell": [{
+            },
+            "sound": {
+                "adjective": "cheese",
+                "intensity": 10000
+            },
+            "smell": {
                 "adjective": "cheesy",
-                "intensity": 1000
-            }],
-            "touch": [{
+                "intensity": 100
+            },
+            "touch": {
                 "adjective": "soft",
                 "intensity": 0
-            }],
-            "taste": [{
-                "adjective": "chese",
+            },
+            "taste": {
+                "adjective": "cheese",
                 "intensity": 0
-            }]
+            }
         },
         "PIT": {
             "sight": {
@@ -89,48 +86,48 @@
                 "intensity": 50
             },
             "smell": {
-                "adjective": "none",
-                "intensity": 10000
+                "adjective": "DIRT",
+                "intensity": 30
             },
             "touch": {
-                "adjective": "none",
-                "intensity": 0
+                "adjective": "Wind",
+                "intensity": 20
             },
             "taste": {
                 "adjective": "none",
                 "intensity": 0
             }
         },
-        "BEARTRAP": {
+        "MOUSETRAP": {
             "sight": {
-                "adjective": "BEARTRAP",
-                "intensity": 100000
+                "adjective": "MOUSETRAP",
+                "intensity": 30
             },
             "sound": {
-                "adjective": "none",
-                "intensity": 100000
+                "adjective": "",
+                "intensity": 0
             },
             "smell": {
-                "adjective": "none",
-                "intensity": 100000
+                "adjective": "RUST",
+                "intensity": 20
             },
             "touch": {
                 "adjective": "PAIN",
-                "intensity": 1000000
+                "intensity": 0
             },
             "taste": {
                 "adjective": "METALLIC",
-                "intensity": 1000000
+                "intensity": 0
             }
         },
         "TARPIT": {
             "sight": {
                 "adjective": "TAR",
-                "intensity": 10000
+                "intensity": 30
             },
             "sound": {
                 "adjective": "BUBBLING",
-                "intensity": 10000
+                "intensity": 30
             },
             "smell": {
                 "adjective": "TAR",
@@ -156,7 +153,7 @@
             },
             "smell": {
                 "adjective": "KEROSENE",
-                "intensity": 4000
+                "intensity": 40
             },
             "touch": {
                 "adjective": "WET",

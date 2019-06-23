@@ -77,30 +77,30 @@ function lookForward(game, lang, cell, engram, dir, distance, maxDistance) {
     }
     // Looks to see if the current cell contains a trap
     if (!(currentCell.Traps === 0 && distance === 0) && distance < maxDistance) {
-        const trapType = Enums_1.CELL_TRAPS[currentCell.Traps];
+        const trapType = currentCell.Traps;
         switch (trapType) {
-            case 'PIT': {
+            case Enums_1.CELL_TRAPS.PIT: {
                 if (data.entities.PIT.sight.intensity - distance * 10 >= 0) {
                     engram.sight += data.entities.PIT.sight.adjective;
                     cellEmpty = false;
                 }
                 break;
             }
-            case 'BEARTRAP': {
-                if (data.entities.BEARTRAP.sight.intensity - distance * 10 >= 0) {
-                    engram.sight += data.entities.BEARTRAP.sight.adjective;
+            case Enums_1.CELL_TRAPS.MOUSETRAP: {
+                if (data.entities.MOUSETRAP.sight.intensity - distance * 10 >= 0) {
+                    engram.sight += data.entities.MOUSETRAP.sight.adjective;
                     cellEmpty = false;
                 }
                 break;
             }
-            case 'TARPIT': {
+            case Enums_1.CELL_TRAPS.TARPIT: {
                 if (data.entities.TARPIT.sight.intensity - distance * 10 >= 0) {
                     engram.sight += data.entities.TARPIT.sight.adjective;
                     cellEmpty = false;
                 }
                 break;
             }
-            case 'FLAMETHOWER': {
+            case Enums_1.CELL_TRAPS.FLAMETHROWER: {
                 if (data.entities.FLAMETHROWER.sight.intensity - distance * 10 >= 0) {
                     engram.sight += data.entities.FLAMETHROWER.sight.adjective;
                     cellEmpty = false;
