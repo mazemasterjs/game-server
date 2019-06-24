@@ -1,10 +1,10 @@
+import { Action } from '@mazemasterjs/shared-library/Action';
 import { doMove } from './controllers/actMove';
-import * as fns from './funcs';
 import { Cache, CACHE_TYPES } from './Cache';
-import { COMMANDS, DIRS, GAME_STATES } from '@mazemasterjs/shared-library/Enums';
+import { COMMANDS, DIRS, GAME_RESULTS, GAME_STATES } from '@mazemasterjs/shared-library/Enums';
 import { Config } from './Config';
 import { doLook } from './controllers/actLook';
-import { Action } from '@mazemasterjs/shared-library/Action';
+import * as fns from './funcs';
 import { doStand } from './controllers/actStand';
 import { Game } from '@mazemasterjs/shared-library/Game';
 import { LOG_LEVELS, Logger } from '@mazemasterjs/logger';
@@ -84,7 +84,7 @@ export const createGame = async (req: Request, res: Response) => {
               // return json game stub: game.Id, getUrl: `${config.EXT_URL_GAME}/get/${game.Id}
               return res
                 .status(200)
-                .json({ status: 200, message: 'Game Created', game: game.getStub(config.EXT_URL_GAME), action: fns.finalizeAction(game, 0) });
+                .json({ status: 200, message: 'Game Created', game: game.getStub(config.EXT_URL_GAME), actionResult: fns.finalizeAction(game, 0) });
             }
           }
         })
@@ -226,24 +226,34 @@ export const processAction = async (req: Request, res: Response) => {
   // add the new action to the game
   game.addAction(action);
 
-  // make sure the game
-  game.State = GAME_STATES.IN_PROGRESS;
+  // handle game state - out of moves or time or whatever
+  if (game.Score.MoveCount >= game.Maze.CellCount * 3) {
+    game.State = GAME_STATES.FINISHED;
+    game.Score.GameResult = GAME_RESULTS.OUT_OF_MOVES;
+    if (game.Id.startsWith('FORCED')) {
+      game.forceSetId(`${game.Id}__${Date.now()}`);
+    }
+    return res.status(400).json({ status: 400, message: 'Game Over', error: 'The game is over.' });
+  } else {
+    game.State = GAME_STATES.IN_PROGRESS;
+  }
 
   switch (action.command) {
     case COMMANDS.LOOK: {
-      return res.status(200).json(await doLook(game, langCode));
+      const actionResult = await doLook(game, langCode);
+      return res.status(200).json({ actionResult, playerState: game.Player.State, playerFacing: game.Player.Facing });
     }
     case COMMANDS.MOVE: {
       const actionResult = await doMove(game, langCode);
-      return res.status(200).json(actionResult);
+      return res.status(200).json({ actionResult, playerState: game.Player.State, playerFacing: game.Player.Facing });
     }
     case COMMANDS.STAND: {
       const actionResult = await doStand(game, langCode);
-      return res.status(200).json(actionResult);
+      return res.status(200).json({ actionResult, playerState: game.Player.State, playerFacing: game.Player.Facing });
     }
     case COMMANDS.TURN: {
       const actionResult = await doTurn(game, langCode);
-      return res.status(200).json(actionResult);
+      return res.status(200).json({ actionResult, playerState: game.Player.State, playerFacing: game.Player.Facing });
     }
     case COMMANDS.JUMP:
     case COMMANDS.SIT:
@@ -251,7 +261,7 @@ export const processAction = async (req: Request, res: Response) => {
     default: {
       const err = new Error(`${COMMANDS[action.command]} is not recognized. Valid commands are LOOK, MOVE, JUMP, SIT, STAND, and WRITE.`);
       log.error(__filename, req.path, 'Unrecognized Command', err);
-      return res.status(500).json({ status: 400, message: 'Unrecognized Command', error: err.message });
+      return res.status(400).json({ status: 400, message: 'Unrecognized Command', error: err.message });
     }
   }
 };

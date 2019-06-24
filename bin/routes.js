@@ -15,13 +15,13 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const Action_1 = require("@mazemasterjs/shared-library/Action");
 const actMove_1 = require("./controllers/actMove");
-const fns = __importStar(require("./funcs"));
 const Cache_1 = require("./Cache");
 const Enums_1 = require("@mazemasterjs/shared-library/Enums");
 const Config_1 = require("./Config");
 const actLook_1 = require("./controllers/actLook");
-const Action_1 = require("@mazemasterjs/shared-library/Action");
+const fns = __importStar(require("./funcs"));
 const actStand_1 = require("./controllers/actStand");
 const Game_1 = require("@mazemasterjs/shared-library/Game");
 const logger_1 = require("@mazemasterjs/logger");
@@ -90,7 +90,7 @@ exports.createGame = (req, res) => __awaiter(this, void 0, void 0, function* () 
                     // return json game stub: game.Id, getUrl: `${config.EXT_URL_GAME}/get/${game.Id}
                     return res
                         .status(200)
-                        .json({ status: 200, message: 'Game Created', game: game.getStub(config.EXT_URL_GAME), action: fns.finalizeAction(game, 0) });
+                        .json({ status: 200, message: 'Game Created', game: game.getStub(config.EXT_URL_GAME), actionResult: fns.finalizeAction(game, 0) });
                 }
             }
         })
@@ -216,23 +216,34 @@ exports.processAction = (req, res) => __awaiter(this, void 0, void 0, function* 
     const action = new Action_1.Action(cmd, dir, msg);
     // add the new action to the game
     game.addAction(action);
-    // make sure the game
-    game.State = Enums_1.GAME_STATES.IN_PROGRESS;
+    // handle game state - out of moves or time or whatever
+    if (game.Score.MoveCount >= game.Maze.CellCount * 3) {
+        game.State = Enums_1.GAME_STATES.FINISHED;
+        game.Score.GameResult = Enums_1.GAME_RESULTS.OUT_OF_MOVES;
+        if (game.Id.startsWith('FORCED')) {
+            game.forceSetId(`${game.Id}__${Date.now()}`);
+        }
+        return res.status(400).json({ status: 400, message: 'Game Over', error: 'The game is over.' });
+    }
+    else {
+        game.State = Enums_1.GAME_STATES.IN_PROGRESS;
+    }
     switch (action.command) {
         case Enums_1.COMMANDS.LOOK: {
-            return res.status(200).json(yield actLook_1.doLook(game, langCode));
+            const actionResult = yield actLook_1.doLook(game, langCode);
+            return res.status(200).json({ actionResult, playerState: game.Player.State, playerFacing: game.Player.Facing });
         }
         case Enums_1.COMMANDS.MOVE: {
             const actionResult = yield actMove_1.doMove(game, langCode);
-            return res.status(200).json(actionResult);
+            return res.status(200).json({ actionResult, playerState: game.Player.State, playerFacing: game.Player.Facing });
         }
         case Enums_1.COMMANDS.STAND: {
             const actionResult = yield actStand_1.doStand(game, langCode);
-            return res.status(200).json(actionResult);
+            return res.status(200).json({ actionResult, playerState: game.Player.State, playerFacing: game.Player.Facing });
         }
         case Enums_1.COMMANDS.TURN: {
             const actionResult = yield actTurn_1.doTurn(game, langCode);
-            return res.status(200).json(actionResult);
+            return res.status(200).json({ actionResult, playerState: game.Player.State, playerFacing: game.Player.Facing });
         }
         case Enums_1.COMMANDS.JUMP:
         case Enums_1.COMMANDS.SIT:
@@ -240,7 +251,7 @@ exports.processAction = (req, res) => __awaiter(this, void 0, void 0, function* 
         default: {
             const err = new Error(`${Enums_1.COMMANDS[action.command]} is not recognized. Valid commands are LOOK, MOVE, JUMP, SIT, STAND, and WRITE.`);
             log.error(__filename, req.path, 'Unrecognized Command', err);
-            return res.status(500).json({ status: 400, message: 'Unrecognized Command', error: err.message });
+            return res.status(400).json({ status: 400, message: 'Unrecognized Command', error: err.message });
         }
     }
 });
