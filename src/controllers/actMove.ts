@@ -72,8 +72,8 @@ export async function doMove(game: Game, langCode: string): Promise<IAction> {
       engram.sight = doLook(game, lang).engram.sight;
       // gather senses
       const cell = game.Maze.Cells[game.Player.Location.row][game.Player.Location.col];
-      engram.smell = fns.getSmell(game, langCode, new Engram(), cell, 0);
-      engram.sound = fns.getSound(game, langCode, new Engram(), cell);
+      engram.smell = fns.smellJSON(game, langCode, cell, 0);
+      //  engram.sound = fns.getSound(game, langCode, cell);
     }
   } else {
     // they tried to walk in a direction that has a wall

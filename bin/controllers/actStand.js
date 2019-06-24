@@ -19,7 +19,6 @@ const fns = __importStar(require("../funcs"));
 const funcs_1 = require("../funcs");
 const Enums_1 = require("@mazemasterjs/shared-library/Enums");
 const actLook_1 = require("./actLook");
-const Engram_1 = require("@mazemasterjs/shared-library/Engram");
 function doStand(game, langCode) {
     return __awaiter(this, void 0, void 0, function* () {
         funcs_1.logDebug(__filename, `doStand(${game.Id})`, 'Player has issued the STAND command.');
@@ -44,8 +43,8 @@ function doStand(game, langCode) {
         // look ahead and one space around
         engram.sight = actLook_1.doLook(game, langCode).engram.sight;
         // gather senses
-        engram.smell = fns.getSmell(game, langCode, new Engram_1.Engram(), cell, 0);
-        engram.sound = fns.getSound(game, langCode, new Engram_1.Engram(), cell);
+        engram.smell = fns.smellJSON(game, langCode, cell, 0);
+        // engram.sound = fns.getSound(game, langCode, cell);
         // finalize the game action
         game.Actions[game.Actions.length - 1] = fns.finalizeAction(game, startScore);
         return Promise.resolve(game.Actions[game.Actions.length - 1]);

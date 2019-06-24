@@ -18,7 +18,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const fns = __importStar(require("../funcs"));
 const Config_1 = require("../Config");
 const Enums_1 = require("@mazemasterjs/shared-library/Enums");
-const Engram_1 = require("@mazemasterjs/shared-library/Engram");
 const util_1 = require("util");
 const funcs_1 = require("../funcs");
 const MazeLoc_1 = require("@mazemasterjs/shared-library/MazeLoc");
@@ -80,8 +79,8 @@ function doMove(game, langCode) {
                 engram.sight = actLook_1.doLook(game, lang).engram.sight;
                 // gather senses
                 const cell = game.Maze.Cells[game.Player.Location.row][game.Player.Location.col];
-                engram.smell = fns.getSmell(game, langCode, new Engram_1.Engram(), cell, 0);
-                engram.sound = fns.getSound(game, langCode, new Engram_1.Engram(), cell);
+                engram.smell = fns.smellJSON(game, langCode, cell, 0);
+                //  engram.sound = fns.getSound(game, langCode, cell);
             }
         }
         else {

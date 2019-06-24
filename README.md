@@ -38,6 +38,10 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 
 ## Change Notes
 
+### v0.6.7
+
+- Looking and Smelling now returns a string in a JSON compatible format
+
 ### v0.6.6
 
 - Added hearing
