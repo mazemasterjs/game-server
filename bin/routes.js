@@ -140,10 +140,11 @@ exports.getGame = (req, res) => {
     return Cache_1.Cache.use()
         .fetchItem(Cache_1.CACHE_TYPES.GAME, req.params.gameId)
         .then(game => {
-        return res.status(200).json(game);
+        const score = game.Score();
+        return res.status(200).json({ game, totalScore: score.getTotalScore(), playerState: game.Player.State, playerFacing: game.Player.Facing });
     })
         .catch(fetchError => {
-        res.status(404).json({ status: 404, message: 'Game Not Found', error: fetchError.message });
+        return res.status(404).json({ status: 404, message: 'Game Not Found', error: fetchError.message });
     });
 };
 /**

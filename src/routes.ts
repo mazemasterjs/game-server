@@ -11,6 +11,7 @@ import { LOG_LEVELS, Logger } from '@mazemasterjs/logger';
 import { Request, Response } from 'express';
 import { doTurn } from './controllers/actTurn';
 import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
+import Score from '@mazemasterjs/shared-library/Score';
 
 // set constant utility references
 const log = Logger.getInstance();
@@ -59,6 +60,7 @@ export const createGame = async (req: Request, res: Response) => {
 
             if (activeGameId !== '') {
               const gameType = botId ? 'SINGLE_PLAYER (bot)' : 'MULTIPLAYER (team)';
+
               return res
                 .status(400)
                 .json({ status: 400, message: 'Invalid Request - An active ' + gameType + ' game already exists.', gameId: activeGameId, teamId, botId });
@@ -139,10 +141,11 @@ export const getGame = (req: Request, res: Response) => {
   return Cache.use()
     .fetchItem(CACHE_TYPES.GAME, req.params.gameId)
     .then(game => {
-      return res.status(200).json(game);
+      const score: Score = game.Score();
+      return res.status(200).json({ game, totalScore: score.getTotalScore(), playerState: game.Player.State, playerFacing: game.Player.Facing });
     })
     .catch(fetchError => {
-      res.status(404).json({ status: 404, message: 'Game Not Found', error: fetchError.message });
+      return res.status(404).json({ status: 404, message: 'Game Not Found', error: fetchError.message });
     });
 };
 
