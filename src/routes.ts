@@ -258,8 +258,13 @@ export const processAction = async (req: Request, res: Response) => {
       const actionResult = await doTurn(game, langCode);
       return res.status(200).json({ actionResult, playerState: game.Player.State, playerFacing: game.Player.Facing });
     }
+    case COMMANDS.FACE:
+    case COMMANDS.LISTEN:
+    case COMMANDS.SNIFF:
     case COMMANDS.JUMP:
+    case COMMANDS.QUIT:
     case COMMANDS.SIT:
+    case COMMANDS.WAIT:
     case COMMANDS.WRITE:
     default: {
       const err = new Error(`${COMMANDS[action.command]} is not recognized. Valid commands are LOOK, MOVE, JUMP, SIT, STAND, and WRITE.`);
