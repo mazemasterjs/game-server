@@ -3,7 +3,7 @@ import { Engram } from '@mazemasterjs/shared-library/Engram';
 import { Game } from '@mazemasterjs/shared-library/Game';
 import { GameLang } from '../GameLang';
 import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
-import { CELL_TRAPS, DIRS } from '@mazemasterjs/shared-library/Enums';
+import { CELL_TRAPS, DIRS, CELL_TAGS } from '@mazemasterjs/shared-library/Enums';
 import { format } from 'util';
 import path from 'path';
 import fs from 'fs';
@@ -56,7 +56,7 @@ export function doLook(game: Game, langCode: string): IAction {
   log.debug(__filename, 'JSON.stringify(testObj)', JSON.stringify(testObj));
   action.engram.sight = engram.sight;
   action.engram.smell = fns.smellJSON(game, langCode, cell, 0);
-  // action.engram.sound = fns.getSound(game, langCode, cell);
+  action.engram.sound = fns.getSound(game, langCode, cell);
 
   if (cell.Location.equals(game.Maze.StartCell)) {
     action.outcomes.push('You see the entrace filled with lava');
@@ -82,6 +82,22 @@ export function lookForward(game: Game, lang: string, cell: CellBase, engram: En
   // Gets the players direction and prepends the sight engram with the characters direction
   if (distance === 0) {
     engram.sight = `"${DIRS[dir]}" : [`;
+  }
+
+  if (!!(currentCell.Tags & CELL_TAGS.START) && dir === DIRS.NORTH) {
+    if (distance !== 0) {
+      engram.sight += `"...",`;
+    }
+    engram.sight += `"${data.entities.lava.sight.adjective}"]`;
+    return engram;
+  }
+
+  if (!!(currentCell.Tags & CELL_TAGS.FINISH) && dir === DIRS.SOUTH) {
+    if (distance !== 0) {
+      engram.sight += `"...",`;
+    }
+    engram.sight += `"${data.entities.cheese.sight.adjective}"]`;
+    return engram;
   }
   // Looks to see if the current cell contains a trap
   if (!(currentCell.Traps === 0 && distance === 0) && distance < maxDistance) {

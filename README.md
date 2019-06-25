@@ -34,9 +34,15 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 - [x] Peripheral vision is seeing more cells further than it should be
 - [ ] Senses besides sight not working correctly
 - [ ] Direction of what is being heard not working correctly
-- [ ] Distance of what is being heard not working correctly
+- [x] Distance of what is being heard not working correctly
 
 ## Change Notes
+
+### v0.6.8
+
+- fixed distance calculation for smells
+- looking towards the entrance or exit returns the apporpriate engram instead of outputting as if the direction was open
+- fixed distance calculation for hearing
 
 ### v0.6.7
 

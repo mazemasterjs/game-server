@@ -35,7 +35,7 @@ export async function doStand(game: Game, langCode: string): Promise<IAction> {
   engram.sight = doLook(game, langCode).engram.sight;
   // gather senses
   engram.smell = fns.smellJSON(game, langCode, cell, 0);
-  // engram.sound = fns.getSound(game, langCode, cell);
+  engram.sound = fns.getSound(game, langCode, cell);
 
   // finalize the game action
   game.Actions[game.Actions.length - 1] = fns.finalizeAction(game, startScore);

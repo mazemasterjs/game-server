@@ -51,17 +51,17 @@ function doMove(game, langCode) {
         if (game.Maze.getCell(pLoc).isDirOpen(dir)) {
             if (dir === Enums_1.DIRS.NORTH && pLoc.equals(game.Maze.StartCell)) {
                 fns.logDebug(__filename, method, 'Player moved north into the entrance (lava).');
-                engram.sight += 'LAVA to the NORTH';
+                // engram.sight += 'LAVA to the NORTH';
                 game.Actions[game.Actions.length - 1].outcomes.push('Walked into lava, you DIED!');
                 finishGame(game, Enums_1.GAME_RESULTS.DEATH_LAVA);
             }
             else if (dir === Enums_1.DIRS.SOUTH && pLoc.equals(game.Maze.FinishCell)) {
                 fns.logDebug(__filename, method, 'Player moved south into the exit (cheese).');
-                engram.sight = 'Cheese!';
-                engram.smell = 'Cheese!';
-                engram.touch = 'Cheese!';
-                engram.taste = 'Cheese!';
-                engram.sound = 'Cheese!';
+                // engram.sight = 'Cheese!';
+                // engram.smell = 'Cheese!';
+                // engram.touch = 'Cheese!';
+                // engram.taste = 'Cheese!';
+                // engram.sound = 'Cheese!';
                 game.Actions[game.Actions.length - 1].outcomes.push('YOU WIN');
                 // game over: WINNER or WIN_FLAWLESS
                 if (game.Score.MoveCount <= game.Maze.ShortestPathLength) {
@@ -80,7 +80,7 @@ function doMove(game, langCode) {
                 // gather senses
                 const cell = game.Maze.Cells[game.Player.Location.row][game.Player.Location.col];
                 engram.smell = fns.smellJSON(game, langCode, cell, 0);
-                //  engram.sound = fns.getSound(game, langCode, cell);
+                engram.sound = fns.getSound(game, langCode, cell);
             }
         }
         else {

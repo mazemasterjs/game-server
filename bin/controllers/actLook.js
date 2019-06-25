@@ -56,7 +56,7 @@ function doLook(game, langCode) {
     log.debug(__filename, 'JSON.stringify(testObj)', JSON.stringify(testObj));
     action.engram.sight = engram.sight;
     action.engram.smell = fns.smellJSON(game, langCode, cell, 0);
-    // action.engram.sound = fns.getSound(game, langCode, cell);
+    action.engram.sound = fns.getSound(game, langCode, cell);
     if (cell.Location.equals(game.Maze.StartCell)) {
         action.outcomes.push('You see the entrace filled with lava');
         action.outcomes.push('North is lava');
@@ -78,6 +78,20 @@ function lookForward(game, lang, cell, engram, dir, distance, maxDistance) {
     // Gets the players direction and prepends the sight engram with the characters direction
     if (distance === 0) {
         engram.sight = `"${Enums_1.DIRS[dir]}" : [`;
+    }
+    if (!!(currentCell.Tags & Enums_1.CELL_TAGS.START) && dir === Enums_1.DIRS.NORTH) {
+        if (distance !== 0) {
+            engram.sight += `"...",`;
+        }
+        engram.sight += `"${data.entities.lava.sight.adjective}"]`;
+        return engram;
+    }
+    if (!!(currentCell.Tags & Enums_1.CELL_TAGS.FINISH) && dir === Enums_1.DIRS.SOUTH) {
+        if (distance !== 0) {
+            engram.sight += `"...",`;
+        }
+        engram.sight += `"${data.entities.cheese.sight.adjective}"]`;
+        return engram;
     }
     // Looks to see if the current cell contains a trap
     if (!(currentCell.Traps === 0 && distance === 0) && distance < maxDistance) {
