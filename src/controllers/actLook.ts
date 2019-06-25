@@ -23,40 +23,51 @@ export function doLook(game: Game, langCode: string): IAction {
 
   // Grab the appropriate engram file
   const playerLoc: MazeLoc = new MazeLoc(game.Player.Location.row, game.Player.Location.col);
-
+  const north: any[] = ['NORTH:'];
+  const south: any[] = ['SOUTH:'];
+  const east: any[] = ['EAST:'];
+  const west: any[] = ['WEST:'];
+  engram.sight.push(north);
+  engram.sight.push(south);
+  engram.sight.push(east);
+  engram.sight.push(west);
+  const northList = engram.sight[engram.sight.indexOf(north)];
+  const southList = engram.sight[engram.sight.indexOf(south)];
+  const eastList = engram.sight[engram.sight.indexOf(east)];
+  const westList = engram.sight[engram.sight.indexOf(west)];
   // Look forward in the direcgtion the player is looking, and one cell in the periphery
   switch (game.Player.Facing) {
     case DIRS.NORTH: {
-      engram.sight += `{${lookForward(game, langCode, cell, engram, DIRS.NORTH, 0).sight},`;
-      engram.sight += `${lookForward(game, langCode, cell, engram, DIRS.EAST, 0, 2).sight},`;
-      engram.sight += `${lookForward(game, langCode, cell, engram, DIRS.WEST, 0, 2).sight}}`;
+      lookForward(game, langCode, cell, northList, DIRS.NORTH, 0);
+      lookForward(game, langCode, cell, eastList, DIRS.EAST, 0, 2);
+      lookForward(game, langCode, cell, westList, DIRS.WEST, 0, 2);
+      lookForward(game, langCode, cell, southList, DIRS.SOUTH, 0, 2);
       break;
     }
     case DIRS.EAST: {
-      engram.sight += `{${lookForward(game, langCode, cell, engram, DIRS.NORTH, 0, 2).sight},`;
-      engram.sight += `${lookForward(game, langCode, cell, engram, DIRS.EAST, 0).sight},`;
-      engram.sight += `${lookForward(game, langCode, cell, engram, DIRS.SOUTH, 0, 2).sight}}`;
+      lookForward(game, langCode, cell, northList, DIRS.NORTH, 0, 2);
+      lookForward(game, langCode, cell, eastList, DIRS.EAST, 0);
+      lookForward(game, langCode, cell, southList, DIRS.SOUTH, 0, 2);
+      lookForward(game, langCode, cell, westList, DIRS.WEST, 0, 2);
       break;
     }
     case DIRS.SOUTH: {
-      engram.sight += `{${lookForward(game, langCode, cell, engram, DIRS.EAST, 0, 2).sight},`;
-      engram.sight += `${lookForward(game, langCode, cell, engram, DIRS.SOUTH, 0).sight},`;
-      engram.sight += `${lookForward(game, langCode, cell, engram, DIRS.WEST, 0, 2).sight}}`;
+      lookForward(game, langCode, cell, eastList, DIRS.EAST, 0, 2);
+      lookForward(game, langCode, cell, southList, DIRS.SOUTH, 0);
+      lookForward(game, langCode, cell, westList, DIRS.WEST, 0, 2);
+      lookForward(game, langCode, cell, northList, DIRS.NORTH, 0, 2);
       break;
     }
     case DIRS.WEST: {
-      engram.sight += `{${lookForward(game, langCode, cell, engram, DIRS.NORTH, 0, 2).sight},`;
-      engram.sight += `${lookForward(game, langCode, cell, engram, DIRS.SOUTH, 0, 2).sight},`;
-      engram.sight += `${lookForward(game, langCode, cell, engram, DIRS.WEST, 0).sight}}`;
+      lookForward(game, langCode, cell, northList, DIRS.NORTH, 0, 2);
+      lookForward(game, langCode, cell, southList, DIRS.SOUTH, 0, 2);
+      lookForward(game, langCode, cell, westList, DIRS.WEST, 0);
+      lookForward(game, langCode, cell, eastList, DIRS.EAST, 0, 2);
       break;
     }
   } // end switch(game.Player.Facing)
-  const testObj = JSON.parse(engram.sight);
-  log.debug(__filename, 'JSON.parse(engram.sight): ', testObj);
-  log.debug(__filename, 'JSON.stringify(testObj)', JSON.stringify(testObj));
   action.engram.sight = engram.sight;
-  action.engram.smell = fns.smellJSON(game, langCode, cell, 0);
-  action.engram.sound = fns.getSound(game, langCode, cell);
+  // action.engram.sound = fns.getSound(game, langCode, cell);
 
   if (cell.Location.equals(game.Maze.StartCell)) {
     action.outcomes.push('You see the entrace filled with lava');
@@ -72,73 +83,48 @@ export function doLook(game: Game, langCode: string): IAction {
   return action;
 }
 
-export function lookForward(game: Game, lang: string, cell: CellBase, engram: Engram, dir: DIRS, distance: number, maxDistance?: number): Engram {
+export function lookForward(game: Game, lang: string, cell: CellBase, engram: string[], dir: DIRS, distance: number, maxDistance?: number): string[] {
   const log = Logger.getInstance();
   const data = GameLang.getInstance(lang);
-  let cellEmpty = true;
   const currentCell = game.Maze.Cells[cell.Location.row][cell.Location.col];
   let nextCell = currentCell;
   maxDistance = maxDistance === undefined ? 10 : maxDistance;
   // Gets the players direction and prepends the sight engram with the characters direction
-  if (distance === 0) {
-    engram.sight = `"${DIRS[dir]}" : [`;
+  if (currentCell.Traps === 0 && !(distance === 0)) {
+    engram.push('EMPTY');
   }
 
   if (!!(currentCell.Tags & CELL_TAGS.START) && dir === DIRS.NORTH) {
-    if (distance !== 0) {
-      engram.sight += `"...",`;
-    }
-    engram.sight += `"${data.entities.lava.sight.adjective}"]`;
+    engram.push(data.entities.lava.sight.adjective);
     return engram;
   }
 
   if (!!(currentCell.Tags & CELL_TAGS.FINISH) && dir === DIRS.SOUTH) {
-    if (distance !== 0) {
-      engram.sight += `"...",`;
-    }
-    engram.sight += `"${data.entities.cheese.sight.adjective}"]`;
+    engram.push(data.entities.cheese.sight.adjective);
     return engram;
   }
   // Looks to see if the current cell contains a trap
   if (!(currentCell.Traps === 0 && distance === 0) && distance < maxDistance) {
-    const trapType = currentCell.Traps;
-    switch (trapType) {
-      case CELL_TRAPS.PIT: {
-        if (data.entities.PIT.sight.intensity - distance * 10 >= 0) {
-          engram.sight += `"${data.entities.PIT.sight.adjective}",`;
-          cellEmpty = false;
-        }
-        break;
-      }
-      case CELL_TRAPS.MOUSETRAP: {
-        if (data.entities.MOUSETRAP.sight.intensity - distance * 10 >= 0) {
-          engram.sight += `"${data.entities.MOUSETRAP.sight.adjective}",`;
-          cellEmpty = false;
-        }
-        break;
-      }
-      case CELL_TRAPS.TARPIT: {
-        if (data.entities.TARPIT.sight.intensity - distance * 10 >= 0) {
-          engram.sight += `"${data.entities.TARPIT.sight.adjective}",`;
-          cellEmpty = false;
-        }
-        break;
-      }
-      case CELL_TRAPS.FLAMETHROWER: {
-        if (data.entities.FLAMETHROWER.sight.intensity - distance * 10 >= 0) {
-          engram.sight += `"${data.entities.FLAMETHROWER.sight.adjective}",`;
-          cellEmpty = false;
-        }
-        break;
-      }
-      default:
-        log.debug(__filename, 'lookForward(): ', 'Unidentified trap detected');
-        break;
+    if (!!(currentCell.Traps & CELL_TRAPS.PIT)) {
+      engram.push(data.entities.PIT.sight.adjective);
+    }
+    if (!!(currentCell.Traps & CELL_TRAPS.FLAMETHROWER)) {
+      engram.push(data.entities.FLAMETHROWER.sight.adjective);
+    }
+    if (!!(currentCell.Traps & CELL_TRAPS.TARPIT)) {
+      engram.push(data.entities.TARPIT.sight.adjective);
+    }
+    if (!!(currentCell.Traps & CELL_TRAPS.MOUSETRAP)) {
+      engram.push(data.entities.MOUSETRAP.sight.adjective);
     }
   } // end if(!(currentCell.Traps === 0 && distance === 0) && distance < maxDistance)
 
   // Looks to see if there is an opening in the direction the character is facing, and if so looks into the next cell over
-  if (currentCell.isDirOpen(dir) && distance * 10 <= data.entities.DARKNESS.sight.intensity && distance < maxDistance) {
+  if (distance >= data.entities.DARKNESS.sight.intensity || distance >= maxDistance) {
+    engram.push(data.entities.DARKNESS.sight.adjective);
+  } else if (!currentCell.isDirOpen(dir)) {
+    engram.push(data.entities.WALL.sight.adjective);
+  } else {
     switch (dir) {
       case DIRS.NORTH:
         if (currentCell.Location.row - 1 >= 0) {
@@ -162,20 +148,8 @@ export function lookForward(game: Game, lang: string, cell: CellBase, engram: En
         break;
       default:
         break;
-    } // end switch(dir)
-    // An empty cell yields no additional information
-    if (cellEmpty && distance > 0 && distance <= maxDistance) {
-      engram.sight += `"...",`;
     }
-    engram = lookForward(game, lang, nextCell, engram, dir, ++distance, maxDistance);
-  } // end if (currentCell.isDirOpen(dir) && distance * 10 <= data.entities.DARKNESS.sight.intensity && distance < maxDistance)
-  else if (!currentCell.isDirOpen(dir) && distance < maxDistance) {
-    if (cellEmpty && distance !== 0) {
-      engram.sight += `"...",`;
-    }
-    engram.sight += `"${data.entities.wall.sight.adjective}"]`;
-  } else {
-    engram.sight += `"${data.entities.DARKNESS.sight.adjective}"]`;
-  }
+    lookForward(game, lang, nextCell, engram, dir, distance + 1, maxDistance);
+  } // end if (currentCell.isDirOpen(dir))
   return engram;
 } // end lookForward()

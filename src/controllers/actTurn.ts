@@ -66,7 +66,7 @@ export async function doTurn(game: Game, langCode: string): Promise<IAction> {
     }
   }
 
-  action.engram.sight += doLook(game, langCode);
+  action.engram.sight.push(doLook(game, langCode).engram.sight);
   // finalize the game action
   game.Actions[game.Actions.length - 1] = fns.finalizeAction(game, startScore);
 

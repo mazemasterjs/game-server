@@ -32,7 +32,7 @@
             "touch": "hot",
             "taste": "chicken"
         },
-        "wall": {
+        "WALL": {
             "sight": {
                 "adjective": "WALL",
                 "intensity": 30

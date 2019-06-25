@@ -75,7 +75,7 @@ function doTurn(game, langCode) {
                 action.outcomes.push('You turn 360 degrees and moonwalk in place');
             }
         }
-        action.engram.sight += actLook_1.doLook(game, langCode);
+        action.engram.sight.push(actLook_1.doLook(game, langCode).engram.sight);
         // finalize the game action
         game.Actions[game.Actions.length - 1] = fns.finalizeAction(game, startScore);
         return Promise.resolve(game.Actions[game.Actions.length - 1]);
