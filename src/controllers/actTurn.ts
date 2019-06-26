@@ -6,7 +6,7 @@ import { grantTrophy, logDebug } from '../funcs';
 import { format } from 'util';
 import { DIRS, PLAYER_STATES, TROPHY_IDS } from '@mazemasterjs/shared-library/Enums';
 import { Engram } from '@mazemasterjs/shared-library/Engram';
-import { doLook, lookForward } from './actLook';
+import { doLook } from './actLook';
 import path from 'path';
 import fs from 'fs';
 
@@ -16,7 +16,7 @@ export async function doTurn(game: Game, langCode: string): Promise<IAction> {
   const method = `doTurn(${game.Id})`;
   const action = game.Actions[game.Actions.length - 1];
   const direction = action.direction;
-  const engram: Engram = game.Actions[game.Actions.length - 1].engram;
+  let engram: Engram = game.Actions[game.Actions.length - 1].engram;
   // Turns left or right
   switch (direction) {
     case DIRS.LEFT: {
@@ -66,7 +66,7 @@ export async function doTurn(game: Game, langCode: string): Promise<IAction> {
     }
   }
 
-  action.engram.sight.push(doLook(game, langCode).engram.sight);
+  engram = doLook(game, langCode, engram);
   // finalize the game action
   game.Actions[game.Actions.length - 1] = fns.finalizeAction(game, startScore);
 

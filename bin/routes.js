@@ -26,6 +26,7 @@ const actStand_1 = require("./controllers/actStand");
 const Game_1 = require("@mazemasterjs/shared-library/Game");
 const logger_1 = require("@mazemasterjs/logger");
 const actTurn_1 = require("./controllers/actTurn");
+const Engram_1 = require("@mazemasterjs/shared-library/Engram");
 // set constant utility references
 const log = logger_1.Logger.getInstance();
 const config = Config_1.Config.getInstance();
@@ -231,7 +232,7 @@ exports.processAction = (req, res) => __awaiter(this, void 0, void 0, function* 
     }
     switch (action.command) {
         case Enums_1.COMMANDS.LOOK: {
-            const actionResult = yield actLook_1.doLook(game, langCode);
+            const actionResult = yield actLook_1.doLook(game, langCode, new Engram_1.Engram());
             return res.status(200).json({ actionResult, playerState: game.Player.State, playerFacing: game.Player.Facing });
         }
         case Enums_1.COMMANDS.MOVE: {

@@ -38,6 +38,10 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 
 ## Change Notes
 
+### v0.6.10
+
+- engrams based on cardinal directions
+
 ### v0.6.9
 
 - sight converted to arrays

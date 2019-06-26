@@ -26,7 +26,7 @@ function doTurn(game, langCode) {
         const method = `doTurn(${game.Id})`;
         const action = game.Actions[game.Actions.length - 1];
         const direction = action.direction;
-        const engram = game.Actions[game.Actions.length - 1].engram;
+        let engram = game.Actions[game.Actions.length - 1].engram;
         // Turns left or right
         switch (direction) {
             case Enums_1.DIRS.LEFT: {
@@ -75,7 +75,7 @@ function doTurn(game, langCode) {
                 action.outcomes.push('You turn 360 degrees and moonwalk in place');
             }
         }
-        action.engram.sight.push(actLook_1.doLook(game, langCode).engram.sight);
+        engram = actLook_1.doLook(game, langCode, engram);
         // finalize the game action
         game.Actions[game.Actions.length - 1] = fns.finalizeAction(game, startScore);
         return Promise.resolve(game.Actions[game.Actions.length - 1]);

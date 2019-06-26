@@ -12,7 +12,7 @@ export async function doStand(game: Game, langCode: string): Promise<IAction> {
   logDebug(__filename, `doStand(${game.Id})`, 'Player has issued the STAND command.');
   const cell = game.Maze.Cells[game.Player.Location.row][game.Player.Location.col];
   const startScore = game.Score.getTotalScore();
-  const engram = game.Actions[game.Actions.length - 1].engram;
+  let engram = game.Actions[game.Actions.length - 1].engram;
 
   // note the lava to the north if in the start cell
   // if (cell.Location.equals(game.Maze.StartCell)) {
@@ -32,7 +32,7 @@ export async function doStand(game: Game, langCode: string): Promise<IAction> {
   }
 
   // look ahead and one space around
-  engram.sight.push(doLook(game, langCode).engram.sight);
+  engram = doLook(game, langCode, engram);
 
   // finalize the game action
   game.Actions[game.Actions.length - 1] = fns.finalizeAction(game, startScore);

@@ -24,7 +24,7 @@ function doStand(game, langCode) {
         funcs_1.logDebug(__filename, `doStand(${game.Id})`, 'Player has issued the STAND command.');
         const cell = game.Maze.Cells[game.Player.Location.row][game.Player.Location.col];
         const startScore = game.Score.getTotalScore();
-        const engram = game.Actions[game.Actions.length - 1].engram;
+        let engram = game.Actions[game.Actions.length - 1].engram;
         // note the lava to the north if in the start cell
         // if (cell.Location.equals(game.Maze.StartCell)) {
         //   engram.sight = 'LAVA NORTH';
@@ -41,7 +41,7 @@ function doStand(game, langCode) {
             game.Actions[game.Actions.length - 1].outcomes.push('You stand up.');
         }
         // look ahead and one space around
-        engram.sight.push(actLook_1.doLook(game, langCode).engram.sight);
+        engram = actLook_1.doLook(game, langCode, engram);
         // finalize the game action
         game.Actions[game.Actions.length - 1] = fns.finalizeAction(game, startScore);
         return Promise.resolve(game.Actions[game.Actions.length - 1]);

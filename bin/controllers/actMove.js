@@ -28,7 +28,7 @@ const config = Config_1.Config.getInstance();
 function doMove(game, langCode) {
     return __awaiter(this, void 0, void 0, function* () {
         const method = `doMove(${game.Id})`;
-        const engram = game.Actions[game.Actions.length - 1].engram;
+        let engram = game.Actions[game.Actions.length - 1].engram;
         let dir = game.Actions[game.Actions.length - 1].direction;
         if (dir === 0) {
             dir = game.Actions[game.Actions.length - 1].direction = game.Player.Facing;
@@ -76,7 +76,7 @@ function doMove(game, langCode) {
                 game.Player.Facing = dir;
                 // engram.sight = lookForward(game, lang, game.Maze.Cells[game.Player.Location.row][game.Player.Location.col], engram, dir, 0).sight;
                 game = fns.movePlayer(game, game.Actions[game.Actions.length - 1]);
-                engram.sight.push(actLook_1.doLook(game, lang).engram.sight);
+                engram = actLook_1.doLook(game, lang, engram);
                 // gather senses
             }
         }

@@ -12,6 +12,7 @@ import { Request, Response } from 'express';
 import { doTurn } from './controllers/actTurn';
 import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
 import Score from '@mazemasterjs/shared-library/Score';
+import { Engram } from '@mazemasterjs/shared-library/Engram';
 
 // set constant utility references
 const log = Logger.getInstance();
@@ -243,7 +244,7 @@ export const processAction = async (req: Request, res: Response) => {
 
   switch (action.command) {
     case COMMANDS.LOOK: {
-      const actionResult = await doLook(game, langCode);
+      const actionResult = await doLook(game, langCode, new Engram());
       return res.status(200).json({ actionResult, playerState: game.Player.State, playerFacing: game.Player.Facing });
     }
     case COMMANDS.MOVE: {

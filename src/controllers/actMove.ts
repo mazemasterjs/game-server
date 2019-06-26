@@ -16,7 +16,7 @@ const config: Config = Config.getInstance();
 
 export async function doMove(game: Game, langCode: string): Promise<IAction> {
   const method = `doMove(${game.Id})`;
-  const engram: Engram = game.Actions[game.Actions.length - 1].engram;
+  let engram: Engram = game.Actions[game.Actions.length - 1].engram;
   let dir: DIRS = game.Actions[game.Actions.length - 1].direction;
   if (dir === 0) {
     dir = game.Actions[game.Actions.length - 1].direction = game.Player.Facing;
@@ -69,7 +69,7 @@ export async function doMove(game: Game, langCode: string): Promise<IAction> {
       game.Player.Facing = dir;
       // engram.sight = lookForward(game, lang, game.Maze.Cells[game.Player.Location.row][game.Player.Location.col], engram, dir, 0).sight;
       game = fns.movePlayer(game, game.Actions[game.Actions.length - 1]);
-      engram.sight.push(doLook(game, lang).engram.sight);
+      engram = doLook(game, lang, engram);
       // gather senses
     }
   } else {
