@@ -246,8 +246,13 @@ exports.processAction = (req, res) => __awaiter(this, void 0, void 0, function* 
             const actionResult = yield actTurn_1.doTurn(game, langCode);
             return res.status(200).json({ actionResult, playerState: game.Player.State, playerFacing: game.Player.Facing });
         }
+        case Enums_1.COMMANDS.FACE:
+        case Enums_1.COMMANDS.LISTEN:
+        case Enums_1.COMMANDS.SNIFF:
         case Enums_1.COMMANDS.JUMP:
+        case Enums_1.COMMANDS.QUIT:
         case Enums_1.COMMANDS.SIT:
+        case Enums_1.COMMANDS.WAIT:
         case Enums_1.COMMANDS.WRITE:
         default: {
             const err = new Error(`${Enums_1.COMMANDS[action.command]} is not recognized. Valid commands are LOOK, MOVE, JUMP, SIT, STAND, and WRITE.`);
