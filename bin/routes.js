@@ -26,7 +26,6 @@ const actStand_1 = require("./controllers/actStand");
 const Game_1 = require("@mazemasterjs/shared-library/Game");
 const logger_1 = require("@mazemasterjs/logger");
 const actTurn_1 = require("./controllers/actTurn");
-const Engram_1 = require("@mazemasterjs/shared-library/Engram");
 // set constant utility references
 const log = logger_1.Logger.getInstance();
 const config = Config_1.Config.getInstance();
@@ -52,6 +51,7 @@ exports.createGame = (req, res) => __awaiter(this, void 0, void 0, function* () 
     const botId = req.params.botId;
     const forceId = req.query.forceId;
     const method = `createGame(${mazeId}, ${teamId}, ${botId})`;
+    const langCode = fns.getLanguage(req);
     // get maze - bail on fail
     return yield Cache_1.Cache.use()
         .fetchOrGetItem(Cache_1.CACHE_TYPES.MAZE, mazeId)
@@ -91,7 +91,7 @@ exports.createGame = (req, res) => __awaiter(this, void 0, void 0, function* () 
                     // return json game stub: game.Id, getUrl: `${config.EXT_URL_GAME}/get/${game.Id}
                     return res
                         .status(200)
-                        .json({ status: 200, message: 'Game Created', game: game.getStub(config.EXT_URL_GAME), actionResult: fns.finalizeAction(game, 0) });
+                        .json({ status: 200, message: 'Game Created', game: game.getStub(config.EXT_URL_GAME), actionResult: fns.finalizeAction(game, 0, langCode) });
                 }
             }
         })
@@ -190,8 +190,8 @@ exports.processAction = (req, res) => __awaiter(this, void 0, void 0, function* 
     }
     // assign some reference vars from req.body (validate cmd and dir)
     const gameId = req.body.gameId;
-    const cmd = fns.getCmdByName(req.body.command);
-    const dir = fns.getDirByName(req.body.direction);
+    const cmd = isNaN(parseInt(req.body.command, 10)) ? fns.getCmdByName(req.body.command) : parseInt(req.body.command, 10);
+    const dir = isNaN(parseInt(req.body.direction, 10)) ? fns.getDirByName(req.body.direction) : parseInt(req.body.direction, 10);
     const msg = req.body.message !== undefined ? req.body.message : '';
     const langCode = fns.getLanguage(req);
     // first attempt to get the game by the given Id - fetchItem() will
@@ -232,7 +232,7 @@ exports.processAction = (req, res) => __awaiter(this, void 0, void 0, function* 
     }
     switch (action.command) {
         case Enums_1.COMMANDS.LOOK: {
-            const actionResult = yield actLook_1.doLook(game, langCode, new Engram_1.Engram());
+            const actionResult = yield actLook_1.doLook(game, langCode);
             return res.status(200).json({ actionResult, playerState: game.Player.State, playerFacing: game.Player.Facing });
         }
         case Enums_1.COMMANDS.MOVE: {

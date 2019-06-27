@@ -1,23 +1,12 @@
 import * as fns from '../funcs';
-import { format } from 'util';
 import { Game } from '@mazemasterjs/shared-library/Game';
-import { GameLang } from '../GameLang';
 import { grantTrophy, logDebug } from '../funcs';
 import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
 import { PLAYER_STATES, TROPHY_IDS } from '@mazemasterjs/shared-library/Enums';
-import { doLook } from './actLook';
-import { Engram } from '@mazemasterjs/shared-library/Engram';
 
 export async function doStand(game: Game, langCode: string): Promise<IAction> {
-  logDebug(__filename, `doStand(${game.Id})`, 'Player has issued the STAND command.');
-  const cell = game.Maze.Cells[game.Player.Location.row][game.Player.Location.col];
+  logDebug(__filename, `doStand(${game.Id}, ${langCode})`, 'Player has issued the STAND command.');
   const startScore = game.Score.getTotalScore();
-  let engram = game.Actions[game.Actions.length - 1].engram;
-
-  // note the lava to the north if in the start cell
-  // if (cell.Location.equals(game.Maze.StartCell)) {
-  //   engram.sight = 'LAVA NORTH';
-  // }
 
   if (!!(game.Player.State & PLAYER_STATES.STANDING)) {
     game = await grantTrophy(game, TROPHY_IDS.STAND_HARDER);
@@ -31,11 +20,6 @@ export async function doStand(game: Game, langCode: string): Promise<IAction> {
     game.Actions[game.Actions.length - 1].outcomes.push('You stand up.');
   }
 
-  // look ahead and one space around
-  engram = doLook(game, langCode, engram);
-
-  // finalize the game action
-  game.Actions[game.Actions.length - 1] = fns.finalizeAction(game, startScore);
-
-  return Promise.resolve(game.Actions[game.Actions.length - 1]);
+  // finalize and return action
+  return Promise.resolve(fns.finalizeAction(game, startScore, langCode));
 }

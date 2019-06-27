@@ -1,21 +1,19 @@
-import { Config } from './Config';
 import axios from 'axios';
-import { MazeLoc } from '@mazemasterjs/shared-library/MazeLoc';
-import { Score } from '@mazemasterjs/shared-library/Score';
-import { Trophy } from '@mazemasterjs/shared-library/Trophy';
 import { AxiosResponse } from 'axios';
 import { Cache, CACHE_TYPES } from './Cache';
-import { CELL_TAGS, CELL_TRAPS, COMMANDS, DIRS, GAME_RESULTS, GAME_STATES, TROPHY_IDS } from '@mazemasterjs/shared-library/Enums';
 import { Cell } from '@mazemasterjs/shared-library/Cell';
+import { COMMANDS, DIRS, GAME_RESULTS, GAME_STATES, TROPHY_IDS } from '@mazemasterjs/shared-library/Enums';
+import { Config } from './Config';
+import { doLookLocal } from './controllers/actLook';
 import { Game } from '@mazemasterjs/shared-library/Game';
 import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
 import { IGameStub } from '@mazemasterjs/shared-library/Interfaces/IGameStub';
-import { Request, Response } from 'express';
 import { LOG_LEVELS, Logger } from '@mazemasterjs/logger';
+import { MazeLoc } from '@mazemasterjs/shared-library/MazeLoc';
+import { Request } from 'express';
+import { Score } from '@mazemasterjs/shared-library/Score';
 import { Team } from '@mazemasterjs/shared-library/Team';
-import { Engram } from '@mazemasterjs/shared-library/Engram';
-import GameLang from './GameLang';
-import CellBase from '@mazemasterjs/shared-library/CellBase';
+import { Trophy } from '@mazemasterjs/shared-library/Trophy';
 
 const log = Logger.getInstance();
 const config = Config.getInstance();
@@ -253,9 +251,8 @@ export function getCmdByName(cmdName: string): number {
  * @param game: Game - the current game
  * @param action: IAction - the pre-validated IAction behind this move
  */
-export function movePlayer(game: Game, act: IAction): Game {
-  const pLoc: MazeLoc = game.Player.Location;
-
+export function movePlayer(game: Game): Game {
+  const act = game.Actions[game.Actions.length - 1];
   // reposition the player - all move validation is preformed prior to this call
   switch (act.direction) {
     case DIRS.NORTH: {
@@ -424,16 +421,13 @@ export function getLanguage(req: Request) {
  * @param startScore
  * @param finishScore
  */
-export function finalizeAction(game: Game, startScore: number): IAction {
+export function finalizeAction(game: Game, startScore: number, langCode: string): IAction {
   // increment move counters
   game.Score.addMove();
   game.Actions[game.Actions.length - 1].moveCount++;
 
   // track the score change from this one move
   game.Actions[game.Actions.length - 1].score = game.Score.getTotalScore() - startScore;
-
-  // TODO: Remove summarize from every every move - here now for DEV/DEBUG  purposes
-  // summarizeGame(game.Actions[game.Actions.length - 1], game.Score);
 
   // TODO: text render - here now just for DEV/DEBUG purposess - it should always be the LAST outcome, too
   try {
@@ -443,6 +437,9 @@ export function finalizeAction(game: Game, startScore: number): IAction {
   } catch (renderError) {
     logError(__filename, 'finalizeAction(...)', 'Unable to generate text render of maze ->', renderError);
   }
+
+  // update the sight engrams
+  doLookLocal(game, langCode);
 
   return game.Actions[game.Actions.length - 1];
 }

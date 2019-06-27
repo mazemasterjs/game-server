@@ -38,6 +38,10 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 
 ## Change Notes
 
+### v0.7.0
+
+- engrams, doLook, doLookLocal, doTurn, outcomes... lots and lots of updates!
+
 ### v0.6.10
 
 - engrams based on cardinal directions

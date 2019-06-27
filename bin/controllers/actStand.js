@@ -18,17 +18,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const fns = __importStar(require("../funcs"));
 const funcs_1 = require("../funcs");
 const Enums_1 = require("@mazemasterjs/shared-library/Enums");
-const actLook_1 = require("./actLook");
 function doStand(game, langCode) {
     return __awaiter(this, void 0, void 0, function* () {
-        funcs_1.logDebug(__filename, `doStand(${game.Id})`, 'Player has issued the STAND command.');
-        const cell = game.Maze.Cells[game.Player.Location.row][game.Player.Location.col];
+        funcs_1.logDebug(__filename, `doStand(${game.Id}, ${langCode})`, 'Player has issued the STAND command.');
         const startScore = game.Score.getTotalScore();
-        let engram = game.Actions[game.Actions.length - 1].engram;
-        // note the lava to the north if in the start cell
-        // if (cell.Location.equals(game.Maze.StartCell)) {
-        //   engram.sight = 'LAVA NORTH';
-        // }
         if (!!(game.Player.State & Enums_1.PLAYER_STATES.STANDING)) {
             game = yield funcs_1.grantTrophy(game, Enums_1.TROPHY_IDS.STAND_HARDER);
             game.Actions[game.Actions.length - 1].outcomes.push('You were already standing.');
@@ -40,11 +33,8 @@ function doStand(game, langCode) {
             game = yield funcs_1.grantTrophy(game, Enums_1.TROPHY_IDS.TAKING_A_STAND);
             game.Actions[game.Actions.length - 1].outcomes.push('You stand up.');
         }
-        // look ahead and one space around
-        engram = actLook_1.doLook(game, langCode, engram);
-        // finalize the game action
-        game.Actions[game.Actions.length - 1] = fns.finalizeAction(game, startScore);
-        return Promise.resolve(game.Actions[game.Actions.length - 1]);
+        // finalize and return action
+        return Promise.resolve(fns.finalizeAction(game, startScore, langCode));
     });
 }
 exports.doStand = doStand;

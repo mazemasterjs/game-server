@@ -1,57 +1,136 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const MazeLoc_1 = __importDefault(require("@mazemasterjs/shared-library/MazeLoc"));
-const logger_1 = __importDefault(require("@mazemasterjs/logger"));
-const log = logger_1.default.getInstance();
-function doLook(game, langCode, engram) {
-    const cell = game.Maze.Cells[game.Player.Location.row][game.Player.Location.col];
-    const action = game.Actions[game.Actions.length - 1];
-    const preMoveScore = game.Score.getTotalScore();
-    // Grab the appropriate engram file
-    const playerLoc = new MazeLoc_1.default(game.Player.Location.row, game.Player.Location.col);
-    const exitList = cell.listExits().split(', ');
-    engram.north.see.pop();
-    engram.south.see.pop();
-    engram.east.see.pop();
-    engram.west.see.pop();
-    if (exitList.includes('NORTH')) {
-        engram.north.see.push({ sight: 'exit', distance: 0 });
-    }
-    else {
-        engram.north.see.push({ sight: 'wall', distance: 0 });
-    }
-    if (exitList.includes('SOUTH')) {
-        engram.south.see.push({ sight: 'exit', distance: 0 });
-    }
-    else {
-        engram.north.see.push({ sight: 'wall', distance: 0 });
-    }
-    if (exitList.includes('EAST')) {
-        engram.east.see.push({ sight: 'exit', distance: 0 });
-    }
-    else {
-        engram.north.see.push({ sight: 'wall', distance: 0 });
-    }
-    if (exitList.includes('WEST')) {
-        engram.west.see.push({ sight: 'exit', distance: 0 });
-    }
-    else {
-        engram.north.see.push({ sight: 'wall', distance: 0 });
-    }
-    action.engram = engram;
-    // action.engram.sound = fns.getSound(game, langCode, cell);
-    if (cell.Location.equals(game.Maze.StartCell)) {
-        action.outcomes.push('You see the entrace filled with lava');
-        action.outcomes.push('North is lava');
-    }
-    // track the score change from this one move
-    action.score = game.Score.getTotalScore() - preMoveScore;
-    // TODO: text render - here now just for DEV/DEBUG purposes
-    action.outcomes.push(game.Maze.generateTextRender(true, game.Player.Location));
-    return engram;
+const fns = __importStar(require("../funcs"));
+const Enums_1 = require("@mazemasterjs/shared-library/Enums");
+function doLook(game, langCode) {
+    fns.logDebug(__filename, 'doLook()', 'Entering');
+    const startScore = game.Score.getTotalScore();
+    game.Actions[game.Actions.length - 1].outcomes.push('You take a look around.');
+    return fns.finalizeAction(game, startScore, langCode);
 }
 exports.doLook = doLook;
+/**
+ * Update the
+ * @param game
+ * @param langCode
+ */
+function doLookLocal(game, langCode) {
+    const method = `doLookLocal(${game.Id}, ${langCode})`;
+    fns.logDebug(__filename, method, 'Entering');
+    const cell = game.Maze.getCell(game.Player.Location);
+    const engram = game.Actions[game.Actions.length - 1].engram;
+    const MAX_DISTANCE = 3; // TODO: Make a MAX_DISTANCE env var ?
+    const OUT_OF_RANGE = 999; // Should this be 999? -1?  Something else?
+    //  loop through the cardinal directions in DIRS
+    for (let pos = 0; pos < 4; pos++) {
+        const dir = 1 << pos; // bitwish shift (1, 2, 4, 8)
+        switch (dir) {
+            case Enums_1.DIRS.NORTH:
+                let nRow = cell.Location.row;
+                while (nRow >= 0) {
+                    const thisCell = game.Maze.Cells[nRow][cell.Location.col];
+                    const distance = Math.abs(cell.Location.row - nRow);
+                    // bail out if we hit max distance
+                    if (distance > MAX_DISTANCE) {
+                        setSee(engram.north.see, { sight: 'darkness', distance: OUT_OF_RANGE });
+                        break;
+                    }
+                    // no exit north, report wall and stop travelling
+                    if (!(thisCell.Exits & Enums_1.DIRS.NORTH)) {
+                        setSee(engram.north.see, { sight: 'wall', distance });
+                        break;
+                    }
+                    // at the entrance - report exit lava and stop travelling (OR YOU WILL DIE IN A FIRE!! AHHHH!!)
+                    if (!!(thisCell.Tags & Enums_1.CELL_TAGS.START)) {
+                        setSee(engram.north.see, { sight: 'lava', distance: distance + 1 }); // lava is just *outside* the maze
+                        break;
+                    }
+                    nRow--;
+                }
+                break;
+            case Enums_1.DIRS.SOUTH:
+                let sRow = cell.Location.row;
+                while (sRow <= game.Maze.Height) {
+                    const thisCell = game.Maze.Cells[sRow][cell.Location.col];
+                    const distance = Math.abs(sRow - cell.Location.row);
+                    // bail out if we hit max distance
+                    if (distance > MAX_DISTANCE) {
+                        setSee(engram.south.see, { sight: 'darkness', distance: OUT_OF_RANGE });
+                        break;
+                    }
+                    // no exit south, report wall and stop travelling
+                    if (!(thisCell.Exits & Enums_1.DIRS.SOUTH)) {
+                        setSee(engram.south.see, { sight: 'wall', distance });
+                        break;
+                    }
+                    // at the exit - report exit and cheese, then stop travelling
+                    if (!!(thisCell.Tags & Enums_1.CELL_TAGS.FINISH)) {
+                        setSee(engram.south.see, { sight: 'cheese', distance: distance + 1 }); // cheese is just *outside* the maze
+                        break;
+                    }
+                    sRow++;
+                }
+                break;
+            case Enums_1.DIRS.EAST:
+                let eCol = cell.Location.col;
+                while (eCol <= game.Maze.Width) {
+                    const thisCell = game.Maze.Cells[cell.Location.row][eCol];
+                    const distance = Math.abs(eCol - cell.Location.col);
+                    // bail out if we hit max distance
+                    if (distance > MAX_DISTANCE) {
+                        setSee(engram.east.see, { sight: 'darkness', distance: OUT_OF_RANGE });
+                        break;
+                    }
+                    // no exit east, report wall and stop travelling
+                    if (!(thisCell.Exits & Enums_1.DIRS.EAST)) {
+                        setSee(engram.east.see, { sight: 'wall', distance });
+                        break;
+                    }
+                    eCol++;
+                }
+                break;
+            case Enums_1.DIRS.WEST:
+                let wCol = cell.Location.col;
+                while (wCol >= 0) {
+                    const thisCell = game.Maze.Cells[cell.Location.row][wCol];
+                    const distance = Math.abs(wCol - cell.Location.col);
+                    // bail out if we hit max distance
+                    if (distance > MAX_DISTANCE) {
+                        setSee(engram.west.see, { sight: 'darkness', distance: OUT_OF_RANGE });
+                        break;
+                    }
+                    // no exit west, report wall and stop travelling
+                    if (!(thisCell.Exits & Enums_1.DIRS.WEST)) {
+                        setSee(engram.west.see, { sight: 'wall', distance });
+                        break;
+                    }
+                    wCol--;
+                }
+                break;
+        }
+    }
+}
+exports.doLookLocal = doLookLocal;
+/**
+ * Update the given see array with given sight if see[0].sight is empty (as is the
+ * case if new Engram()), otherwise push sight onto the see array.
+ *
+ * @param see
+ * @param sight
+ */
+function setSee(see, sight) {
+    if (see[0].sight === '') {
+        see[0] = sight;
+    }
+    else {
+        see.push(sight);
+    }
+}
 //# sourceMappingURL=actLook.js.map

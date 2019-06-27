@@ -11,10 +11,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const Config_1 = require("./Config");
 const axios_1 = __importDefault(require("axios"));
 const Cache_1 = require("./Cache");
 const Enums_1 = require("@mazemasterjs/shared-library/Enums");
+const Config_1 = require("./Config");
+const actLook_1 = require("./controllers/actLook");
 const logger_1 = require("@mazemasterjs/logger");
 const log = logger_1.Logger.getInstance();
 const config = Config_1.Config.getInstance();
@@ -251,8 +252,8 @@ exports.getCmdByName = getCmdByName;
  * @param game: Game - the current game
  * @param action: IAction - the pre-validated IAction behind this move
  */
-function movePlayer(game, act) {
-    const pLoc = game.Player.Location;
+function movePlayer(game) {
+    const act = game.Actions[game.Actions.length - 1];
     // reposition the player - all move validation is preformed prior to this call
     switch (act.direction) {
         case Enums_1.DIRS.NORTH: {
@@ -411,14 +412,12 @@ exports.getLanguage = getLanguage;
  * @param startScore
  * @param finishScore
  */
-function finalizeAction(game, startScore) {
+function finalizeAction(game, startScore, langCode) {
     // increment move counters
     game.Score.addMove();
     game.Actions[game.Actions.length - 1].moveCount++;
     // track the score change from this one move
     game.Actions[game.Actions.length - 1].score = game.Score.getTotalScore() - startScore;
-    // TODO: Remove summarize from every every move - here now for DEV/DEBUG  purposes
-    // summarizeGame(game.Actions[game.Actions.length - 1], game.Score);
     // TODO: text render - here now just for DEV/DEBUG purposess - it should always be the LAST outcome, too
     try {
         const textRender = game.Maze.generateTextRender(true, game.Player.Location);
@@ -428,6 +427,8 @@ function finalizeAction(game, startScore) {
     catch (renderError) {
         logError(__filename, 'finalizeAction(...)', 'Unable to generate text render of maze ->', renderError);
     }
+    // update the sight engrams
+    actLook_1.doLookLocal(game, langCode);
     return game.Actions[game.Actions.length - 1];
 }
 exports.finalizeAction = finalizeAction;

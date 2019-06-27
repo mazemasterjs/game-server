@@ -42,6 +42,7 @@ export const createGame = async (req: Request, res: Response) => {
   const botId = req.params.botId;
   const forceId = req.query.forceId;
   const method = `createGame(${mazeId}, ${teamId}, ${botId})`;
+  const langCode = fns.getLanguage(req);
 
   // get maze - bail on fail
   return await Cache.use()
@@ -87,7 +88,7 @@ export const createGame = async (req: Request, res: Response) => {
               // return json game stub: game.Id, getUrl: `${config.EXT_URL_GAME}/get/${game.Id}
               return res
                 .status(200)
-                .json({ status: 200, message: 'Game Created', game: game.getStub(config.EXT_URL_GAME), actionResult: fns.finalizeAction(game, 0) });
+                .json({ status: 200, message: 'Game Created', game: game.getStub(config.EXT_URL_GAME), actionResult: fns.finalizeAction(game, 0, langCode) });
             }
           }
         })
@@ -196,8 +197,8 @@ export const processAction = async (req: Request, res: Response) => {
 
   // assign some reference vars from req.body (validate cmd and dir)
   const gameId = req.body.gameId;
-  const cmd = fns.getCmdByName(req.body.command);
-  const dir = fns.getDirByName(req.body.direction);
+  const cmd = isNaN(parseInt(req.body.command, 10)) ? fns.getCmdByName(req.body.command) : parseInt(req.body.command, 10);
+  const dir = isNaN(parseInt(req.body.direction, 10)) ? fns.getDirByName(req.body.direction) : parseInt(req.body.direction, 10);
   const msg = req.body.message !== undefined ? req.body.message : '';
   const langCode = fns.getLanguage(req);
 
@@ -244,7 +245,7 @@ export const processAction = async (req: Request, res: Response) => {
 
   switch (action.command) {
     case COMMANDS.LOOK: {
-      const actionResult = await doLook(game, langCode, new Engram());
+      const actionResult = await doLook(game, langCode);
       return res.status(200).json({ actionResult, playerState: game.Player.State, playerFacing: game.Player.Facing });
     }
     case COMMANDS.MOVE: {
