@@ -66,7 +66,6 @@ function doMove(game, langCode) {
             else {
                 // Changes the facing of the player and looks in that direction
                 game.Player.Facing = dir;
-                // engram.sight = lookForward(game, lang, game.Maze.Cells[game.Player.Location.row][game.Player.Location.col], engram, dir, 0).sight;
                 fns.movePlayer(game);
             }
         }

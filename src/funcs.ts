@@ -2,7 +2,7 @@ import axios from 'axios';
 import { AxiosResponse } from 'axios';
 import { Cache, CACHE_TYPES } from './Cache';
 import { Cell } from '@mazemasterjs/shared-library/Cell';
-import { COMMANDS, DIRS, GAME_RESULTS, GAME_STATES, TROPHY_IDS } from '@mazemasterjs/shared-library/Enums';
+import { COMMANDS, DIRS, GAME_RESULTS, GAME_STATES, TROPHY_IDS, CELL_TRAPS, CELL_TAGS } from '@mazemasterjs/shared-library/Enums';
 import { Config } from './Config';
 import { doLookLocal } from './controllers/actLook';
 import { Game } from '@mazemasterjs/shared-library/Game';
@@ -14,6 +14,9 @@ import { Request } from 'express';
 import { Score } from '@mazemasterjs/shared-library/Score';
 import { Team } from '@mazemasterjs/shared-library/Team';
 import { Trophy } from '@mazemasterjs/shared-library/Trophy';
+import { CellBase } from '@mazemasterjs/shared-library/CellBase';
+import { ISmell, ISound } from '@mazemasterjs/shared-library/Interfaces/ISenses';
+import GameLang from './GameLang';
 
 const log = Logger.getInstance();
 const config = Config.getInstance();
@@ -440,120 +443,212 @@ export function finalizeAction(game: Game, startScore: number, langCode: string)
 
   // update the sight engrams
   doLookLocal(game, langCode);
+  // update the smell engrams
+  doSmellLocal(game, langCode);
+  doListen(game, langCode);
 
   return game.Actions[game.Actions.length - 1];
 }
 
-// export function smellJSON(game: Game, lang: string, cell: CellBase, distance: number): string {
-//   let smellText = getSmell(game, lang, cell, distance);
-//   smellText = `{${smellText.substr(1)}}`;
-//   return smellText;
-// }
+export function doSmellLocal(game: Game, lang: string) {
+  const method = `doSmellLocal(${game.Id}, ${lang})`;
+  logDebug(__filename, method, 'Entering');
+  const cell = game.Maze.getCell(game.Player.Location);
+  const engram = game.Actions[game.Actions.length - 1].engram;
+  // get the local smells first
 
-// export function getSmell(game: Game, lang: string, cell: CellBase, distance: number, cameFrom: DIRS = DIRS.NONE): string {
-//   const method = `getSmell(${game.Id}, ${game.Maze.Id}, ${lang}, [Engram], (${cell.Location.row}x${cell.Location.col}), ${distance}, ${cameFrom})`;
-//   logTrace(__filename, method, 'Entering getSmell()...');
-//   const data = GameLang.getInstance(lang);
-//   const currentCell = game.Maze.getCell(cell.Location);
-//   const x = currentCell.Location.col;
-//   const y = currentCell.Location.row;
-//   const height = game.Maze.Height;
-//   const width = game.Maze.Width;
-//   const engram = new Engram();
-//   let smellSomething = false;
-//   engram.smell += `,"${distance}": [`;
+  //  loop through the cardinal directions in DIRS
+  for (let pos = 0; pos < 4; pos++) {
+    const dir = 1 << pos; // bitwish shift (1, 2, 4, 8)
+    switch (dir) {
+      case DIRS.NORTH: {
+        if (cell.isDirOpen(DIRS.NORTH) && cell.Location.row - 1 >= 0) {
+          const nextCell = game.Maze.getCell(new MazeLoc(cell.Location.row - 1, cell.Location.col));
+          doSmellDirected(game, lang, nextCell, engram.north.smell, DIRS.SOUTH, 1);
+        }
+        break;
+      }
+      case DIRS.SOUTH: {
+        if (cell.isDirOpen(DIRS.SOUTH) && cell.Location.row + 1 < game.Maze.Height) {
+          const nextCell = game.Maze.getCell(new MazeLoc(cell.Location.row + 1, cell.Location.col));
+          doSmellDirected(game, lang, nextCell, engram.south.smell, DIRS.NORTH, 1);
+        }
+        break;
+      }
+      case DIRS.EAST: {
+        if (cell.isDirOpen(DIRS.EAST) && cell.Location.col + 1 < game.Maze.Width) {
+          const nextCell = game.Maze.getCell(new MazeLoc(cell.Location.row, cell.Location.col + 1));
+          doSmellDirected(game, lang, nextCell, engram.east.smell, DIRS.WEST, 1);
+        }
+        break;
+      }
+      case DIRS.WEST: {
+        if (cell.isDirOpen(DIRS.WEST) && cell.Location.col - 1 >= 0) {
+          const nextCell = game.Maze.getCell(new MazeLoc(cell.Location.row, cell.Location.col - 1));
+          doSmellDirected(game, lang, nextCell, engram.west.smell, DIRS.EAST, 1);
+        }
+        break;
+      }
+    } // end switch(dir)
+  } // end for (pos<4)
+}
 
-//   if (!!(currentCell.Tags & CELL_TAGS.START)) {
-//     // smell - north would be lava
-//     if (data.entities.lava.smell.intensity >= distance * 10) {
-//       engram.smell += `"${data.entities.lava.smell.adjective}"`;
-//       smellSomething = true;
-//     }
-//   }
+export function doSmellDirected(game: Game, lang: string, cell: CellBase, engramDir: ISmell[], lastDirection: DIRS, distance: number) {
+  const data = GameLang.getInstance(lang);
+  const method = `doSmellDirected(${game.Id}, ${lang}, ${cell.Location}, [emgramDir], ${lastDirection}, ${distance})`;
+  logDebug(__filename, method, 'Entering');
+  if (!!(cell.Tags & CELL_TAGS.START)) {
+    setSmell(engramDir, { scent: 'Sulpur', strength: distance });
+  }
+  if (!!(cell.Tags & CELL_TAGS.FINISH)) {
+    setSmell(engramDir, { scent: 'Cheese', strength: distance });
+  }
 
-//   if (!!(currentCell.Tags & CELL_TAGS.FINISH)) {
-//     // smell - south :: smell is cheese
-//     if (data.entities.cheese.smell.intensity >= distance * 10) {
-//       engram.smell += `"${data.entities.cheese.smell.adjective}"`;
-//       smellSomething = true;
-//     }
-//   }
+  if (cell.Traps !== CELL_TRAPS.NONE) {
+    for (let pos = 0; pos < 9; pos++) {
+      const trapEnum = 1 << pos;
+      const trapType = CELL_TRAPS[trapEnum];
+      if (!!(cell.Traps & trapEnum)) {
+        try {
+          const intensityString = `data.entities.${trapType}.smell.intensity`;
+          const adjectiveString = `data.entities.${trapType}.smell.adjective`;
+          const intensity = eval(intensityString);
+          const adjective = eval(adjectiveString);
+          if (distance < intensity) {
+            if (
+              !engramDir.find(smell => {
+                if (smell.scent === adjective) {
+                  if (smell.strength > distance) {
+                    smell.strength = distance;
+                  }
+                  return true;
+                } else {
+                  return false;
+                }
+              })
+            ) {
+              setSmell(engramDir, { scent: adjective, strength: distance });
+            }
+          }
+        } catch (err) {
+          logDebug(__filename, method, err);
+        }
+      } // end (!!(cell.Traps & trapEnum))
+    } // end for(pos<9)}
+  } // if (!!(cell.Traps & CELL_TRAPS.NONE))
+  //  loop through the cardinal directions in DIRS
+  for (let pos = 0; pos < 4; pos++) {
+    const dir = 1 << pos; // bitwish shift (1, 2, 4, 8)
+    switch (dir) {
+      case DIRS.NORTH: {
+        if (cell.isDirOpen(DIRS.NORTH) && cell.Location.row - 1 >= 0 && !(lastDirection === dir)) {
+          const nextCell = game.Maze.getCell(new MazeLoc(cell.Location.row - 1, cell.Location.col));
+          doSmellDirected(game, lang, nextCell, engramDir, DIRS.SOUTH, distance + 1);
+        }
+        break;
+      }
+      case DIRS.SOUTH: {
+        if (cell.isDirOpen(DIRS.SOUTH) && cell.Location.row + 1 < game.Maze.Height && !(lastDirection === dir)) {
+          const nextCell = game.Maze.getCell(new MazeLoc(cell.Location.row + 1, cell.Location.col));
+          doSmellDirected(game, lang, nextCell, engramDir, DIRS.NORTH, distance + 1);
+        }
+        break;
+      }
+      case DIRS.EAST: {
+        if (cell.isDirOpen(DIRS.EAST) && cell.Location.col + 1 < game.Maze.Width && !(lastDirection === dir)) {
+          const nextCell = game.Maze.getCell(new MazeLoc(cell.Location.row, cell.Location.col + 1));
+          doSmellDirected(game, lang, nextCell, engramDir, DIRS.WEST, distance + 1);
+        }
+        break;
+      }
+      case DIRS.WEST: {
+        if (cell.isDirOpen(DIRS.WEST) && cell.Location.col - 1 >= 0 && !(lastDirection === dir)) {
+          const nextCell = game.Maze.getCell(new MazeLoc(cell.Location.row, cell.Location.col - 1));
+          doSmellDirected(game, lang, nextCell, engramDir, DIRS.EAST, distance + 1);
+        }
+        break;
+      }
+    } // end switch(dir)
+  } // end for (pos<4)
+} // end doSmellDirected
 
-//   // TODO: CELL_TRAPS is a bitwise enumeration - this doesn't support bitwise
-//   if (!(currentCell.Traps & CELL_TRAPS.NONE)) {
-//     const trapType = currentCell.Traps;
-//     logTrace(__filename, method, `${CELL_TRAPS[trapType]} detected in cell: ${currentCell.Location.toString()}`);
-//     switch (trapType) {
-//       case CELL_TRAPS.PIT: {
-//         if (data.entities.PIT.smell.intensity >= distance * 10) {
-//           engram.smell += `"${data.entities.PIT.smell.adjective}"`;
-//           smellSomething = true;
-//         }
-//       }
-//       case CELL_TRAPS.MOUSETRAP: {
-//         if (data.entities.MOUSETRAP.smell.intensity >= distance * 10) {
-//           engram.smell += `"${data.entities.MOUSETRAP.smell.adjective}"`;
-//           smellSomething = true;
-//         }
-//       }
-//       case CELL_TRAPS.TARPIT: {
-//         if (data.entities.TARPIT.smell.intensity >= distance * 10) {
-//           engram.smell += `"${data.entities.TARPIT.smell.adjective}"`;
-//           smellSomething = true;
-//         }
-//         break;
-//       }
-//       case CELL_TRAPS.FLAMETHROWER: {
-//         if (data.entities.FLAMETHROWER.smell.intensity >= distance * 10) {
-//           engram.smell += `"${data.entities.FLAMETHROWER.smell.adjective}"`;
-//           smellSomething = true;
-//         }
-//         break;
-//       }
-//       case CELL_TRAPS.FRAGILE_FLOOR:
-//       case CELL_TRAPS.POISON_DART:
-//       case CELL_TRAPS.TELEPORTER:
-//       case CELL_TRAPS.DEADFALL: {
-//         logTrace(__filename, method, `Trap Type ${CELL_TRAPS[trapType]} not implemented.`);
-//         break;
-//       }
+/**
+ * Update the given smell array with given scent if smell[0].scent is empty (as is the
+ * case if new Engram()), otherwise push scent onto the see array.
+ *
+ * @param smell
+ * @param scent
+ */
+function setSmell(smell: Array<ISmell>, scent: ISmell) {
+  if (smell[0].scent === '') {
+    smell[0] = scent;
+  } else {
+    smell.push(scent);
+  }
+}
 
-//       default: {
-//         logTrace(__filename, method, 'No traps detected in cell ' + currentCell.Location.toString());
-//       }
-//     } // end switch
-//   } // end if
-//   engram.smell += `]`;
-//   if (!smellSomething) {
-//     engram.smell = '';
-//   }
-//   if (currentCell.isDirOpen(DIRS.NORTH) && cameFrom !== DIRS.NORTH && y - 1 >= 0) {
-//     const nextCell = game.Maze.getNeighbor(currentCell, DIRS.NORTH);
-//     logTrace(__filename, method, 'Smelling to the north.');
-//     engram.smell += `${getSmell(game, lang, nextCell, distance + 1, DIRS.SOUTH)}`;
-//   }
-//   if (currentCell.isDirOpen(DIRS.SOUTH) && cameFrom !== DIRS.SOUTH && y + 1 < height) {
-//     const nextCell = game.Maze.getNeighbor(currentCell, DIRS.SOUTH);
-//     logTrace(__filename, method, 'Smelling to the south.');
-//     engram.smell += `${getSmell(game, lang, nextCell, distance + 1, DIRS.NORTH)}`;
-//   }
-//   if (currentCell.isDirOpen(DIRS.EAST) && cameFrom !== DIRS.EAST && x + 1 <= width) {
-//     const nextCell = game.Maze.getNeighbor(currentCell, DIRS.EAST);
-//     logTrace(__filename, method, 'Smelling to the east.');
-//     engram.smell += `${getSmell(game, lang, nextCell, distance + 1, DIRS.WEST)}`;
-//   }
-//   if (currentCell.isDirOpen(DIRS.WEST) && cameFrom !== DIRS.WEST && x - 1 >= 0) {
-//     const nextCell = game.Maze.getNeighbor(currentCell, DIRS.WEST);
-//     logTrace(__filename, method, 'Smelling to the west.');
-//     engram.smell += `${getSmell(game, lang, nextCell, distance + 1, DIRS.EAST)}`;
-//   }
-//   return engram.smell;
-// }
+function doListen(game: Game, lang: string) {
+  const method = `getSound(${game.Id}, ${game.Maze.Id}, ${lang})`;
+  logTrace(__filename, method, 'Entering getSound()...');
+  const data = GameLang.getInstance(lang);
+  const engram = game.Actions[game.Actions.length - 1].engram;
+  // Get the players X and Y position in the game
+  const pX = game.Player.Location.col;
+  const pY = game.Player.Location.row;
+  let engramDir;
+  for (let y = pY - 8; y < pY + 8; y++) {
+    for (let x = pX - 8; x < pX + 8; x++) {
+      if (x >= 0 && x < game.Maze.Width && y >= 0 && y < game.Maze.Height) {
+        const cell = game.Maze.getCell(new MazeLoc(y, x));
+        const distance = Math.floor(Math.sqrt(Math.pow(x - pX, 2) + Math.pow(y - pY, 2)));
+        switch (calcDirection(x, y, pX, pY)) {
+          case DIRS.NORTH: {
+            engramDir = engram.north.hear;
+            break;
+          }
+          case DIRS.SOUTH: {
+            engramDir = engram.south.hear;
+            break;
+          }
+          case DIRS.EAST: {
+            engramDir = engram.east.hear;
+            break;
+          }
+          case DIRS.WEST: {
+            engramDir = engram.west.hear;
+            break;
+          }
+          default: {
+            engramDir = engram.here.hear;
+          }
+        }
+        if (!!(cell.Tags & CELL_TAGS.START)) {
+          setSound(engramDir, { sound: 'Bubbling', volume: distance });
+        }
+        if (!!(cell.Tags & CELL_TAGS.FINISH)) {
+          setSound(engramDir, { sound: 'Cheese', volume: distance });
+        }
+      }
+    } // end for x
+  } // end for y
+}
 
+/**
+ * Update the given smell array with given scent if smell[0].scent is empty (as is the
+ * case if new Engram()), otherwise push scent onto the see array.
+ *
+ * @param hear
+ * @param sound
+ */
+function setSound(hear: Array<ISound>, sound: ISound) {
+  if (hear[0].sound === '') {
+    hear[0] = sound;
+  } else {
+    hear.push(sound);
+  }
+}
 // export function getSound(game: Game, lang: string, cell: CellBase): string {
-//   const method = `getSound(${game.Id}, ${game.Maze.Id}, ${lang}, [Engram], (${cell.Location.row}x${cell.Location.col}))`;
-//   logTrace(__filename, method, 'Entering getSound()...');
-//   const data = GameLang.getInstance(lang);
+
 //   let currentCell = game.Maze.getCell(cell.Location);
 //   const xPlayer = game.Maze.getCell(game.Player.Location).Location.col;
 //   const yPlayer = game.Maze.getCell(game.Player.Location).Location.row;
@@ -655,18 +750,24 @@ export function finalizeAction(game: Game, startScore: number, langCode: string)
 //   return engram.sound;
 // }
 
-export function calcDirection(x1: number, y1: number, x2: number, y2: number): string {
+export function calcDirection(x1: number, y1: number, x2: number, y2: number): DIRS {
   const angle1 = calcAngleDegrees(x1, y1);
   const angle2 = calcAngleDegrees(x2, y2);
-  const dirAngle = angle1 - angle2;
-  if (dirAngle <= 0) {
-    return 'NORTH';
+  const dirAngle = Math.abs((angle1 - angle2) % 360);
+  if (dirAngle >= 315 || dirAngle <= 45) {
+    return DIRS.NORTH;
   }
-  if (dirAngle > 0) {
-    return 'SOUTH';
+  if (dirAngle > 45 && dirAngle < 135) {
+    return DIRS.EAST;
+  }
+  if (dirAngle >= 135 && dirAngle <= 225) {
+    return DIRS.EAST;
+  }
+  if (dirAngle > 225 && dirAngle < 315) {
+    return DIRS.EAST;
   }
 
-  return 'NONE';
+  return DIRS.NONE;
 }
 
 function calcAngleDegrees(x: number, y: number) {

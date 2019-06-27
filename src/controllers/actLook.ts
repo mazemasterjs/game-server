@@ -125,9 +125,9 @@ export function doLookLocal(game: Game, langCode: string) {
           wCol--;
         }
         break;
-    }
-  }
-}
+    } // end switch(dir)
+  } // end for(pos)
+} // end doLookLocal
 
 /**
  * Update the given see array with given sight if see[0].sight is empty (as is the

@@ -109,7 +109,7 @@
             },
             "smell": {
                 "adjective": "RUST",
-                "intensity": 20
+                "intensity": 1000000
             },
             "touch": {
                 "adjective": "PAIN",
@@ -131,7 +131,7 @@
             },
             "smell": {
                 "adjective": "TAR",
-                "intensity": 0
+                "intensity": 50
             },
             "touch": {
                 "adjective": "STICKY",
@@ -154,6 +154,116 @@
             "smell": {
                 "adjective": "KEROSENE",
                 "intensity": 40
+            },
+            "touch": {
+                "adjective": "WET",
+                "intensity": 10
+            },
+            "taste": {
+                "adjective": "BURNT",
+                "intensity": 0
+            }
+        },
+        "POISON_DART": {
+            "sight": {
+                "adjective": "PUDDLE",
+                "intensity": 20
+            },
+            "sound": {
+                "adjective": "HISSING",
+                "intensity": 10
+            },
+            "smell": {
+                "adjective": "KEROSENE",
+                "intensity": 40
+            },
+            "touch": {
+                "adjective": "WET",
+                "intensity": 10
+            },
+            "taste": {
+                "adjective": "BURNT",
+                "intensity": 0
+            }
+        },
+        "TELEPORTER": {
+            "sight": {
+                "adjective": "PUDDLE",
+                "intensity": 20
+            },
+            "sound": {
+                "adjective": "HISSING",
+                "intensity": 10
+            },
+            "smell": {
+                "adjective": "KEROSENE",
+                "intensity": 40
+            },
+            "touch": {
+                "adjective": "WET",
+                "intensity": 10
+            },
+            "taste": {
+                "adjective": "BURNT",
+                "intensity": 0
+            }
+        },
+        "DEADFALL": {
+            "sight": {
+                "adjective": "PUDDLE",
+                "intensity": 20
+            },
+            "sound": {
+                "adjective": "HISSING",
+                "intensity": 10
+            },
+            "smell": {
+                "adjective": "KEROSENE",
+                "intensity": 40
+            },
+            "touch": {
+                "adjective": "WET",
+                "intensity": 10
+            },
+            "taste": {
+                "adjective": "BURNT",
+                "intensity": 0
+            }
+        },
+        "FRAGILE_FLOOR": {
+            "sight": {
+                "adjective": "PUDDLE",
+                "intensity": 20
+            },
+            "sound": {
+                "adjective": "HISSING",
+                "intensity": 10
+            },
+            "smell": {
+                "adjective": "KEROSENE",
+                "intensity": 40
+            },
+            "touch": {
+                "adjective": "WET",
+                "intensity": 10
+            },
+            "taste": {
+                "adjective": "BURNT",
+                "intensity": 0
+            }
+        },
+        "CHEESE": {
+            "sight": {
+                "adjective": "CHEESE",
+                "intensity": 1000
+            },
+            "sound": {
+                "adjective": "HISSING",
+                "intensity": 1000
+            },
+            "smell": {
+                "adjective": "KEROSENE",
+                "intensity": 1000
             },
             "touch": {
                 "adjective": "WET",

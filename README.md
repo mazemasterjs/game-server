@@ -38,6 +38,13 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 
 ## Change Notes
 
+### v0.7.1
+
+- rebuild hearing and smell based on the new engrams
+- you only smell the closest scent of a kind
+- smelling tells which direction through the maze from the players position the smell is coming from
+- hearing tells directly which direction a sound is coming from
+
 ### v0.7.0
 
 - engrams, doLook, doLookLocal, doTurn, outcomes... lots and lots of updates!
