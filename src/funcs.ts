@@ -1,22 +1,22 @@
 import axios from 'axios';
+import GameLang from './GameLang';
 import { AxiosResponse } from 'axios';
 import { Cache, CACHE_TYPES } from './Cache';
 import { Cell } from '@mazemasterjs/shared-library/Cell';
-import { COMMANDS, DIRS, GAME_RESULTS, GAME_STATES, TROPHY_IDS, CELL_TRAPS, CELL_TAGS } from '@mazemasterjs/shared-library/Enums';
+import { CELL_TAGS, CELL_TRAPS, COMMANDS, DIRS, GAME_RESULTS, GAME_STATES, TROPHY_IDS } from '@mazemasterjs/shared-library/Enums';
+import { CellBase } from '@mazemasterjs/shared-library/CellBase';
 import { Config } from './Config';
 import { doLookLocal } from './controllers/actLook';
 import { Game } from '@mazemasterjs/shared-library/Game';
 import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
 import { IGameStub } from '@mazemasterjs/shared-library/Interfaces/IGameStub';
+import { ISmell, ISound } from '@mazemasterjs/shared-library/Interfaces/ISenses';
 import { LOG_LEVELS, Logger } from '@mazemasterjs/logger';
 import { MazeLoc } from '@mazemasterjs/shared-library/MazeLoc';
 import { Request } from 'express';
 import { Score } from '@mazemasterjs/shared-library/Score';
 import { Team } from '@mazemasterjs/shared-library/Team';
 import { Trophy } from '@mazemasterjs/shared-library/Trophy';
-import { CellBase } from '@mazemasterjs/shared-library/CellBase';
-import { ISmell, ISound } from '@mazemasterjs/shared-library/Interfaces/ISenses';
-import GameLang from './GameLang';
 
 const log = Logger.getInstance();
 const config = Config.getInstance();
@@ -510,10 +510,12 @@ export function doSmellDirected(game: Game, lang: string, cell: CellBase, engram
       const trapType = CELL_TRAPS[trapEnum];
       if (!!(cell.Traps & trapEnum)) {
         try {
-          const intensityString = `data.entities.${trapType}.smell.intensity`;
-          const adjectiveString = `data.entities.${trapType}.smell.adjective`;
-          const intensity = eval(intensityString);
-          const adjective = eval(adjectiveString);
+          const intensity = data.entities[trapType.toLowerCase()].smell.intensity;
+          const adjective = data.entities[trapType.toLowerCase()].smell.adjective;
+          // const intensityString = `data.entities.${trapType}.smell.intensity`;
+          // const adjectiveString = `data.entities.${trapType}.smell.adjective`;
+          // const intensity = eval(intensityString);  <-- very clever, but an unsafe operation that the linter opposes
+          // const adjective = eval(adjectiveString);  <-- very clever, but an unsafe operation that the linter opposes
           if (distance < intensity) {
             if (
               !engramDir.find(smell => {
@@ -595,7 +597,7 @@ function doListen(game: Game, lang: string) {
   // Get the players X and Y position in the game
   const pX = game.Player.Location.col;
   const pY = game.Player.Location.row;
-  let engramDir;
+  let engramDir: ISound[] = [{ sound: 'silence', volume: 1 }];
   for (let y = pY - 8; y < pY + 8; y++) {
     for (let x = pX - 8; x < pX + 8; x++) {
       if (x >= 0 && x < game.Maze.Width && y >= 0 && y < game.Maze.Height) {
@@ -617,9 +619,6 @@ function doListen(game: Game, lang: string) {
           case DIRS.WEST: {
             engramDir = engram.west.hear;
             break;
-          }
-          default: {
-            engramDir = engram.here.hear;
           }
         }
         if (!!(cell.Tags & CELL_TAGS.START)) {

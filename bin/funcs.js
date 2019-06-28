@@ -12,13 +12,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const axios_1 = __importDefault(require("axios"));
+const GameLang_1 = __importDefault(require("./GameLang"));
 const Cache_1 = require("./Cache");
 const Enums_1 = require("@mazemasterjs/shared-library/Enums");
 const Config_1 = require("./Config");
 const actLook_1 = require("./controllers/actLook");
 const logger_1 = require("@mazemasterjs/logger");
 const MazeLoc_1 = require("@mazemasterjs/shared-library/MazeLoc");
-const GameLang_1 = __importDefault(require("./GameLang"));
 const log = logger_1.Logger.getInstance();
 const config = Config_1.Config.getInstance();
 /**
@@ -495,10 +495,12 @@ function doSmellDirected(game, lang, cell, engramDir, lastDirection, distance) {
             const trapType = Enums_1.CELL_TRAPS[trapEnum];
             if (!!(cell.Traps & trapEnum)) {
                 try {
-                    const intensityString = `data.entities.${trapType}.smell.intensity`;
-                    const adjectiveString = `data.entities.${trapType}.smell.adjective`;
-                    const intensity = eval(intensityString);
-                    const adjective = eval(adjectiveString);
+                    const intensity = data.entities[trapType.toLowerCase()].smell.intensity;
+                    const adjective = data.entities[trapType.toLowerCase()].smell.adjective;
+                    // const intensityString = `data.entities.${trapType}.smell.intensity`;
+                    // const adjectiveString = `data.entities.${trapType}.smell.adjective`;
+                    // const intensity = eval(intensityString);  <-- very clever, but an unsafe operation that the linter opposes
+                    // const adjective = eval(adjectiveString);  <-- very clever, but an unsafe operation that the linter opposes
                     if (distance < intensity) {
                         if (!engramDir.find(smell => {
                             if (smell.scent === adjective) {
@@ -580,7 +582,7 @@ function doListen(game, lang) {
     // Get the players X and Y position in the game
     const pX = game.Player.Location.col;
     const pY = game.Player.Location.row;
-    let engramDir;
+    let engramDir = [{ sound: 'silence', volume: 1 }];
     for (let y = pY - 8; y < pY + 8; y++) {
         for (let x = pX - 8; x < pX + 8; x++) {
             if (x >= 0 && x < game.Maze.Width && y >= 0 && y < game.Maze.Height) {
@@ -602,9 +604,6 @@ function doListen(game, lang) {
                     case Enums_1.DIRS.WEST: {
                         engramDir = engram.west.hear;
                         break;
-                    }
-                    default: {
-                        engramDir = engram.here.hear;
                     }
                 }
                 if (!!(cell.Tags & Enums_1.CELL_TAGS.START)) {
