@@ -89,7 +89,7 @@ export const createGame = async (req: Request, res: Response) => {
               // return json game stub: game.Id, getUrl: `${config.EXT_URL_GAME}/get/${game.Id}
               return res
                 .status(200)
-                .json({ status: 200, message: 'Game Created', game: game.getStub(config.EXT_URL_GAME), actionResult: fns.finalizeAction(game, 0, langCode) });
+                .json({ status: 200, message: 'Game Created', game: game.getStub(config.EXT_URL_GAME), action: fns.finalizeAction(game, 0, langCode) });
             }
           }
         })
@@ -246,33 +246,33 @@ export const processAction = async (req: Request, res: Response) => {
 
   switch (action.command) {
     case COMMANDS.LOOK: {
-      const actionResult = await doLook(game, langCode);
-      return res.status(200).json({ actionResult, playerState: game.Player.State, playerFacing: game.Player.Facing });
+      const lookResult = await doLook(game, langCode);
+      return res.status(200).json({ action: lookResult, playerState: game.Player.State, playerFacing: game.Player.Facing });
     }
     case COMMANDS.MOVE: {
-      const actionResult = await doMove(game, langCode);
-      return res.status(200).json({ actionResult, playerState: game.Player.State, playerFacing: game.Player.Facing });
+      const moveResult = await doMove(game, langCode);
+      return res.status(200).json({ action: moveResult, playerState: game.Player.State, playerFacing: game.Player.Facing });
     }
     case COMMANDS.STAND: {
-      const actionResult = await doStand(game, langCode);
-      return res.status(200).json({ actionResult, playerState: game.Player.State, playerFacing: game.Player.Facing });
+      const standResult = await doStand(game, langCode);
+      return res.status(200).json({ action: standResult, playerState: game.Player.State, playerFacing: game.Player.Facing });
     }
     case COMMANDS.TURN: {
-      const actionResult = await doTurn(game, langCode);
-      return res.status(200).json({ actionResult, playerState: game.Player.State, playerFacing: game.Player.Facing });
+      const turnResult = await doTurn(game, langCode);
+      return res.status(200).json({ action: turnResult, playerState: game.Player.State, playerFacing: game.Player.Facing });
     }
     case COMMANDS.FACE:
     case COMMANDS.LISTEN:
     case COMMANDS.SNIFF:
     case COMMANDS.JUMP:
-      const actionResult = await doJump(game, langCode);
-      return res.status(200).json({ actionResult, playerState: game.Player.State, playerFacing: game.Player.Facing });
+      const jumpResult = await doJump(game, langCode);
+      return res.status(200).json({ action: jumpResult, playerState: game.Player.State, playerFacing: game.Player.Facing });
     case COMMANDS.QUIT:
     case COMMANDS.SIT:
     case COMMANDS.WAIT:
     case COMMANDS.WRITE: {
-      const actionResult = await fns.doWrite(game, langCode, msg);
-      return res.status(200).json({ actionResult, playerState: game.Player.State, playerFacing: game.Player.Facing });
+      const writeResult = await fns.doWrite(game, langCode, msg);
+      return res.status(200).json({ action: writeResult, playerState: game.Player.State, playerFacing: game.Player.Facing });
     }
     default: {
       const err = new Error(`${COMMANDS[action.command]} is not recognized. Valid commands are LOOK, MOVE, JUMP, SIT, STAND, and WRITE.`);
