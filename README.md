@@ -34,9 +34,14 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 - [x] Peripheral vision is seeing more cells further than it should be
 - [ ] Senses besides sight not working correctly
 - [ ] Direction of what is being heard not working correctly
-- [x] Distance of what is being heard not working correctly
+- [ ] Adjust values for the various engrams, current they are all based on distance
 
 ## Change Notes
+
+### v0.7.2
+
+- engram senses are all working
+- engram.here lists exits, and any messages on the ground
 
 ### v0.7.1
 
