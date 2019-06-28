@@ -445,6 +445,7 @@ export function finalizeAction(game: Game, startScore: number, langCode: string)
   }
 
   // update the engrams
+  getLocal(game, langCode);
   doLookLocal(game, langCode);
   doSmellLocal(game, langCode);
   doListenLocal(game, langCode);
@@ -455,7 +456,7 @@ export function finalizeAction(game: Game, startScore: number, langCode: string)
 }
 
 export function getLocal(game: Game, lang: string) {
-  const method = `doSmellLocal(${game.Id}, ${lang})`;
+  const method = `getLocal(${game.Id}, ${lang})`;
   logDebug(__filename, method, 'Entering');
   const cell = game.Maze.getCell(game.Player.Location);
   const engram = game.Actions[game.Actions.length - 1].engram.here;
@@ -492,6 +493,26 @@ export function getLocal(game: Game, lang: string) {
   } // end for (pos<4)
 
   if (cell.Notes.length > 0) {
-    engram.messages.push(cell.Notes);
+    cell.Notes.forEach(element => {
+      engram.messages.push(element);
+    });
   }
+}
+
+export function doWrite(game: Game, lang: string, message: string) {
+  const method = `doWrite(${game.Id}, ${lang},${message})`;
+  const cell = game.Maze.getCell(new MazeLoc(game.Player.Location.row, game.Player.Location.col));
+  const startScore = game.Score.getTotalScore();
+  const engram = game.Actions[game.Actions.length - 1].engram.here;
+  const data = GameLang.getInstance(lang);
+  engram.messages.pop();
+  if (cell.Notes[0] === '') {
+    cell.Notes[0] = message.substr(0, 8);
+  } else {
+    cell.Notes.push(message.substr(0, 8));
+  }
+
+  logDebug(__filename, method, 'executed the write command');
+  game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.message);
+  return Promise.resolve(finalizeAction(game, startScore, lang));
 }

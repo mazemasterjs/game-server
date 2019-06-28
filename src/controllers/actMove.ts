@@ -18,7 +18,7 @@ export async function doMove(game: Game, langCode: string): Promise<IAction> {
   if (dir === 0) {
     dir = game.Actions[game.Actions.length - 1].direction = game.Player.Facing;
   }
-  const lang = GameLang.getInstance(langCode);
+  const data = GameLang.getInstance(langCode);
 
   // grab the current score so we can update action with points earned or lost during this move
   const startScore = game.Score.getTotalScore();
@@ -33,7 +33,7 @@ export async function doMove(game: Game, langCode: string): Promise<IAction> {
     // add the trophy for walking without standing
     game = await fns.grantTrophy(game, TROPHY_IDS.SPINNING_YOUR_WHEELS);
 
-    game.Actions[game.Actions.length - 1].outcomes.push('You cannot move while sitting!');
+    game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.movewhilesitting);
 
     // finalize and return action
     return Promise.resolve(fns.finalizeAction(game, startScore, langCode));
@@ -43,12 +43,12 @@ export async function doMove(game: Game, langCode: string): Promise<IAction> {
   if (game.Maze.getCell(pLoc).isDirOpen(dir)) {
     if (dir === DIRS.NORTH && pLoc.equals(game.Maze.StartCell)) {
       fns.logDebug(__filename, method, 'Player moved north into the entrance (lava).');
-      game.Actions[game.Actions.length - 1].outcomes.push('Walked into lava, you DIED!');
+      game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.lava);
       finishGame(game, GAME_RESULTS.DEATH_LAVA);
     } else if (dir === DIRS.SOUTH && pLoc.equals(game.Maze.FinishCell)) {
       fns.logDebug(__filename, method, 'Player moved south into the exit (cheese).');
 
-      game.Actions[game.Actions.length - 1].outcomes.push('YOU WIN');
+      game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.win);
 
       // game over: WINNER or WIN_FLAWLESS
       if (game.Score.MoveCount <= game.Maze.ShortestPathLength) {
@@ -67,8 +67,8 @@ export async function doMove(game: Game, langCode: string): Promise<IAction> {
 
     game.Player.addState(PLAYER_STATES.SITTING);
 
-    game.Actions[game.Actions.length - 1].outcomes.push(format('You crash into the wall to the [%s]', DIRS[dir]));
-    game.Actions[game.Actions.length - 1].outcomes.push('STUNNED');
+    game.Actions[game.Actions.length - 1].outcomes.push(format(data.outcomes.walkintowall, DIRS[dir]));
+    game.Actions[game.Actions.length - 1].outcomes.push(data.outcome.stunned);
   }
 
   // game continues - return the action (with outcomes and engram)
@@ -108,7 +108,7 @@ async function saveScore(game: Game): Promise<boolean> {
  * @param gameResult
  * @returns Promise<Game>
  */
-async function finishGame(game: Game, gameResult: GAME_RESULTS): Promise<Game> {
+export async function finishGame(game: Game, gameResult: GAME_RESULTS): Promise<Game> {
   const method = `finishGame(${game.Id}, ${GAME_RESULTS[gameResult]})`;
 
   // update the basic game state & result fields

@@ -26,6 +26,7 @@ const actStand_1 = require("./controllers/actStand");
 const Game_1 = require("@mazemasterjs/shared-library/Game");
 const logger_1 = require("@mazemasterjs/logger");
 const actTurn_1 = require("./controllers/actTurn");
+const actJump_1 = require("./controllers/actJump");
 // set constant utility references
 const log = logger_1.Logger.getInstance();
 const config = Config_1.Config.getInstance();
@@ -251,10 +252,15 @@ exports.processAction = (req, res) => __awaiter(this, void 0, void 0, function* 
         case Enums_1.COMMANDS.LISTEN:
         case Enums_1.COMMANDS.SNIFF:
         case Enums_1.COMMANDS.JUMP:
+            const actionResult = yield actJump_1.doJump(game, langCode);
+            return res.status(200).json({ actionResult, playerState: game.Player.State, playerFacing: game.Player.Facing });
         case Enums_1.COMMANDS.QUIT:
         case Enums_1.COMMANDS.SIT:
         case Enums_1.COMMANDS.WAIT:
-        case Enums_1.COMMANDS.WRITE:
+        case Enums_1.COMMANDS.WRITE: {
+            const actionResult = yield fns.doWrite(game, langCode, msg);
+            return res.status(200).json({ actionResult, playerState: game.Player.State, playerFacing: game.Player.Facing });
+        }
         default: {
             const err = new Error(`${Enums_1.COMMANDS[action.command]} is not recognized. Valid commands are LOOK, MOVE, JUMP, SIT, STAND, and WRITE.`);
             log.error(__filename, req.path, 'Unrecognized Command', err);

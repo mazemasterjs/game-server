@@ -69,10 +69,10 @@ function doSmellDirected(game, lang, cell, engramDir, lastDirection, distance) {
     fns.logDebug(__filename, method, 'Entering');
     const MAX_DISTANCE = 10;
     if (!!(cell.Tags & Enums_1.CELL_TAGS.START)) {
-        setSmell(engramDir, { scent: 'Sulpur', strength: distance });
+        setSmell(engramDir, { scent: data.entities.cheese.smell.adjective, strength: distance });
     }
     if (!!(cell.Tags & Enums_1.CELL_TAGS.FINISH)) {
-        setSmell(engramDir, { scent: 'Cheese', strength: distance });
+        setSmell(engramDir, { scent: data.entities.cheese.smell.adjective, strength: distance });
     }
     if (cell.Traps !== Enums_1.CELL_TRAPS.NONE) {
         for (let pos = 0; pos < 9; pos++) {
@@ -82,10 +82,6 @@ function doSmellDirected(game, lang, cell, engramDir, lastDirection, distance) {
                 try {
                     const intensity = data.entities[trapType.toLowerCase()].smell.intensity;
                     const adjective = data.entities[trapType.toLowerCase()].smell.adjective;
-                    // const intensityString = `data.entities.${trapType}.smell.intensity`;
-                    // const adjectiveString = `data.entities.${trapType}.smell.adjective`;
-                    // const intensity = eval(intensityString);  <-- very clever, but an unsafe operation that the linter opposes
-                    // const adjective = eval(adjectiveString);  <-- very clever, but an unsafe operation that the linter opposes
                     if (distance < intensity) {
                         if (!engramDir.find(smell => {
                             if (smell.scent === adjective) {

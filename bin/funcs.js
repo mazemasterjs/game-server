@@ -12,11 +12,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const axios_1 = __importDefault(require("axios"));
+const GameLang_1 = __importDefault(require("./GameLang"));
 const Cache_1 = require("./Cache");
 const Enums_1 = require("@mazemasterjs/shared-library/Enums");
 const Config_1 = require("./Config");
 const actLook_1 = require("./controllers/actLook");
 const logger_1 = require("@mazemasterjs/logger");
+const MazeLoc_1 = require("@mazemasterjs/shared-library/MazeLoc");
 const actTaste_1 = require("./controllers/actTaste");
 const actFeel_1 = require("./controllers/actFeel");
 const actSmell_1 = require("./controllers/actSmell");
@@ -432,6 +434,7 @@ function finalizeAction(game, startScore, langCode) {
         logError(__filename, 'finalizeAction(...)', 'Unable to generate text render of maze ->', renderError);
     }
     // update the engrams
+    getLocal(game, langCode);
     actLook_1.doLookLocal(game, langCode);
     actSmell_1.doSmellLocal(game, langCode);
     actListen_1.doListenLocal(game, langCode);
@@ -440,4 +443,64 @@ function finalizeAction(game, startScore, langCode) {
     return game.Actions[game.Actions.length - 1];
 }
 exports.finalizeAction = finalizeAction;
+function getLocal(game, lang) {
+    const method = `getLocal(${game.Id}, ${lang})`;
+    logDebug(__filename, method, 'Entering');
+    const cell = game.Maze.getCell(game.Player.Location);
+    const engram = game.Actions[game.Actions.length - 1].engram.here;
+    const data = GameLang_1.default.getInstance(lang);
+    for (let pos = 0; pos < 4; pos++) {
+        const dir = 1 << pos; // bitwish shift (1, 2, 4, 8)
+        switch (dir) {
+            case Enums_1.DIRS.NORTH: {
+                if (cell.isDirOpen(Enums_1.DIRS.NORTH)) {
+                    engram.exitNorth = true;
+                }
+                break;
+            }
+            case Enums_1.DIRS.SOUTH: {
+                if (cell.isDirOpen(Enums_1.DIRS.SOUTH)) {
+                    engram.exitSouth = true;
+                }
+                break;
+            }
+            case Enums_1.DIRS.EAST: {
+                if (cell.isDirOpen(Enums_1.DIRS.EAST)) {
+                    engram.exitSouth = true;
+                }
+                break;
+            }
+            case Enums_1.DIRS.WEST: {
+                if (cell.isDirOpen(Enums_1.DIRS.WEST)) {
+                    engram.exitWest = true;
+                }
+                break;
+            }
+        } // end switch(dir)
+    } // end for (pos<4)
+    if (cell.Notes.length > 0) {
+        cell.Notes.forEach(element => {
+            engram.messages.push(element);
+        });
+    }
+}
+exports.getLocal = getLocal;
+function doWrite(game, lang, message) {
+    const method = `doWrite(${game.Id}, ${lang},${message})`;
+    const cell = game.Maze.getCell(new MazeLoc_1.MazeLoc(game.Player.Location.row, game.Player.Location.col));
+    const startScore = game.Score.getTotalScore();
+    const engram = game.Actions[game.Actions.length - 1].engram.here;
+    const data = GameLang_1.default.getInstance(lang);
+    engram.messages.pop();
+    if (cell.Notes[0] === '') {
+        cell.Notes[0] = message.substr(0, 8);
+    }
+    else {
+        cell.Notes.push(message.substr(0, 8));
+    }
+    logDebug(__filename, method, 'executed the write command');
+    game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.message);
+    return Promise.resolve(finalizeAction(game, startScore, lang));
+}
+exports.doWrite = doWrite;
 //# sourceMappingURL=funcs.js.map

@@ -31,7 +31,7 @@ function doMove(game, langCode) {
         if (dir === 0) {
             dir = game.Actions[game.Actions.length - 1].direction = game.Player.Facing;
         }
-        const lang = GameLang_1.GameLang.getInstance(langCode);
+        const data = GameLang_1.GameLang.getInstance(langCode);
         // grab the current score so we can update action with points earned or lost during this move
         const startScore = game.Score.getTotalScore();
         // seems that that embedded objects reliable... have to keep reinstantiating things??
@@ -41,7 +41,7 @@ function doMove(game, langCode) {
             fns.logDebug(__filename, method, 'Player tried to move while not standing.');
             // add the trophy for walking without standing
             game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.SPINNING_YOUR_WHEELS);
-            game.Actions[game.Actions.length - 1].outcomes.push('You cannot move while sitting!');
+            game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.movewhilesitting);
             // finalize and return action
             return Promise.resolve(fns.finalizeAction(game, startScore, langCode));
         }
@@ -49,12 +49,12 @@ function doMove(game, langCode) {
         if (game.Maze.getCell(pLoc).isDirOpen(dir)) {
             if (dir === Enums_1.DIRS.NORTH && pLoc.equals(game.Maze.StartCell)) {
                 fns.logDebug(__filename, method, 'Player moved north into the entrance (lava).');
-                game.Actions[game.Actions.length - 1].outcomes.push('Walked into lava, you DIED!');
+                game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.lava);
                 finishGame(game, Enums_1.GAME_RESULTS.DEATH_LAVA);
             }
             else if (dir === Enums_1.DIRS.SOUTH && pLoc.equals(game.Maze.FinishCell)) {
                 fns.logDebug(__filename, method, 'Player moved south into the exit (cheese).');
-                game.Actions[game.Actions.length - 1].outcomes.push('YOU WIN');
+                game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.win);
                 // game over: WINNER or WIN_FLAWLESS
                 if (game.Score.MoveCount <= game.Maze.ShortestPathLength) {
                     finishGame(game, Enums_1.GAME_RESULTS.WIN_FLAWLESS);
@@ -73,8 +73,8 @@ function doMove(game, langCode) {
             // they tried to walk in a direction that has a wall
             game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.YOU_FOUGHT_THE_WALL);
             game.Player.addState(Enums_1.PLAYER_STATES.SITTING);
-            game.Actions[game.Actions.length - 1].outcomes.push(util_1.format('You crash into the wall to the [%s]', Enums_1.DIRS[dir]));
-            game.Actions[game.Actions.length - 1].outcomes.push('STUNNED');
+            game.Actions[game.Actions.length - 1].outcomes.push(util_1.format(data.outcomes.walkintowall, Enums_1.DIRS[dir]));
+            game.Actions[game.Actions.length - 1].outcomes.push(data.outcome.stunned);
         }
         // game continues - return the action (with outcomes and engram)
         return Promise.resolve(fns.finalizeAction(game, startScore, langCode));
@@ -176,4 +176,5 @@ function finishGame(game, gameResult) {
         return Promise.resolve(game);
     });
 }
+exports.finishGame = finishGame;
 //# sourceMappingURL=actMove.js.map

@@ -32,7 +32,7 @@
             "touch": "hot",
             "taste": "chicken"
         },
-        "WALL": {
+        "wall": {
             "sight": {
                 "adjective": "WALL",
                 "intensity": 30
@@ -305,5 +305,22 @@
         "WEST": "WEST",
         "LEFT": "LEFT",
         "RIGHT": "RIGHT"
+    },
+    "outcomes": {
+        "message": "You write a message on the ground...",
+        "movewhilesitting": "You can't move while sitting!",
+        "standwhilestanding": "You are already standing!",
+        "stand": "You stand up.",
+        "lava": "You walked into lava. YOU DIED.",
+        "win": "You WIN!",
+        "walkintowall": "You crash into the wall to the [%s]",
+        "stunned": "You are stunned!",
+        "look": "You take a look around",
+        "jumpwhilesitting": "You leap to your feet",
+        "jumpintowall": "You leap directly into a wall!",
+        "landfromjump": "You land on your feet",
+        "jumping": "You fly through the air",
+        "jumpintolava": "You fly through the air...straight into lava"
+
     }
 }

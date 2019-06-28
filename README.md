@@ -38,6 +38,12 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 
 ## Change Notes
 
+### v0.8.0
+
+- added write and jump commands
+- outcomes now utilize the language file system
+- various messages in move and look now utilize the language file system
+
 ### v0.7.2
 
 - engram senses are all working

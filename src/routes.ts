@@ -13,6 +13,7 @@ import { doTurn } from './controllers/actTurn';
 import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
 import Score from '@mazemasterjs/shared-library/Score';
 import { Engram } from '@mazemasterjs/shared-library/Engram';
+import { doJump } from './controllers/actJump';
 
 // set constant utility references
 const log = Logger.getInstance();
@@ -264,10 +265,15 @@ export const processAction = async (req: Request, res: Response) => {
     case COMMANDS.LISTEN:
     case COMMANDS.SNIFF:
     case COMMANDS.JUMP:
+      const actionResult = await doJump(game, langCode);
+      return res.status(200).json({ actionResult, playerState: game.Player.State, playerFacing: game.Player.Facing });
     case COMMANDS.QUIT:
     case COMMANDS.SIT:
     case COMMANDS.WAIT:
-    case COMMANDS.WRITE:
+    case COMMANDS.WRITE: {
+      const actionResult = await fns.doWrite(game, langCode, msg);
+      return res.status(200).json({ actionResult, playerState: game.Player.State, playerFacing: game.Player.Facing });
+    }
     default: {
       const err = new Error(`${COMMANDS[action.command]} is not recognized. Valid commands are LOOK, MOVE, JUMP, SIT, STAND, and WRITE.`);
       log.error(__filename, req.path, 'Unrecognized Command', err);

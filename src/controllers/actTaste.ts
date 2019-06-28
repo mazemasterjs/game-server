@@ -27,9 +27,6 @@ export function doTasteLocal(game: Game, lang: string) {
     setTaste(engram.south.taste, { taste: data.entities.cheese.taste.adjective, strength: data.entities.cheese.taste.intensity });
   }
 
-  // taste specific, get tastes in the cell
-  doTasteDirected(game, lang, cell, engram.here.taste, DIRS.NONE, 0);
-
   //  loop through the cardinal directions in DIRS
   for (let pos = 0; pos < 4; pos++) {
     const dir = 1 << pos; // bitwish shift (1, 2, 4, 8)

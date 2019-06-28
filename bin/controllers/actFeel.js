@@ -75,10 +75,6 @@ function doFeelDirected(game, lang, cell, engramDir, lastDirection, distance) {
                 try {
                     const intensity = data.entities[trapType.toLowerCase()].touch.intensity;
                     const adjective = data.entities[trapType.toLowerCase()].touch.adjective;
-                    // const intensityString = `data.entities.${trapType}.smell.intensity`;
-                    // const adjectiveString = `data.entities.${trapType}.smell.adjective`;
-                    // const intensity = eval(intensityString);  <-- very clever, but an unsafe operation that the linter opposes
-                    // const adjective = eval(adjectiveString);  <-- very clever, but an unsafe operation that the linter opposes
                     if (distance < intensity) {
                         setFeel(engramDir, { feeling: adjective, intensity: distance });
                     }

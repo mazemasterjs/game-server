@@ -1,5 +1,5 @@
 import * as fns from '../funcs';
-import { CELL_TAGS, DIRS, CELL_TRAPS } from '@mazemasterjs/shared-library/Enums';
+import { CELL_TAGS, CELL_TRAPS, DIRS } from '@mazemasterjs/shared-library/Enums';
 import { Game } from '@mazemasterjs/shared-library/Game';
 import { ISight, ISmell } from '@mazemasterjs/shared-library/Interfaces/ISenses';
 import MazeLoc from '@mazemasterjs/shared-library/MazeLoc';
@@ -61,10 +61,10 @@ export function doSmellDirected(game: Game, lang: string, cell: CellBase, engram
   fns.logDebug(__filename, method, 'Entering');
   const MAX_DISTANCE = 10;
   if (!!(cell.Tags & CELL_TAGS.START)) {
-    setSmell(engramDir, { scent: 'Sulpur', strength: distance });
+    setSmell(engramDir, { scent: data.entities.cheese.smell.adjective, strength: distance });
   }
   if (!!(cell.Tags & CELL_TAGS.FINISH)) {
-    setSmell(engramDir, { scent: 'Cheese', strength: distance });
+    setSmell(engramDir, { scent: data.entities.cheese.smell.adjective, strength: distance });
   }
 
   if (cell.Traps !== CELL_TRAPS.NONE) {
@@ -75,10 +75,6 @@ export function doSmellDirected(game: Game, lang: string, cell: CellBase, engram
         try {
           const intensity = data.entities[trapType.toLowerCase()].smell.intensity;
           const adjective = data.entities[trapType.toLowerCase()].smell.adjective;
-          // const intensityString = `data.entities.${trapType}.smell.intensity`;
-          // const adjectiveString = `data.entities.${trapType}.smell.adjective`;
-          // const intensity = eval(intensityString);  <-- very clever, but an unsafe operation that the linter opposes
-          // const adjective = eval(adjectiveString);  <-- very clever, but an unsafe operation that the linter opposes
           if (distance < intensity) {
             if (
               !engramDir.find(smell => {
