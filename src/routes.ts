@@ -1,15 +1,20 @@
-import * as fns from './funcs';
 import { Action } from '@mazemasterjs/shared-library/Action';
+import { doMove } from './controllers/actMove';
 import { Cache, CACHE_TYPES } from './Cache';
-import { COMMANDS, GAME_STATES } from '@mazemasterjs/shared-library/Enums';
+import { COMMANDS, DIRS, GAME_RESULTS, GAME_STATES } from '@mazemasterjs/shared-library/Enums';
 import { Config } from './Config';
 import { doLook } from './controllers/actLook';
-import { doMove } from './controllers/actMove';
+import * as fns from './funcs';
 import { doStand } from './controllers/actStand';
 import { Game } from '@mazemasterjs/shared-library/Game';
 import { LOG_LEVELS, Logger } from '@mazemasterjs/logger';
 import { Request, Response } from 'express';
-import { ENGINE_METHOD_PKEY_ASN1_METHS } from 'constants';
+import { doTurn } from './controllers/actTurn';
+import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
+import Score from '@mazemasterjs/shared-library/Score';
+import { Engram } from '@mazemasterjs/shared-library/Engram';
+import { doJump } from './controllers/actJump';
+import GameLang from './GameLang';
 
 // set constant utility references
 const log = Logger.getInstance();
@@ -39,6 +44,7 @@ export const createGame = async (req: Request, res: Response) => {
   const botId = req.params.botId;
   const forceId = req.query.forceId;
   const method = `createGame(${mazeId}, ${teamId}, ${botId})`;
+  const langCode = fns.getLanguage(req);
 
   // get maze - bail on fail
   return await Cache.use()
@@ -58,6 +64,7 @@ export const createGame = async (req: Request, res: Response) => {
 
             if (activeGameId !== '') {
               const gameType = botId ? 'SINGLE_PLAYER (bot)' : 'MULTIPLAYER (team)';
+
               return res
                 .status(400)
                 .json({ status: 400, message: 'Invalid Request - An active ' + gameType + ' game already exists.', gameId: activeGameId, teamId, botId });
@@ -73,22 +80,74 @@ export const createGame = async (req: Request, res: Response) => {
                 game.forceSetId(forceId);
               }
 
-              // store the game on the cache
+              // store the game on the  cache
               Cache.use().storeItem(CACHE_TYPES.GAME, game);
 
-              // return json game stub: game.Id, getUrl: `${config.EXT_URL_GAME}/get/${game.Id}
-              return res.status(200).json({ status: 200, message: 'Game Created', game: game.getStub(`${config.EXT_URL_GAME}/get/`) });
+              // add initial game action
+              const langData = GameLang.getInstance(langCode);
+
+              // create the initial game action and add a new-game outcome
+              const firstAction: IAction = new Action(COMMANDS.WAIT, DIRS.NONE, '');
+              firstAction.outcomes.push(langData.outcomes.newGame);
+              game.addAction(firstAction);
+
+              // finalize the last action and capture as a result
+              const createResult: IAction = fns.finalizeAction(game, game.Score.getTotalScore(), langCode, true);
+
+              // return the newly created game
+              return res.status(200).json({
+                game: game.getStub(config.EXT_URL_GAME),
+                action: createResult,
+                totalScore: game.Score.getTotalScore(),
+                playerState: game.Player.State,
+                playerFacing: game.Player.Facing,
+              });
             }
           }
         })
         .catch(teamErr => {
-          log.warn(__filename, method, 'Unable to get Team');
+          log.warn(__filename, method, 'Unable to get Team -> ' + teamErr);
           return res.status(404).json({ status: 404, message: 'Invalid Request - Team not found.', error: teamErr.message });
         });
     })
     .catch(mazeErr => {
-      log.warn(__filename, method, 'Unable to get Maze');
+      log.warn(__filename, method, 'Unable to get Maze -> ' + mazeErr);
       return res.status(404).json({ status: 404, message: 'Invalid Request - Maze not found.', error: mazeErr.message });
+    });
+};
+
+/**
+ * Returns game data for the requested Game.Id
+ */
+export const getGame = (req: Request, res: Response) => {
+  logRequest('getGames', req);
+  const langCode = fns.getLanguage(req);
+
+  return Cache.use()
+    .fetchItem(CACHE_TYPES.GAME, req.params.gameId)
+    .then(game => {
+      // add initial game action
+      const langData = GameLang.getInstance(langCode);
+
+      // create a resume game action and add a resume outcome
+      const resumeAction: IAction = new Action(COMMANDS.WAIT, DIRS.NONE, '');
+      resumeAction.outcomes.push(langData.outcomes.resumeGame);
+      game.addAction(resumeAction);
+
+      // finalize the last action and capture as a result
+      const resumeResult: IAction = fns.finalizeAction(game, game.Score.getTotalScore(), langCode, true);
+
+      // add the new game outcome
+      return res.status(200).json({
+        game: game.getStub(config.EXT_URL_GAME),
+        action: resumeResult,
+        totalScore: game.Score.getTotalScore(),
+        playerState: game.Player.State,
+        playerFacing: game.Player.Facing,
+      });
+    })
+    .catch(fetchError => {
+      return res.status(404).json({ status: 404, message: 'Game Not Found', error: fetchError.message });
     });
 };
 
@@ -117,21 +176,6 @@ export const abandonGame = async (req: Request, res: Response) => {
 
       // go ahead and abandon the game
       log.warn(__filename, 'abandonGame', `${game.Id} forcibly abandoned by request from ${req.ip}`);
-      return res.status(200).json(game.getStub(config.EXT_URL_GAME + '/get/'));
-    })
-    .catch(fetchError => {
-      res.status(404).json({ status: 404, message: 'Game Not Found', error: fetchError.message });
-    });
-};
-
-/**
- * Returns game data for the requested Game.Id
- */
-export const getGame = (req: Request, res: Response) => {
-  logRequest('getGames', req);
-  return Cache.use()
-    .fetchItem(CACHE_TYPES.GAME, req.params.gameId)
-    .then(game => {
       return res.status(200).json(game.getStub(config.EXT_URL_GAME));
     })
     .catch(fetchError => {
@@ -185,20 +229,27 @@ export const processAction = async (req: Request, res: Response) => {
 
   // assign some reference vars from req.body (validate cmd and dir)
   const gameId = req.body.gameId;
-  const cmd = fns.getCmdByName(req.body.command);
-  const dir = fns.getDirByName(req.body.direction);
-  const msg = req.body.message + '';
+  const cmd = isNaN(parseInt(req.body.command, 10)) ? fns.getCmdByName(req.body.command) : parseInt(req.body.command, 10);
+  const dir = isNaN(parseInt(req.body.direction, 10)) ? fns.getDirByName(req.body.direction) : parseInt(req.body.direction, 10);
+  const msg = req.body.message !== undefined ? req.body.message : '';
+  const langCode = fns.getLanguage(req);
 
-  // first attempt to get the game by the given Id - fetchItem will throw an
-  // error if the game is not found and we'll respond accordingly
+  // first attempt to get the game by the given Id - fetchItem() will
+  // reject the promise with an error if the game is not found in the game cache
   game = await Cache.use()
     .fetchItem(CACHE_TYPES.GAME, gameId)
     .then(fetchedGame => {
       return fetchedGame;
     })
     .catch(fetchError => {
-      return res.status(404).json({ status: 404, message: 'Game Not Found', error: fetchError.message });
+      log.warn(__filename, req.path, `Invalid gameId (${gameId}) -> ${fetchError.message}`);
+      return null;
     });
+
+  // make sure a game was found
+  if (!game) {
+    return res.status(404).json({ status: 404, message: 'Game Not Found', gameId });
+  }
 
   // got a game - make sure it's not in an end-state: FINISHED, ABANDONDED, or ERROR
   if (game.State >= GAME_STATES.FINISHED) {
@@ -212,26 +263,64 @@ export const processAction = async (req: Request, res: Response) => {
   // add the new action to the game
   game.addAction(action);
 
-  // make sure the game
-  game.State = GAME_STATES.IN_PROGRESS;
+  // handle game state - out of moves or time or whatever
+  if (game.Score.MoveCount >= game.Maze.CellCount * 3) {
+    game.State = GAME_STATES.FINISHED;
+    game.Score.GameResult = GAME_RESULTS.OUT_OF_MOVES;
+    if (game.Id.startsWith('FORCED')) {
+      game.forceSetId(`${game.Id}__${Date.now()}`);
+    }
+    return res.status(400).json({ status: 400, message: 'Game Over', error: 'The game is over.' });
+  } else {
+    game.State = GAME_STATES.IN_PROGRESS;
+  }
 
   switch (action.command) {
     case COMMANDS.LOOK: {
-      return res.status(200).json(await doLook(game));
+      const lookResult = await doLook(game, langCode);
+      return res
+        .status(200)
+        .json({ action: lookResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
     }
     case COMMANDS.MOVE: {
-      return await res.status(200).json(await doMove(game));
+      const moveResult = await doMove(game, langCode);
+      return res
+        .status(200)
+        .json({ action: moveResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
     }
     case COMMANDS.STAND: {
-      return res.status(200).json(await doStand(game));
+      const standResult = await doStand(game, langCode);
+      return res
+        .status(200)
+        .json({ action: standResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
     }
+    case COMMANDS.TURN: {
+      const turnResult = await doTurn(game, langCode);
+      return res
+        .status(200)
+        .json({ action: turnResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
+    }
+    case COMMANDS.FACE:
+    case COMMANDS.LISTEN:
+    case COMMANDS.SNIFF:
     case COMMANDS.JUMP:
+      const jumpResult = await doJump(game, langCode);
+      return res
+        .status(200)
+        .json({ action: jumpResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
+    case COMMANDS.QUIT:
     case COMMANDS.SIT:
-    case COMMANDS.WRITE:
+    case COMMANDS.WAIT:
+    case COMMANDS.WRITE: {
+      const writeResult = await fns.doWrite(game, langCode, msg);
+      return res
+        .status(200)
+        .json({ action: writeResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
+    }
     default: {
       const err = new Error(`${COMMANDS[action.command]} is not recognized. Valid commands are LOOK, MOVE, JUMP, SIT, STAND, and WRITE.`);
       log.error(__filename, req.path, 'Unrecognized Command', err);
-      return res.status(500).json({ status: 400, message: 'Unrecognized Command', error: err.message });
+      return res.status(400).json({ status: 400, message: 'Unrecognized Command', error: err.message });
     }
   }
 };

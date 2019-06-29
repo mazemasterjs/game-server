@@ -12,10 +12,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const axios_1 = __importDefault(require("axios"));
+const GameLang_1 = __importDefault(require("./GameLang"));
 const Cache_1 = require("./Cache");
 const Enums_1 = require("@mazemasterjs/shared-library/Enums");
 const Config_1 = require("./Config");
+const actLook_1 = require("./controllers/actLook");
 const logger_1 = require("@mazemasterjs/logger");
+const MazeLoc_1 = require("@mazemasterjs/shared-library/MazeLoc");
+const actTaste_1 = require("./controllers/actTaste");
+const actFeel_1 = require("./controllers/actFeel");
+const actSmell_1 = require("./controllers/actSmell");
+const actListen_1 = require("./controllers/actListen");
 const log = logger_1.Logger.getInstance();
 const config = Config_1.Config.getInstance();
 /**
@@ -191,6 +198,12 @@ function getDirByName(dirName) {
         case 'NONE': {
             return Enums_1.DIRS.NONE;
         }
+        case 'LEFT': {
+            return Enums_1.DIRS.LEFT;
+        }
+        case 'RIGHT': {
+            return Enums_1.DIRS.RIGHT;
+        }
         default:
             log.warn(__filename, `getDirByName(${dirName})`, 'Invalid direction received, returning DIRS.NONE.');
             return Enums_1.DIRS.NONE;
@@ -220,12 +233,15 @@ function getCmdByName(cmdName) {
         case 'STAND': {
             return Enums_1.COMMANDS.STAND;
         }
+        case 'TURN': {
+            return Enums_1.COMMANDS.TURN;
+        }
         case 'WRITE': {
             return Enums_1.COMMANDS.WRITE;
         }
-        // case 'QUIT': {
-        //   return COMMANDS.QUIT;
-        // }
+        case 'QUIT': {
+            return Enums_1.COMMANDS.QUIT;
+        }
         case 'NONE': {
             return Enums_1.COMMANDS.NONE;
         }
@@ -237,13 +253,13 @@ function getCmdByName(cmdName) {
 exports.getCmdByName = getCmdByName;
 /**
  * Handles updating the player's location, associated maze cell visit/backtrack
- * counters, and updates the Score.MoveCount.
+ * counters.  MoveCount / action.MoveCount are handled in finalizeAction.
  *
  * @param game: Game - the current game
  * @param action: IAction - the pre-validated IAction behind this move
  */
-function movePlayer(game, act) {
-    const pLoc = game.Player.Location;
+function movePlayer(game) {
+    const act = game.Actions[game.Actions.length - 1];
     // reposition the player - all move validation is preformed prior to this call
     switch (act.direction) {
         case Enums_1.DIRS.NORTH: {
@@ -266,17 +282,15 @@ function movePlayer(game, act) {
             act.outcomes.push('You move to the West.');
             break;
         }
-    }
-    // increment the move counters
-    game.Score.addMove();
-    act.moveCount++;
+    } // end switch(act.direction)
     const cell = game.Maze.Cells[game.Player.Location.row][game.Player.Location.col];
     // until blindness or something is added, always see exits
-    act.engram.sight = 'You see exits: ' + game.Maze.Cells[pLoc.row][pLoc.col].listExits();
+    // commented for testing purposes
+    // act.engram.sight = 'You see exits: ' + game.Maze.Cells[pLoc.row][pLoc.col].listExits();
     // check for backtracking
     if (game.Maze.Cells[game.Player.Location.row][game.Player.Location.col].VisitCount > 0) {
         game.Score.addBacktrack();
-        act.engram.sight += ' Footprints mar the dusty floor. ';
+        // act.engram.sight += ' Footprints mar the dusty floor. ';
     }
     // and update the cell visit count
     cell.addVisit(game.Score.MoveCount);
@@ -295,7 +309,7 @@ exports.movePlayer = movePlayer;
 function grantTrophy(game, trophyId) {
     return __awaiter(this, void 0, void 0, function* () {
         const method = `grantTrophy(${game.Id}, ${Enums_1.TROPHY_IDS[trophyId]})`;
-        return yield Cache_1.Cache.use()
+        yield Cache_1.Cache.use()
             .fetchOrGetItem(Cache_1.CACHE_TYPES.TROPHY, Enums_1.TROPHY_IDS[trophyId])
             .then(item => {
             const trophy = item;
@@ -307,12 +321,12 @@ function grantTrophy(game, trophyId) {
             game.Score.addTrophy(trophyId);
             game.Score.addBonusPoints(trophy.BonusAward);
             logDebug(__filename, method, 'Trophy added.');
-            return Promise.resolve(game);
         })
             .catch(fetchError => {
-            logWarn(__filename, method, 'Unable to fetch trophy: ' + Enums_1.TROPHY_IDS[Enums_1.TROPHY_IDS.WISHFUL_DYING] + '. Error -> ' + fetchError.message);
-            return Promise.reject(fetchError);
+            game.Actions[game.Actions.length - 1].outcomes.push('Error adding add trophy ' + Enums_1.TROPHY_IDS[trophyId] + ' -> ' + fetchError.message);
+            logWarn(__filename, method, 'Unable to fetch trophy: ' + Enums_1.TROPHY_IDS[trophyId] + '. Error -> ' + fetchError.message);
         });
+        return Promise.resolve(game);
     });
 }
 exports.grantTrophy = grantTrophy;
@@ -378,4 +392,117 @@ function logError(file, method, msg, error) {
     log.error(file, method, msg, error);
 }
 exports.logError = logError;
+/**
+ * Checks for accept-language header and returns the 2-letter language code
+ * or returns 'en' if none found - default language will be english (en)
+ *
+ * @param req
+ */
+function getLanguage(req) {
+    const languageHeader = req.header('accept-language');
+    let userLanguage = 'en';
+    logDebug(__filename, 'getLanguage(req)', `Acquiring users language from the header: ${languageHeader}`);
+    if (languageHeader && languageHeader.length >= 2) {
+        userLanguage = languageHeader.substring(0, 2);
+        logDebug(__filename, 'getLanguage(req)', 'userLanguage is ' + userLanguage);
+    }
+    return userLanguage;
+}
+exports.getLanguage = getLanguage;
+/**
+ * Aggregates some commmon scoring and debugging
+ *
+ * @param game
+ * @param maze
+ * @param action
+ * @param startScore
+ * @param finishScore
+ */
+function finalizeAction(game, startScore, langCode, freeAction = false) {
+    // increment move counters unless freeAction is set (new / resume game)
+    if (!freeAction) {
+        game.Score.addMove();
+        game.Actions[game.Actions.length - 1].moveCount++;
+    }
+    // track the score change from this one move
+    game.Actions[game.Actions.length - 1].score = game.Score.getTotalScore() - startScore;
+    // TODO: text render - here now just for DEV/DEBUG purposess - it should always be the LAST outcome, too
+    try {
+        const textRender = game.Maze.generateTextRender(true, game.Player.Location);
+        game.Actions[game.Actions.length - 1].outcomes.push(textRender);
+        logDebug(__filename, 'finalizeAction(...)', '\r\n' + textRender);
+    }
+    catch (renderError) {
+        logError(__filename, 'finalizeAction(...)', 'Unable to generate text render of maze ->', renderError);
+    }
+    // update the engrams
+    getLocal(game, langCode);
+    actLook_1.doLookLocal(game, langCode);
+    actSmell_1.doSmellLocal(game, langCode);
+    actListen_1.doListenLocal(game, langCode);
+    actTaste_1.doTasteLocal(game, langCode);
+    actFeel_1.doFeelLocal(game, langCode);
+    return game.Actions[game.Actions.length - 1];
+}
+exports.finalizeAction = finalizeAction;
+function getLocal(game, lang) {
+    const method = `getLocal(${game.Id}, ${lang})`;
+    logDebug(__filename, method, 'Entering');
+    const cell = game.Maze.getCell(game.Player.Location);
+    const engram = game.Actions[game.Actions.length - 1].engram.here;
+    const data = GameLang_1.default.getInstance(lang);
+    for (let pos = 0; pos < 4; pos++) {
+        const dir = 1 << pos; // bitwish shift (1, 2, 4, 8)
+        switch (dir) {
+            case Enums_1.DIRS.NORTH: {
+                if (cell.isDirOpen(Enums_1.DIRS.NORTH)) {
+                    engram.exitNorth = true;
+                }
+                break;
+            }
+            case Enums_1.DIRS.SOUTH: {
+                if (cell.isDirOpen(Enums_1.DIRS.SOUTH)) {
+                    engram.exitSouth = true;
+                }
+                break;
+            }
+            case Enums_1.DIRS.EAST: {
+                if (cell.isDirOpen(Enums_1.DIRS.EAST)) {
+                    engram.exitSouth = true;
+                }
+                break;
+            }
+            case Enums_1.DIRS.WEST: {
+                if (cell.isDirOpen(Enums_1.DIRS.WEST)) {
+                    engram.exitWest = true;
+                }
+                break;
+            }
+        } // end switch(dir)
+    } // end for (pos<4)
+    if (cell.Notes.length > 0) {
+        cell.Notes.forEach(element => {
+            engram.messages.push(element);
+        });
+    }
+}
+exports.getLocal = getLocal;
+function doWrite(game, lang, message) {
+    const method = `doWrite(${game.Id}, ${lang},${message})`;
+    const cell = game.Maze.getCell(new MazeLoc_1.MazeLoc(game.Player.Location.row, game.Player.Location.col));
+    const startScore = game.Score.getTotalScore();
+    const engram = game.Actions[game.Actions.length - 1].engram.here;
+    const data = GameLang_1.default.getInstance(lang);
+    engram.messages.pop();
+    if (cell.Notes[0] === '') {
+        cell.Notes[0] = message.substr(0, 8);
+    }
+    else {
+        cell.Notes.push(message.substr(0, 8));
+    }
+    logDebug(__filename, method, 'executed the write command');
+    game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.message);
+    return Promise.resolve(finalizeAction(game, startScore, lang));
+}
+exports.doWrite = doWrite;
 //# sourceMappingURL=funcs.js.map

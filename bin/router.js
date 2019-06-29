@@ -12,10 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const routes = __importStar(require("./routes"));
 const express_1 = __importDefault(require("express"));
-const Config_1 = __importDefault(require("./Config"));
 exports.router = express_1.default.Router();
-// load the service config
-const config = Config_1.default.getInstance();
 // existing games
 exports.router.get('/get', routes.listGames);
 exports.router.get('/get/:gameId', routes.getGame);

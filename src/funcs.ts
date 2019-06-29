@@ -1,17 +1,25 @@
 import axios from 'axios';
-import { Cell } from '@mazemasterjs/shared-library/Cell';
-import { MazeLoc } from '@mazemasterjs/shared-library/MazeLoc';
-import { Score } from '@mazemasterjs/shared-library/Score';
-import { Trophy } from '@mazemasterjs/shared-library/Trophy';
+import GameLang from './GameLang';
 import { AxiosResponse } from 'axios';
 import { Cache, CACHE_TYPES } from './Cache';
-import { COMMANDS, DIRS, GAME_RESULTS, GAME_STATES, TROPHY_IDS } from '@mazemasterjs/shared-library/Enums';
+import { Cell } from '@mazemasterjs/shared-library/Cell';
+import { CELL_TAGS, CELL_TRAPS, COMMANDS, DIRS, GAME_RESULTS, GAME_STATES, TROPHY_IDS } from '@mazemasterjs/shared-library/Enums';
+import { CellBase } from '@mazemasterjs/shared-library/CellBase';
 import { Config } from './Config';
+import { doLookLocal } from './controllers/actLook';
 import { Game } from '@mazemasterjs/shared-library/Game';
 import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
 import { IGameStub } from '@mazemasterjs/shared-library/Interfaces/IGameStub';
 import { LOG_LEVELS, Logger } from '@mazemasterjs/logger';
+import { MazeLoc } from '@mazemasterjs/shared-library/MazeLoc';
+import { Request } from 'express';
+import { Score } from '@mazemasterjs/shared-library/Score';
 import { Team } from '@mazemasterjs/shared-library/Team';
+import { Trophy } from '@mazemasterjs/shared-library/Trophy';
+import { doTasteLocal } from './controllers/actTaste';
+import { doFeelLocal } from './controllers/actFeel';
+import { doSmellLocal } from './controllers/actSmell';
+import { doListenLocal } from './controllers/actListen';
 
 const log = Logger.getInstance();
 const config = Config.getInstance();
@@ -189,6 +197,12 @@ export function getDirByName(dirName: string): number {
     case 'NONE': {
       return DIRS.NONE;
     }
+    case 'LEFT': {
+      return DIRS.LEFT;
+    }
+    case 'RIGHT': {
+      return DIRS.RIGHT;
+    }
     default:
       log.warn(__filename, `getDirByName(${dirName})`, 'Invalid direction received, returning DIRS.NONE.');
       return DIRS.NONE;
@@ -218,12 +232,15 @@ export function getCmdByName(cmdName: string): number {
     case 'STAND': {
       return COMMANDS.STAND;
     }
+    case 'TURN': {
+      return COMMANDS.TURN;
+    }
     case 'WRITE': {
       return COMMANDS.WRITE;
     }
-    // case 'QUIT': {
-    //   return COMMANDS.QUIT;
-    // }
+    case 'QUIT': {
+      return COMMANDS.QUIT;
+    }
     case 'NONE': {
       return COMMANDS.NONE;
     }
@@ -235,14 +252,13 @@ export function getCmdByName(cmdName: string): number {
 
 /**
  * Handles updating the player's location, associated maze cell visit/backtrack
- * counters, and updates the Score.MoveCount.
+ * counters.  MoveCount / action.MoveCount are handled in finalizeAction.
  *
  * @param game: Game - the current game
  * @param action: IAction - the pre-validated IAction behind this move
  */
-export function movePlayer(game: Game, act: IAction): Game {
-  const pLoc: MazeLoc = game.Player.Location;
-
+export function movePlayer(game: Game): Game {
+  const act = game.Actions[game.Actions.length - 1];
   // reposition the player - all move validation is preformed prior to this call
   switch (act.direction) {
     case DIRS.NORTH: {
@@ -265,21 +281,18 @@ export function movePlayer(game: Game, act: IAction): Game {
       act.outcomes.push('You move to the West.');
       break;
     }
-  }
-
-  // increment the move counters
-  game.Score.addMove();
-  act.moveCount++;
+  } // end switch(act.direction)
 
   const cell: Cell = game.Maze.Cells[game.Player.Location.row][game.Player.Location.col];
 
   // until blindness or something is added, always see exits
-  act.engram.sight = 'You see exits: ' + game.Maze.Cells[pLoc.row][pLoc.col].listExits();
+  // commented for testing purposes
+  // act.engram.sight = 'You see exits: ' + game.Maze.Cells[pLoc.row][pLoc.col].listExits();
 
   // check for backtracking
   if (game.Maze.Cells[game.Player.Location.row][game.Player.Location.col].VisitCount > 0) {
     game.Score.addBacktrack();
-    act.engram.sight += ' Footprints mar the dusty floor. ';
+    // act.engram.sight += ' Footprints mar the dusty floor. ';
   }
 
   // and update the cell visit count
@@ -300,7 +313,7 @@ export function movePlayer(game: Game, act: IAction): Game {
 export async function grantTrophy(game: Game, trophyId: TROPHY_IDS): Promise<Game> {
   const method = `grantTrophy(${game.Id}, ${TROPHY_IDS[trophyId]})`;
 
-  return await Cache.use()
+  await Cache.use()
     .fetchOrGetItem(CACHE_TYPES.TROPHY, TROPHY_IDS[trophyId])
     .then(item => {
       const trophy: Trophy = item;
@@ -314,12 +327,13 @@ export async function grantTrophy(game: Game, trophyId: TROPHY_IDS): Promise<Gam
       game.Score.addTrophy(trophyId);
       game.Score.addBonusPoints(trophy.BonusAward);
       logDebug(__filename, method, 'Trophy added.');
-      return Promise.resolve(game);
     })
     .catch(fetchError => {
-      logWarn(__filename, method, 'Unable to fetch trophy: ' + TROPHY_IDS[TROPHY_IDS.WISHFUL_DYING] + '. Error -> ' + fetchError.message);
-      return Promise.reject(fetchError);
+      game.Actions[game.Actions.length - 1].outcomes.push('Error adding add trophy ' + TROPHY_IDS[trophyId] + ' -> ' + fetchError.message);
+      logWarn(__filename, method, 'Unable to fetch trophy: ' + TROPHY_IDS[trophyId] + '. Error -> ' + fetchError.message);
     });
+
+  return Promise.resolve(game);
 }
 
 /**
@@ -382,4 +396,125 @@ export function logWarn(file: string, method: string, msg: string) {
  */
 export function logError(file: string, method: string, msg: string, error: Error) {
   log.error(file, method, msg, error);
+}
+
+/**
+ * Checks for accept-language header and returns the 2-letter language code
+ * or returns 'en' if none found - default language will be english (en)
+ *
+ * @param req
+ */
+export function getLanguage(req: Request) {
+  const languageHeader = req.header('accept-language');
+
+  let userLanguage = 'en';
+  logDebug(__filename, 'getLanguage(req)', `Acquiring users language from the header: ${languageHeader}`);
+
+  if (languageHeader && languageHeader.length >= 2) {
+    userLanguage = languageHeader.substring(0, 2);
+    logDebug(__filename, 'getLanguage(req)', 'userLanguage is ' + userLanguage);
+  }
+
+  return userLanguage;
+}
+
+/**
+ * Aggregates some commmon scoring and debugging
+ *
+ * @param game
+ * @param maze
+ * @param action
+ * @param startScore
+ * @param finishScore
+ */
+export function finalizeAction(game: Game, startScore: number, langCode: string, freeAction: boolean = false): IAction {
+  // increment move counters unless freeAction is set (new / resume game)
+  if (!freeAction) {
+    game.Score.addMove();
+    game.Actions[game.Actions.length - 1].moveCount++;
+  }
+
+  // track the score change from this one move
+  game.Actions[game.Actions.length - 1].score = game.Score.getTotalScore() - startScore;
+
+  // TODO: text render - here now just for DEV/DEBUG purposess - it should always be the LAST outcome, too
+  try {
+    const textRender = game.Maze.generateTextRender(true, game.Player.Location);
+    game.Actions[game.Actions.length - 1].outcomes.push(textRender);
+    logDebug(__filename, 'finalizeAction(...)', '\r\n' + textRender);
+  } catch (renderError) {
+    logError(__filename, 'finalizeAction(...)', 'Unable to generate text render of maze ->', renderError);
+  }
+
+  // update the engrams
+  getLocal(game, langCode);
+  doLookLocal(game, langCode);
+  doSmellLocal(game, langCode);
+  doListenLocal(game, langCode);
+  doTasteLocal(game, langCode);
+  doFeelLocal(game, langCode);
+
+  return game.Actions[game.Actions.length - 1];
+}
+
+export function getLocal(game: Game, lang: string) {
+  const method = `getLocal(${game.Id}, ${lang})`;
+  logDebug(__filename, method, 'Entering');
+  const cell = game.Maze.getCell(game.Player.Location);
+  const engram = game.Actions[game.Actions.length - 1].engram.here;
+  const data = GameLang.getInstance(lang);
+
+  for (let pos = 0; pos < 4; pos++) {
+    const dir = 1 << pos; // bitwish shift (1, 2, 4, 8)
+    switch (dir) {
+      case DIRS.NORTH: {
+        if (cell.isDirOpen(DIRS.NORTH)) {
+          engram.exitNorth = true;
+        }
+        break;
+      }
+      case DIRS.SOUTH: {
+        if (cell.isDirOpen(DIRS.SOUTH)) {
+          engram.exitSouth = true;
+        }
+        break;
+      }
+      case DIRS.EAST: {
+        if (cell.isDirOpen(DIRS.EAST)) {
+          engram.exitSouth = true;
+        }
+        break;
+      }
+      case DIRS.WEST: {
+        if (cell.isDirOpen(DIRS.WEST)) {
+          engram.exitWest = true;
+        }
+        break;
+      }
+    } // end switch(dir)
+  } // end for (pos<4)
+
+  if (cell.Notes.length > 0) {
+    cell.Notes.forEach(element => {
+      engram.messages.push(element);
+    });
+  }
+}
+
+export function doWrite(game: Game, lang: string, message: string) {
+  const method = `doWrite(${game.Id}, ${lang},${message})`;
+  const cell = game.Maze.getCell(new MazeLoc(game.Player.Location.row, game.Player.Location.col));
+  const startScore = game.Score.getTotalScore();
+  const engram = game.Actions[game.Actions.length - 1].engram.here;
+  const data = GameLang.getInstance(lang);
+  engram.messages.pop();
+  if (cell.Notes[0] === '') {
+    cell.Notes[0] = message.substr(0, 8);
+  } else {
+    cell.Notes.push(message.substr(0, 8));
+  }
+
+  logDebug(__filename, method, 'executed the write command');
+  game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.message);
+  return Promise.resolve(finalizeAction(game, startScore, lang));
 }

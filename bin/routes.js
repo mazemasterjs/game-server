@@ -14,17 +14,23 @@ var __importStar = (this && this.__importStar) || function (mod) {
     result["default"] = mod;
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const fns = __importStar(require("./funcs"));
 const Action_1 = require("@mazemasterjs/shared-library/Action");
+const actMove_1 = require("./controllers/actMove");
 const Cache_1 = require("./Cache");
 const Enums_1 = require("@mazemasterjs/shared-library/Enums");
 const Config_1 = require("./Config");
 const actLook_1 = require("./controllers/actLook");
-const actMove_1 = require("./controllers/actMove");
+const fns = __importStar(require("./funcs"));
 const actStand_1 = require("./controllers/actStand");
 const Game_1 = require("@mazemasterjs/shared-library/Game");
 const logger_1 = require("@mazemasterjs/logger");
+const actTurn_1 = require("./controllers/actTurn");
+const actJump_1 = require("./controllers/actJump");
+const GameLang_1 = __importDefault(require("./GameLang"));
 // set constant utility references
 const log = logger_1.Logger.getInstance();
 const config = Config_1.Config.getInstance();
@@ -50,6 +56,7 @@ exports.createGame = (req, res) => __awaiter(this, void 0, void 0, function* () 
     const botId = req.params.botId;
     const forceId = req.query.forceId;
     const method = `createGame(${mazeId}, ${teamId}, ${botId})`;
+    const langCode = fns.getLanguage(req);
     // get maze - bail on fail
     return yield Cache_1.Cache.use()
         .fetchOrGetItem(Cache_1.CACHE_TYPES.MAZE, mazeId)
@@ -81,23 +88,67 @@ exports.createGame = (req, res) => __awaiter(this, void 0, void 0, function* () 
                     if (forceId) {
                         game.forceSetId(forceId);
                     }
-                    // store the game on the cache
+                    // store the game on the  cache
                     Cache_1.Cache.use().storeItem(Cache_1.CACHE_TYPES.GAME, game);
-                    // return json game stub: game.Id, getUrl: `${config.EXT_URL_GAME}/get/${game.Id}
-                    return res.status(200).json({ status: 200, message: 'Game Created', game: game.getStub(`${config.EXT_URL_GAME}/get/`) });
+                    // add initial game action
+                    const langData = GameLang_1.default.getInstance(langCode);
+                    // create the initial game action and add a new-game outcome
+                    const firstAction = new Action_1.Action(Enums_1.COMMANDS.WAIT, Enums_1.DIRS.NONE, '');
+                    firstAction.outcomes.push(langData.outcomes.newGame);
+                    game.addAction(firstAction);
+                    // finalize the last action and capture as a result
+                    const createResult = fns.finalizeAction(game, game.Score.getTotalScore(), langCode, true);
+                    // return the newly created game
+                    return res.status(200).json({
+                        game: game.getStub(config.EXT_URL_GAME),
+                        action: createResult,
+                        totalScore: game.Score.getTotalScore(),
+                        playerState: game.Player.State,
+                        playerFacing: game.Player.Facing,
+                    });
                 }
             }
         })
             .catch(teamErr => {
-            log.warn(__filename, method, 'Unable to get Team');
+            log.warn(__filename, method, 'Unable to get Team -> ' + teamErr);
             return res.status(404).json({ status: 404, message: 'Invalid Request - Team not found.', error: teamErr.message });
         });
     })
         .catch(mazeErr => {
-        log.warn(__filename, method, 'Unable to get Maze');
+        log.warn(__filename, method, 'Unable to get Maze -> ' + mazeErr);
         return res.status(404).json({ status: 404, message: 'Invalid Request - Maze not found.', error: mazeErr.message });
     });
 });
+/**
+ * Returns game data for the requested Game.Id
+ */
+exports.getGame = (req, res) => {
+    logRequest('getGames', req);
+    const langCode = fns.getLanguage(req);
+    return Cache_1.Cache.use()
+        .fetchItem(Cache_1.CACHE_TYPES.GAME, req.params.gameId)
+        .then(game => {
+        // add initial game action
+        const langData = GameLang_1.default.getInstance(langCode);
+        // create a resume game action and add a resume outcome
+        const resumeAction = new Action_1.Action(Enums_1.COMMANDS.WAIT, Enums_1.DIRS.NONE, '');
+        resumeAction.outcomes.push(langData.outcomes.resumeGame);
+        game.addAction(resumeAction);
+        // finalize the last action and capture as a result
+        const resumeResult = fns.finalizeAction(game, game.Score.getTotalScore(), langCode, true);
+        // add the new game outcome
+        return res.status(200).json({
+            game: game.getStub(config.EXT_URL_GAME),
+            action: resumeResult,
+            totalScore: game.Score.getTotalScore(),
+            playerState: game.Player.State,
+            playerFacing: game.Player.Facing,
+        });
+    })
+        .catch(fetchError => {
+        return res.status(404).json({ status: 404, message: 'Game Not Found', error: fetchError.message });
+    });
+};
 /**
  * Returns abandons a game currently in memory
  */
@@ -120,26 +171,12 @@ exports.abandonGame = (req, res) => __awaiter(this, void 0, void 0, function* ()
         }
         // go ahead and abandon the game
         log.warn(__filename, 'abandonGame', `${game.Id} forcibly abandoned by request from ${req.ip}`);
-        return res.status(200).json(game.getStub(config.EXT_URL_GAME + '/get/'));
-    })
-        .catch(fetchError => {
-        res.status(404).json({ status: 404, message: 'Game Not Found', error: fetchError.message });
-    });
-});
-/**
- * Returns game data for the requested Game.Id
- */
-exports.getGame = (req, res) => {
-    logRequest('getGames', req);
-    return Cache_1.Cache.use()
-        .fetchItem(Cache_1.CACHE_TYPES.GAME, req.params.gameId)
-        .then(game => {
         return res.status(200).json(game.getStub(config.EXT_URL_GAME));
     })
         .catch(fetchError => {
         res.status(404).json({ status: 404, message: 'Game Not Found', error: fetchError.message });
     });
-};
+});
 /**
  * Returns a list of stubbed game data for all games currently
  * held in memory.
@@ -182,19 +219,25 @@ exports.processAction = (req, res) => __awaiter(this, void 0, void 0, function* 
     }
     // assign some reference vars from req.body (validate cmd and dir)
     const gameId = req.body.gameId;
-    const cmd = fns.getCmdByName(req.body.command);
-    const dir = fns.getDirByName(req.body.direction);
-    const msg = req.body.message + '';
-    // first attempt to get the game by the given Id - fetchItem will throw an
-    // error if the game is not found and we'll respond accordingly
+    const cmd = isNaN(parseInt(req.body.command, 10)) ? fns.getCmdByName(req.body.command) : parseInt(req.body.command, 10);
+    const dir = isNaN(parseInt(req.body.direction, 10)) ? fns.getDirByName(req.body.direction) : parseInt(req.body.direction, 10);
+    const msg = req.body.message !== undefined ? req.body.message : '';
+    const langCode = fns.getLanguage(req);
+    // first attempt to get the game by the given Id - fetchItem() will
+    // reject the promise with an error if the game is not found in the game cache
     game = yield Cache_1.Cache.use()
         .fetchItem(Cache_1.CACHE_TYPES.GAME, gameId)
         .then(fetchedGame => {
         return fetchedGame;
     })
         .catch(fetchError => {
-        return res.status(404).json({ status: 404, message: 'Game Not Found', error: fetchError.message });
+        log.warn(__filename, req.path, `Invalid gameId (${gameId}) -> ${fetchError.message}`);
+        return null;
     });
+    // make sure a game was found
+    if (!game) {
+        return res.status(404).json({ status: 404, message: 'Game Not Found', gameId });
+    }
     // got a game - make sure it's not in an end-state: FINISHED, ABANDONDED, or ERROR
     if (game.State >= Enums_1.GAME_STATES.FINISHED) {
         log.warn(__filename, req.path, `Action sent to ${Enums_1.GAME_STATES[game.State]} game.`);
@@ -204,25 +247,64 @@ exports.processAction = (req, res) => __awaiter(this, void 0, void 0, function* 
     const action = new Action_1.Action(cmd, dir, msg);
     // add the new action to the game
     game.addAction(action);
-    // make sure the game
-    game.State = Enums_1.GAME_STATES.IN_PROGRESS;
+    // handle game state - out of moves or time or whatever
+    if (game.Score.MoveCount >= game.Maze.CellCount * 3) {
+        game.State = Enums_1.GAME_STATES.FINISHED;
+        game.Score.GameResult = Enums_1.GAME_RESULTS.OUT_OF_MOVES;
+        if (game.Id.startsWith('FORCED')) {
+            game.forceSetId(`${game.Id}__${Date.now()}`);
+        }
+        return res.status(400).json({ status: 400, message: 'Game Over', error: 'The game is over.' });
+    }
+    else {
+        game.State = Enums_1.GAME_STATES.IN_PROGRESS;
+    }
     switch (action.command) {
         case Enums_1.COMMANDS.LOOK: {
-            return res.status(200).json(yield actLook_1.doLook(game));
+            const lookResult = yield actLook_1.doLook(game, langCode);
+            return res
+                .status(200)
+                .json({ action: lookResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
         }
         case Enums_1.COMMANDS.MOVE: {
-            return yield res.status(200).json(yield actMove_1.doMove(game));
+            const moveResult = yield actMove_1.doMove(game, langCode);
+            return res
+                .status(200)
+                .json({ action: moveResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
         }
         case Enums_1.COMMANDS.STAND: {
-            return res.status(200).json(yield actStand_1.doStand(game));
+            const standResult = yield actStand_1.doStand(game, langCode);
+            return res
+                .status(200)
+                .json({ action: standResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
         }
+        case Enums_1.COMMANDS.TURN: {
+            const turnResult = yield actTurn_1.doTurn(game, langCode);
+            return res
+                .status(200)
+                .json({ action: turnResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
+        }
+        case Enums_1.COMMANDS.FACE:
+        case Enums_1.COMMANDS.LISTEN:
+        case Enums_1.COMMANDS.SNIFF:
         case Enums_1.COMMANDS.JUMP:
+            const jumpResult = yield actJump_1.doJump(game, langCode);
+            return res
+                .status(200)
+                .json({ action: jumpResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
+        case Enums_1.COMMANDS.QUIT:
         case Enums_1.COMMANDS.SIT:
-        case Enums_1.COMMANDS.WRITE:
+        case Enums_1.COMMANDS.WAIT:
+        case Enums_1.COMMANDS.WRITE: {
+            const writeResult = yield fns.doWrite(game, langCode, msg);
+            return res
+                .status(200)
+                .json({ action: writeResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
+        }
         default: {
             const err = new Error(`${Enums_1.COMMANDS[action.command]} is not recognized. Valid commands are LOOK, MOVE, JUMP, SIT, STAND, and WRITE.`);
             log.error(__filename, req.path, 'Unrecognized Command', err);
-            return res.status(500).json({ status: 400, message: 'Unrecognized Command', error: err.message });
+            return res.status(400).json({ status: 400, message: 'Unrecognized Command', error: err.message });
         }
     }
 });

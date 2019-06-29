@@ -27,11 +27,115 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 
 ## TODO
 
-- [x] Implement percentage-based cache eviction routine that keeps a minimum amount of free-space available instead of the current FIFO model
-- [x] Ensure that cache entries for active games aren't evicted (add game state to value calculation?)
-- [ ] Add logic to automatically end games after a certain period of inactivity (set GAMES_STATES.ABANDONED)
+- [x] Fix Action scores / trophies not being returned with the actual action response
+- [ ] All language files are loaded on GameLang instantiation - This should be changed to load language files on demand
+- [x] Add logic to automatically end games after a certain period of inactivity (set GAMES_STATES.ABANDONED)
+- [x] When a character turns walls are detected where there should not be
+- [x] Peripheral vision is seeing more cells further than it should be
+- [ ] Senses besides sight not working correctly
+- [ ] Direction of what is being heard not working correctly
+- [ ] Adjust values for the various engrams, current they are all based on distance
 
 ## Change Notes
+
+### v0.8.1
+
+- all actions now return gameStub
+- create / get game now consistent
+- all responses are now consistently returning data to support bot-editor / running games
+- updated en.json to camelCase outcome string identifiers
+- honey badgers are pretty awesome.
+
+### v0.8.0
+
+- added write and jump commands
+- outcomes now utilize the language file system
+- various messages in move and look now utilize the language file system
+
+### v0.7.2
+
+- engram senses are all working
+- engram.here lists exits, and any messages on the ground
+
+### v0.7.1
+
+- rebuild hearing and smell based on the new engrams
+- you only smell the closest scent of a kind
+- smelling tells which direction through the maze from the players position the smell is coming from
+- hearing tells directly which direction a sound is coming from
+
+### v0.7.0
+
+- engrams, doLook, doLookLocal, doTurn, outcomes... lots and lots of updates!
+
+### v0.6.10
+
+- engrams based on cardinal directions
+
+### v0.6.9
+
+- sight converted to arrays
+
+### v0.6.8
+
+- fixed distance calculation for smells
+- looking towards the entrance or exit returns the apporpriate engram instead of outputting as if the direction was open
+- fixed distance calculation for hearing
+
+### v0.6.7
+
+- Looking and Smelling now returns a string in a JSON compatible format
+
+### v0.6.6
+
+- Added hearing
+- direction, and distance to the target being heard
+
+### v0.6.5
+
+- Changes trophies
+- Updated maze libary
+- Changes to support shared library 1.9.5
+
+### v0.6.4
+
+- smelling the maze when the player stands or moves
+
+### v0.6.3
+
+- added basis for other engram senses
+
+### v0.6.2
+
+- characters look forward in the direction the are facing, and one cell in their peripheral vision, and darkness behind them
+
+### v0.6.1
+
+- characters vision is limited by darkness sight intensity in engram.json
+- characters can see traps from a distance depending on the traps sight intensity
+
+### v0.6.0
+
+- player characters now have a facing direction
+- player characters can now see forward indefinately until a wall gets in the way
+- player characters can now change the cardinal direction they are facing (no relative turning yet!)
+
+### v0.5.1
+
+- had to replace all reference vars to game.action with game.Actions[game.Actions.length - 1] ... very annoying.
+- added async handling to actStand.ts
+- funcs.grantTrophy() now pushes an error message to the outcomes array if the trophy was not found
+- corrected promise rejection handling in Cache.use().fetchOrGetItem()
+- refactored the language support features
+  - moved es.ts and en.ts data into /data/es.json and /data/en.json
+  - refactored the iLanguage.ts and languageIndex.ts into a GameLang class and moved it to /src
+  - language-specific values loaded on GameLang's first .getInstance()
+  - Currently, all language files are loaded at once - this should probably be changed to an on-demand system
+- moved MoveCount and action.MoveCount remove movePlayer() to finalizeAction()
+
+### v0.5.0
+
+- Implemented the framework for multiple language support
 
 ### v0.4.1
 
