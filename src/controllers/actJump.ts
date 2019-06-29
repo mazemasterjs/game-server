@@ -1,6 +1,6 @@
 import { Game } from '@mazemasterjs/shared-library/Game';
 import MazeLoc from '@mazemasterjs/shared-library/MazeLoc';
-import { DIRS, PLAYER_STATES, CELL_TRAPS, CELL_TAGS, GAME_RESULTS } from '@mazemasterjs/shared-library/Enums';
+import { CELL_TAGS, CELL_TRAPS, DIRS, GAME_RESULTS, PLAYER_STATES } from '@mazemasterjs/shared-library/Enums';
 import { logDebug } from '../funcs';
 import GameLang from '../GameLang';
 import * as fns from '../funcs';
@@ -9,7 +9,7 @@ import { finishGame } from './actMove';
 export function doJump(game: Game, lang: string) {
   const data = GameLang.getInstance(lang);
   if (!!(game.Player.State & PLAYER_STATES.SITTING)) {
-    game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jumpwhilesitting);
+    game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jumpWhileSitting);
     game.Player.addState(PLAYER_STATES.STANDING);
   } else {
     jumpNext(game, lang, 0);
@@ -28,7 +28,7 @@ export function jumpNext(game: Game, lang: string, distance: number) {
     if (cell.isDirOpen(dir)) {
       // Check to see if the player jumped into the entrance or exit...
       if (!!(cell.Tags & CELL_TAGS.START) && dir === DIRS.NORTH) {
-        game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jumpintolava);
+        game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jumpingIntoLava);
         finishGame(game, GAME_RESULTS.DEATH_LAVA);
         return;
       } else if (!!(cell.Tags & CELL_TAGS.FINISH) && dir === DIRS.SOUTH) {
@@ -50,11 +50,11 @@ export function jumpNext(game: Game, lang: string, distance: number) {
       game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jumping);
     } else {
       logDebug(__filename, method, 'Player crashed into a wall while jumping');
-      game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jumpintowall);
+      game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jumpingIntoWall);
       game.Player.addState(PLAYER_STATES.SITTING);
     }
   } else {
-    game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.landfromjump);
+    game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.landFromJump);
     if (!!(cell.Traps & CELL_TRAPS.NONE)) {
       // placeholder for traps
     }

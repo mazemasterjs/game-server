@@ -29,7 +29,7 @@ function doStand(game, langCode) {
         const data = GameLang_1.default.getInstance(langCode);
         if (!!(game.Player.State & Enums_1.PLAYER_STATES.STANDING)) {
             game = yield funcs_1.grantTrophy(game, Enums_1.TROPHY_IDS.STAND_HARDER);
-            game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.standwhilestanding);
+            game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.standWhileStanding);
         }
         else {
             // execute the stand command

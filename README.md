@@ -29,7 +29,7 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 
 - [x] Fix Action scores / trophies not being returned with the actual action response
 - [ ] All language files are loaded on GameLang instantiation - This should be changed to load language files on demand
-- [ ] Add logic to automatically end games after a certain period of inactivity (set GAMES_STATES.ABANDONED)
+- [x] Add logic to automatically end games after a certain period of inactivity (set GAMES_STATES.ABANDONED)
 - [x] When a character turns walls are detected where there should not be
 - [x] Peripheral vision is seeing more cells further than it should be
 - [ ] Senses besides sight not working correctly
@@ -37,6 +37,14 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 - [ ] Adjust values for the various engrams, current they are all based on distance
 
 ## Change Notes
+
+### v0.8.1
+
+- all actions now return gameStub
+- create / get game now consistent
+- all responses are now consistently returning data to support bot-editor / running games
+- updated en.json to camelCase outcome string identifiers
+- honey badgers are pretty awesome.
 
 ### v0.8.0
 

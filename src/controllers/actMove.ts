@@ -33,7 +33,7 @@ export async function doMove(game: Game, langCode: string): Promise<IAction> {
     // add the trophy for walking without standing
     game = await fns.grantTrophy(game, TROPHY_IDS.SPINNING_YOUR_WHEELS);
 
-    game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.movewhilesitting);
+    game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.moveWhileSitting);
 
     // finalize and return action
     return Promise.resolve(fns.finalizeAction(game, startScore, langCode));
@@ -67,7 +67,7 @@ export async function doMove(game: Game, langCode: string): Promise<IAction> {
 
     game.Player.addState(PLAYER_STATES.SITTING);
 
-    game.Actions[game.Actions.length - 1].outcomes.push(format(data.outcomes.walkintowall, DIRS[dir]));
+    game.Actions[game.Actions.length - 1].outcomes.push(format(data.outcomes.walkIntoWall, DIRS[dir]));
     game.Actions[game.Actions.length - 1].outcomes.push(data.outcome.stunned);
   }
 

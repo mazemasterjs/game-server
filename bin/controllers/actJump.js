@@ -19,7 +19,7 @@ const actMove_1 = require("./actMove");
 function doJump(game, lang) {
     const data = GameLang_1.default.getInstance(lang);
     if (!!(game.Player.State & Enums_1.PLAYER_STATES.SITTING)) {
-        game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jumpwhilesitting);
+        game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jumpWhileSitting);
         game.Player.addState(Enums_1.PLAYER_STATES.STANDING);
     }
     else {
@@ -39,7 +39,7 @@ function jumpNext(game, lang, distance) {
         if (cell.isDirOpen(dir)) {
             // Check to see if the player jumped into the entrance or exit...
             if (!!(cell.Tags & Enums_1.CELL_TAGS.START) && dir === Enums_1.DIRS.NORTH) {
-                game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jumpintolava);
+                game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jumpingIntoLava);
                 actMove_1.finishGame(game, Enums_1.GAME_RESULTS.DEATH_LAVA);
                 return;
             }
@@ -62,12 +62,12 @@ function jumpNext(game, lang, distance) {
         }
         else {
             funcs_1.logDebug(__filename, method, 'Player crashed into a wall while jumping');
-            game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jumpintowall);
+            game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jumpingIntoWall);
             game.Player.addState(Enums_1.PLAYER_STATES.SITTING);
         }
     }
     else {
-        game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.landfromjump);
+        game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.landFromJump);
         if (!!(cell.Traps & Enums_1.CELL_TRAPS.NONE)) {
             // placeholder for traps
         }

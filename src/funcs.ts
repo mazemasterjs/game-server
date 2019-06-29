@@ -427,10 +427,12 @@ export function getLanguage(req: Request) {
  * @param startScore
  * @param finishScore
  */
-export function finalizeAction(game: Game, startScore: number, langCode: string): IAction {
-  // increment move counters
-  game.Score.addMove();
-  game.Actions[game.Actions.length - 1].moveCount++;
+export function finalizeAction(game: Game, startScore: number, langCode: string, freeAction: boolean = false): IAction {
+  // increment move counters unless freeAction is set (new / resume game)
+  if (!freeAction) {
+    game.Score.addMove();
+    game.Actions[game.Actions.length - 1].moveCount++;
+  }
 
   // track the score change from this one move
   game.Actions[game.Actions.length - 1].score = game.Score.getTotalScore() - startScore;

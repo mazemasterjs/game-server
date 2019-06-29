@@ -316,7 +316,7 @@
     "look": "You take a look around",
     "message": "You write a message on the ground...",
     "moveWhileSitting": "You can't move while sitting!",
-    "newGame": "You awake to find yourself sitting just outside the maze entrance.",
+    "newGame": "You awake to find yourself sitting just inside the maze's entrance.",
     "resumeGame": "You find yourself lying on the floor - you must have fainted.",
     "stand": "You stand up.",
     "standWhileStanding": "You are already standing!",

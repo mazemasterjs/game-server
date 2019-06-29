@@ -14,6 +14,7 @@ import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
 import Score from '@mazemasterjs/shared-library/Score';
 import { Engram } from '@mazemasterjs/shared-library/Engram';
 import { doJump } from './controllers/actJump';
+import GameLang from './GameLang';
 
 // set constant utility references
 const log = Logger.getInstance();
@@ -83,13 +84,24 @@ export const createGame = async (req: Request, res: Response) => {
               Cache.use().storeItem(CACHE_TYPES.GAME, game);
 
               // add initial game action
-              const firstAction: IAction = new Action(COMMANDS.WAIT, DIRS.NONE, 'You are sitting near the entrance to the maze.');
+              const langData = GameLang.getInstance(langCode);
+
+              // create the initial game action and add a new-game outcome
+              const firstAction: IAction = new Action(COMMANDS.WAIT, DIRS.NONE, '');
+              firstAction.outcomes.push(langData.outcomes.newGame);
               game.addAction(firstAction);
 
-              // return json game stub: game.Id, getUrl: `${config.EXT_URL_GAME}/get/${game.Id}
-              return res
-                .status(200)
-                .json({ status: 200, message: 'Game Created', game: game.getStub(config.EXT_URL_GAME), action: fns.finalizeAction(game, 0, langCode) });
+              // finalize the last action and capture as a result
+              const createResult: IAction = fns.finalizeAction(game, game.Score.getTotalScore(), langCode, true);
+
+              // return the newly created game
+              return res.status(200).json({
+                game: game.getStub(config.EXT_URL_GAME),
+                action: createResult,
+                totalScore: game.Score.getTotalScore(),
+                playerState: game.Player.State,
+                playerFacing: game.Player.Facing,
+              });
             }
           }
         })
@@ -101,6 +113,41 @@ export const createGame = async (req: Request, res: Response) => {
     .catch(mazeErr => {
       log.warn(__filename, method, 'Unable to get Maze -> ' + mazeErr);
       return res.status(404).json({ status: 404, message: 'Invalid Request - Maze not found.', error: mazeErr.message });
+    });
+};
+
+/**
+ * Returns game data for the requested Game.Id
+ */
+export const getGame = (req: Request, res: Response) => {
+  logRequest('getGames', req);
+  const langCode = fns.getLanguage(req);
+
+  return Cache.use()
+    .fetchItem(CACHE_TYPES.GAME, req.params.gameId)
+    .then(game => {
+      // add initial game action
+      const langData = GameLang.getInstance(langCode);
+
+      // create a resume game action and add a resume outcome
+      const resumeAction: IAction = new Action(COMMANDS.WAIT, DIRS.NONE, '');
+      resumeAction.outcomes.push(langData.outcomes.resumeGame);
+      game.addAction(resumeAction);
+
+      // finalize the last action and capture as a result
+      const resumeResult: IAction = fns.finalizeAction(game, game.Score.getTotalScore(), langCode, true);
+
+      // add the new game outcome
+      return res.status(200).json({
+        game: game.getStub(config.EXT_URL_GAME),
+        action: resumeResult,
+        totalScore: game.Score.getTotalScore(),
+        playerState: game.Player.State,
+        playerFacing: game.Player.Facing,
+      });
+    })
+    .catch(fetchError => {
+      return res.status(404).json({ status: 404, message: 'Game Not Found', error: fetchError.message });
     });
 };
 
@@ -129,26 +176,10 @@ export const abandonGame = async (req: Request, res: Response) => {
 
       // go ahead and abandon the game
       log.warn(__filename, 'abandonGame', `${game.Id} forcibly abandoned by request from ${req.ip}`);
-      return res.status(200).json(game.getStub(config.EXT_URL_GAME + '/get/'));
+      return res.status(200).json(game.getStub(config.EXT_URL_GAME));
     })
     .catch(fetchError => {
       res.status(404).json({ status: 404, message: 'Game Not Found', error: fetchError.message });
-    });
-};
-
-/**
- * Returns game data for the requested Game.Id
- */
-export const getGame = (req: Request, res: Response) => {
-  logRequest('getGames', req);
-  return Cache.use()
-    .fetchItem(CACHE_TYPES.GAME, req.params.gameId)
-    .then(game => {
-      const score: Score = game.Score();
-      return res.status(200).json({ game, totalScore: score.getTotalScore(), playerState: game.Player.State, playerFacing: game.Player.Facing });
-    })
-    .catch(fetchError => {
-      return res.status(404).json({ status: 404, message: 'Game Not Found', error: fetchError.message });
     });
 };
 
@@ -247,32 +278,44 @@ export const processAction = async (req: Request, res: Response) => {
   switch (action.command) {
     case COMMANDS.LOOK: {
       const lookResult = await doLook(game, langCode);
-      return res.status(200).json({ action: lookResult, playerState: game.Player.State, playerFacing: game.Player.Facing });
+      return res
+        .status(200)
+        .json({ action: lookResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
     }
     case COMMANDS.MOVE: {
       const moveResult = await doMove(game, langCode);
-      return res.status(200).json({ action: moveResult, playerState: game.Player.State, playerFacing: game.Player.Facing });
+      return res
+        .status(200)
+        .json({ action: moveResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
     }
     case COMMANDS.STAND: {
       const standResult = await doStand(game, langCode);
-      return res.status(200).json({ action: standResult, playerState: game.Player.State, playerFacing: game.Player.Facing });
+      return res
+        .status(200)
+        .json({ action: standResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
     }
     case COMMANDS.TURN: {
       const turnResult = await doTurn(game, langCode);
-      return res.status(200).json({ action: turnResult, playerState: game.Player.State, playerFacing: game.Player.Facing });
+      return res
+        .status(200)
+        .json({ action: turnResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
     }
     case COMMANDS.FACE:
     case COMMANDS.LISTEN:
     case COMMANDS.SNIFF:
     case COMMANDS.JUMP:
       const jumpResult = await doJump(game, langCode);
-      return res.status(200).json({ action: jumpResult, playerState: game.Player.State, playerFacing: game.Player.Facing });
+      return res
+        .status(200)
+        .json({ action: jumpResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
     case COMMANDS.QUIT:
     case COMMANDS.SIT:
     case COMMANDS.WAIT:
     case COMMANDS.WRITE: {
       const writeResult = await fns.doWrite(game, langCode, msg);
-      return res.status(200).json({ action: writeResult, playerState: game.Player.State, playerFacing: game.Player.Facing });
+      return res
+        .status(200)
+        .json({ action: writeResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
     }
     default: {
       const err = new Error(`${COMMANDS[action.command]} is not recognized. Valid commands are LOOK, MOVE, JUMP, SIT, STAND, and WRITE.`);

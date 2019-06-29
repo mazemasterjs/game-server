@@ -418,10 +418,12 @@ exports.getLanguage = getLanguage;
  * @param startScore
  * @param finishScore
  */
-function finalizeAction(game, startScore, langCode) {
-    // increment move counters
-    game.Score.addMove();
-    game.Actions[game.Actions.length - 1].moveCount++;
+function finalizeAction(game, startScore, langCode, freeAction = false) {
+    // increment move counters unless freeAction is set (new / resume game)
+    if (!freeAction) {
+        game.Score.addMove();
+        game.Actions[game.Actions.length - 1].moveCount++;
+    }
     // track the score change from this one move
     game.Actions[game.Actions.length - 1].score = game.Score.getTotalScore() - startScore;
     // TODO: text render - here now just for DEV/DEBUG purposess - it should always be the LAST outcome, too

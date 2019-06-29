@@ -12,7 +12,7 @@ export async function doStand(game: Game, langCode: string): Promise<IAction> {
 
   if (!!(game.Player.State & PLAYER_STATES.STANDING)) {
     game = await grantTrophy(game, TROPHY_IDS.STAND_HARDER);
-    game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.standwhilestanding);
+    game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.standWhileStanding);
   } else {
     // execute the stand command
     game.Player.addState(PLAYER_STATES.STANDING);

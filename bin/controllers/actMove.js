@@ -41,7 +41,7 @@ function doMove(game, langCode) {
             fns.logDebug(__filename, method, 'Player tried to move while not standing.');
             // add the trophy for walking without standing
             game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.SPINNING_YOUR_WHEELS);
-            game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.movewhilesitting);
+            game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.moveWhileSitting);
             // finalize and return action
             return Promise.resolve(fns.finalizeAction(game, startScore, langCode));
         }
@@ -73,7 +73,7 @@ function doMove(game, langCode) {
             // they tried to walk in a direction that has a wall
             game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.YOU_FOUGHT_THE_WALL);
             game.Player.addState(Enums_1.PLAYER_STATES.SITTING);
-            game.Actions[game.Actions.length - 1].outcomes.push(util_1.format(data.outcomes.walkintowall, Enums_1.DIRS[dir]));
+            game.Actions[game.Actions.length - 1].outcomes.push(util_1.format(data.outcomes.walkIntoWall, Enums_1.DIRS[dir]));
             game.Actions[game.Actions.length - 1].outcomes.push(data.outcome.stunned);
         }
         // game continues - return the action (with outcomes and engram)
