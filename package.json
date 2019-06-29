@@ -4,7 +4,7 @@
   "description": "MazeMasterJS Game Server",
   "main": "./bin/server.js",
   "scripts": {
-    "start": "node -r dotenv/config ./bin/server.js",
+    "start": "node ./bin/server.js",
     "scan": "sonar-scanner.bat",
     "watch": "nodemon -r dotenv/config bin/server.js -w bin/**/*.js",
     "local": "node -r dotenv/config bin/server.js",
