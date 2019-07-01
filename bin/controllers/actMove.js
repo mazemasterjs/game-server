@@ -75,11 +75,11 @@ function doMove(game, langCode) {
                 game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.YOU_FOUGHT_THE_WALL);
                 game.Player.addState(Enums_1.PLAYER_STATES.SITTING);
                 game.Actions[game.Actions.length - 1].outcomes.push(util_1.format(data.outcomes.walkintowall, Enums_1.DIRS[dir]));
-                game.Actions[game.Actions.length - 1].outcomes.push(data.outcome.stunned);
+                game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.stunned);
             }
         }
         else {
-            game.Actions[game.Actions.length - 1].outcomes.push(data.outcome.stunned);
+            game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.stunned);
             game.Player.removeState(Enums_1.PLAYER_STATES.STUNNED);
         }
         // game continues - return the action (with outcomes and engram)
