@@ -39,7 +39,7 @@ export function doLookLocal(game: Game, langCode: string) {
 
           // bail out if we hit max distance
           if (distance > MAX_DISTANCE) {
-            setSee(engram.north.see, { sight: data.entities.darkness.sight.adjective, distance: OUT_OF_RANGE });
+            setSee(engram.north.see, { sight: data.entities.DARKNESS.sight.adjective, distance: OUT_OF_RANGE });
             break;
           }
 
@@ -67,7 +67,7 @@ export function doLookLocal(game: Game, langCode: string) {
 
           // bail out if we hit max distance
           if (distance > MAX_DISTANCE) {
-            setSee(engram.south.see, { sight: data.entities.darkness.sight.adjective, distance: OUT_OF_RANGE });
+            setSee(engram.south.see, { sight: data.entities.DARKNESS.sight.adjective, distance: OUT_OF_RANGE });
             break;
           }
 
@@ -94,7 +94,7 @@ export function doLookLocal(game: Game, langCode: string) {
 
           // bail out if we hit max distance
           if (distance > MAX_DISTANCE) {
-            setSee(engram.east.see, { sight: data.entities.darkness.sight.adjective, distance: OUT_OF_RANGE });
+            setSee(engram.east.see, { sight: data.entities.DARKNESS.sight.adjective, distance: OUT_OF_RANGE });
             break;
           }
 
@@ -115,7 +115,7 @@ export function doLookLocal(game: Game, langCode: string) {
 
           // bail out if we hit max distance
           if (distance > MAX_DISTANCE) {
-            setSee(engram.west.see, { sight: data.entities.darkness.sight.adjective, distance: OUT_OF_RANGE });
+            setSee(engram.west.see, { sight: data.entities.DARKNESS.sight.adjective, distance: OUT_OF_RANGE });
             break;
           }
 

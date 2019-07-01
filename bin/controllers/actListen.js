@@ -73,8 +73,8 @@ function doListenDirected(game, lang, cell, engramDir, lastDirection, distance) 
             const trapType = Enums_1.CELL_TRAPS[trapEnum];
             if (!!(cell.Traps & trapEnum)) {
                 try {
-                    const intensity = data.entities[trapType.toLowerCase()].sound.intensity;
-                    const adjective = data.entities[trapType.toLowerCase()].sound.adjective;
+                    const intensity = data.entities[trapType.toUpperCase()].sound.intensity;
+                    const adjective = data.entities[trapType.toUpperCase()].sound.adjective;
                     // const intensityString = `data.entities.${trapType}.smell.intensity`;
                     // const adjectiveString = `data.entities.${trapType}.smell.adjective`;
                     // const intensity = eval(intensityString);  <-- very clever, but an unsafe operation that the linter opposes

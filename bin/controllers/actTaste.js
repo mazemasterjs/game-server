@@ -73,8 +73,8 @@ function doTasteDirected(game, lang, cell, engramDir, lastDirection, distance) {
             const trapType = Enums_1.CELL_TRAPS[trapEnum];
             if (!!(cell.Traps & trapEnum)) {
                 try {
-                    const intensity = data.entities[trapType.toLowerCase()].taste.intensity;
-                    const adjective = data.entities[trapType.toLowerCase()].taste.adjective;
+                    const intensity = data.entities[trapType.toUpperCase()].taste.intensity;
+                    const adjective = data.entities[trapType.toUpperCase()].taste.adjective;
                     if (distance < intensity) {
                         setTaste(engramDir, { taste: adjective, strength: distance });
                     }
