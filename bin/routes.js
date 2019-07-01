@@ -91,6 +91,7 @@ exports.createGame = (req, res) => __awaiter(this, void 0, void 0, function* () 
                     // store the game on the  cache
                     Cache_1.Cache.use().storeItem(Cache_1.CACHE_TYPES.GAME, game);
                     // add initial game action
+                    fns.logDebug(__filename, method, `Loading GameLang (langCode = ${langCode})`);
                     const langData = GameLang_1.default.getInstance(langCode);
                     // create the initial game action and add a new-game outcome
                     const firstAction = new Action_1.Action(Enums_1.COMMANDS.WAIT, Enums_1.DIRS.NONE, '');

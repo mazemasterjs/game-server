@@ -82,6 +82,7 @@ export const createGame = async (req: Request, res: Response) => {
               Cache.use().storeItem(CACHE_TYPES.GAME, game);
 
               // add initial game action
+              fns.logDebug(__filename, method, `Loading GameLang (langCode = ${langCode})`);
               const langData = GameLang.getInstance(langCode);
 
               // create the initial game action and add a new-game outcome
