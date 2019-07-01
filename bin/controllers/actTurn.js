@@ -14,7 +14,7 @@ const fns = __importStar(require("../funcs"));
 const Enums_1 = require("@mazemasterjs/shared-library/Enums");
 const Helpers_1 = require("@mazemasterjs/shared-library/Helpers");
 const funcs_1 = require("../funcs");
-const GameLang_1 = __importDefault(require("src/GameLang"));
+const GameLang_1 = __importDefault(require("../GameLang"));
 function doTurn(game, langCode) {
     funcs_1.logDebug(__filename, `doTurn(${game.Id}, ${langCode})`, 'Player has issued the Turn command.');
     const startScore = game.Score.getTotalScore();

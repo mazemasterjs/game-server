@@ -4,7 +4,7 @@ import { Game } from '@mazemasterjs/shared-library/Game';
 import { getNextDir } from '@mazemasterjs/shared-library/Helpers';
 import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
 import { logDebug } from '../funcs';
-import GameLang from 'src/GameLang';
+import GameLang from '../GameLang';
 
 export function doTurn(game: Game, langCode: string): Promise<IAction> {
   logDebug(__filename, `doTurn(${game.Id}, ${langCode})`, 'Player has issued the Turn command.');
