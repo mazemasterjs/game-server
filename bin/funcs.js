@@ -260,28 +260,36 @@ exports.getCmdByName = getCmdByName;
  * @param game: Game - the current game
  * @param action: IAction - the pre-validated IAction behind this move
  */
-function movePlayer(game) {
+function movePlayer(game, printOutcome = false) {
     const act = game.Actions[game.Actions.length - 1];
     // reposition the player - all move validation is preformed prior to this call
     switch (act.direction) {
         case Enums_1.DIRS.NORTH: {
             game.Player.Location.row--;
-            act.outcomes.push('You move to the North.');
+            if (printOutcome) {
+                act.outcomes.push('You move to the North.');
+            }
             break;
         }
         case Enums_1.DIRS.SOUTH: {
             game.Player.Location.row++;
-            act.outcomes.push('You move to the South.');
+            if (printOutcome) {
+                act.outcomes.push('You move to the South.');
+            }
             break;
         }
         case Enums_1.DIRS.EAST: {
             game.Player.Location.col++;
-            act.outcomes.push('You move to the East.');
+            if (printOutcome) {
+                act.outcomes.push('You move to the East.');
+            }
             break;
         }
         case Enums_1.DIRS.WEST: {
             game.Player.Location.col--;
-            act.outcomes.push('You move to the West.');
+            if (printOutcome) {
+                act.outcomes.push('You move to the West.');
+            }
             break;
         }
     } // end switch(act.direction)
@@ -438,12 +446,14 @@ function finalizeAction(game, startScore, langCode, freeAction = false) {
         logError(__filename, 'finalizeAction(...)', 'Unable to generate text render of maze ->', renderError);
     }
     // update the engrams
-    getLocal(game, langCode);
-    actLook_1.doLookLocal(game, langCode);
-    actSmell_1.doSmellLocal(game, langCode);
-    actListen_1.doListenLocal(game, langCode);
-    actTaste_1.doTasteLocal(game, langCode);
-    actFeel_1.doFeelLocal(game, langCode);
+    if (!!(game.Player.State & Enums_1.PLAYER_STATES.STUNNED)) {
+        getLocal(game, langCode);
+        actLook_1.doLookLocal(game, langCode);
+        actSmell_1.doSmellLocal(game, langCode);
+        actListen_1.doListenLocal(game, langCode);
+        actTaste_1.doTasteLocal(game, langCode);
+        actFeel_1.doFeelLocal(game, langCode);
+    }
     return game.Actions[game.Actions.length - 1];
 }
 exports.finalizeAction = finalizeAction;

@@ -3,7 +3,7 @@ import GameLang from './GameLang';
 import { AxiosResponse } from 'axios';
 import { Cache, CACHE_TYPES } from './Cache';
 import { Cell } from '@mazemasterjs/shared-library/Cell';
-import { COMMANDS, DIRS, GAME_RESULTS, GAME_STATES, TROPHY_IDS } from '@mazemasterjs/shared-library/Enums';
+import { COMMANDS, DIRS, GAME_RESULTS, GAME_STATES, TROPHY_IDS, PLAYER_STATES } from '@mazemasterjs/shared-library/Enums';
 import { Config } from './Config';
 import { doFeelLocal } from './controllers/actFeel';
 import { doListenLocal } from './controllers/actListen';
@@ -259,28 +259,36 @@ export function getCmdByName(cmdName: string): number {
  * @param game: Game - the current game
  * @param action: IAction - the pre-validated IAction behind this move
  */
-export function movePlayer(game: Game): Game {
+export function movePlayer(game: Game, printOutcome: boolean = false): Game {
   const act = game.Actions[game.Actions.length - 1];
   // reposition the player - all move validation is preformed prior to this call
   switch (act.direction) {
     case DIRS.NORTH: {
       game.Player.Location.row--;
-      act.outcomes.push('You move to the North.');
+      if (printOutcome) {
+        act.outcomes.push('You move to the North.');
+      }
       break;
     }
     case DIRS.SOUTH: {
       game.Player.Location.row++;
-      act.outcomes.push('You move to the South.');
+      if (printOutcome) {
+        act.outcomes.push('You move to the South.');
+      }
       break;
     }
     case DIRS.EAST: {
       game.Player.Location.col++;
-      act.outcomes.push('You move to the East.');
+      if (printOutcome) {
+        act.outcomes.push('You move to the East.');
+      }
       break;
     }
     case DIRS.WEST: {
       game.Player.Location.col--;
-      act.outcomes.push('You move to the West.');
+      if (printOutcome) {
+        act.outcomes.push('You move to the West.');
+      }
       break;
     }
   } // end switch(act.direction)
@@ -449,12 +457,14 @@ export function finalizeAction(game: Game, startScore: number, langCode: string,
   }
 
   // update the engrams
-  getLocal(game, langCode);
-  doLookLocal(game, langCode);
-  doSmellLocal(game, langCode);
-  doListenLocal(game, langCode);
-  doTasteLocal(game, langCode);
-  doFeelLocal(game, langCode);
+  if (!!(game.Player.State & PLAYER_STATES.STUNNED)) {
+    getLocal(game, langCode);
+    doLookLocal(game, langCode);
+    doSmellLocal(game, langCode);
+    doListenLocal(game, langCode);
+    doTasteLocal(game, langCode);
+    doFeelLocal(game, langCode);
+  }
 
   return game.Actions[game.Actions.length - 1];
 }

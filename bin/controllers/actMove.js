@@ -37,44 +37,50 @@ function doMove(game, langCode) {
         // seems that that embedded objects reliable... have to keep reinstantiating things??
         const pLoc = new MazeLoc_1.MazeLoc(game.Player.Location.row, game.Player.Location.col);
         // first make sure the player can move at all
-        if (!(game.Player.State & Enums_1.PLAYER_STATES.STANDING)) {
-            fns.logDebug(__filename, method, 'Player tried to move while not standing.');
-            // add the trophy for walking without standing
-            game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.SPINNING_YOUR_WHEELS);
-            game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.moveWhileSitting);
-            // finalize and return action
-            return Promise.resolve(fns.finalizeAction(game, startScore, langCode));
-        }
-        // now check for start/finish cell win & lose conditions
-        if (game.Maze.getCell(pLoc).isDirOpen(dir)) {
-            if (dir === Enums_1.DIRS.NORTH && pLoc.equals(game.Maze.StartCell)) {
-                fns.logDebug(__filename, method, 'Player moved north into the entrance (lava).');
-                game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.lava);
-                finishGame(game, Enums_1.GAME_RESULTS.DEATH_LAVA);
+        if (!!(game.Player.State & Enums_1.PLAYER_STATES.STUNNED)) {
+            if (!(game.Player.State & Enums_1.PLAYER_STATES.STANDING)) {
+                fns.logDebug(__filename, method, 'Player tried to move while not standing.');
+                // add the trophy for walking without standing
+                game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.SPINNING_YOUR_WHEELS);
+                game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.movewhilesitting);
+                // finalize and return action
+                return Promise.resolve(fns.finalizeAction(game, startScore, langCode));
             }
-            else if (dir === Enums_1.DIRS.SOUTH && pLoc.equals(game.Maze.FinishCell)) {
-                fns.logDebug(__filename, method, 'Player moved south into the exit (cheese).');
-                game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.win);
-                // game over: WINNER or WIN_FLAWLESS
-                if (game.Score.MoveCount <= game.Maze.ShortestPathLength) {
-                    finishGame(game, Enums_1.GAME_RESULTS.WIN_FLAWLESS);
+            // now check for start/finish cell win & lose conditions
+            if (game.Maze.getCell(pLoc).isDirOpen(dir)) {
+                if (dir === Enums_1.DIRS.NORTH && pLoc.equals(game.Maze.StartCell)) {
+                    fns.logDebug(__filename, method, 'Player moved north into the entrance (lava).');
+                    game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.lava);
+                    finishGame(game, Enums_1.GAME_RESULTS.DEATH_LAVA);
+                }
+                else if (dir === Enums_1.DIRS.SOUTH && pLoc.equals(game.Maze.FinishCell)) {
+                    fns.logDebug(__filename, method, 'Player moved south into the exit (cheese).');
+                    game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.win);
+                    // game over: WINNER or WIN_FLAWLESS
+                    if (game.Score.MoveCount <= game.Maze.ShortestPathLength) {
+                        finishGame(game, Enums_1.GAME_RESULTS.WIN_FLAWLESS);
+                    }
+                    else {
+                        finishGame(game, Enums_1.GAME_RESULTS.WIN);
+                    }
                 }
                 else {
-                    finishGame(game, Enums_1.GAME_RESULTS.WIN);
+                    // Changes the facing of the player and looks in that direction
+                    game.Player.Facing = dir;
+                    fns.movePlayer(game);
                 }
             }
             else {
-                // Changes the facing of the player and looks in that direction
-                game.Player.Facing = dir;
-                fns.movePlayer(game);
+                // they tried to walk in a direction that has a wall
+                game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.YOU_FOUGHT_THE_WALL);
+                game.Player.addState(Enums_1.PLAYER_STATES.SITTING);
+                game.Actions[game.Actions.length - 1].outcomes.push(util_1.format(data.outcomes.walkintowall, Enums_1.DIRS[dir]));
+                game.Actions[game.Actions.length - 1].outcomes.push(data.outcome.stunned);
             }
         }
         else {
-            // they tried to walk in a direction that has a wall
-            game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.YOU_FOUGHT_THE_WALL);
-            game.Player.addState(Enums_1.PLAYER_STATES.SITTING);
-            game.Actions[game.Actions.length - 1].outcomes.push(util_1.format(data.outcomes.walkIntoWall, Enums_1.DIRS[dir]));
             game.Actions[game.Actions.length - 1].outcomes.push(data.outcome.stunned);
+            game.Player.removeState(Enums_1.PLAYER_STATES.STUNNED);
         }
         // game continues - return the action (with outcomes and engram)
         return Promise.resolve(fns.finalizeAction(game, startScore, langCode));
