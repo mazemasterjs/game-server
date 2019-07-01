@@ -16,15 +16,17 @@ const GameLang_1 = __importDefault(require("./GameLang"));
 const Cache_1 = require("./Cache");
 const Enums_1 = require("@mazemasterjs/shared-library/Enums");
 const Config_1 = require("./Config");
+const actFeel_1 = require("./controllers/actFeel");
+const actListen_1 = require("./controllers/actListen");
 const actLook_1 = require("./controllers/actLook");
+const actSmell_1 = require("./controllers/actSmell");
+const actTaste_1 = require("./controllers/actTaste");
 const logger_1 = require("@mazemasterjs/logger");
 const MazeLoc_1 = require("@mazemasterjs/shared-library/MazeLoc");
-const actTaste_1 = require("./controllers/actTaste");
-const actFeel_1 = require("./controllers/actFeel");
-const actSmell_1 = require("./controllers/actSmell");
-const actListen_1 = require("./controllers/actListen");
 const log = logger_1.Logger.getInstance();
 const config = Config_1.Config.getInstance();
+// tslint:disable-next-line: no-string-literal
+axios_1.default.defaults.headers.common['Authorization'] = 'Basic ' + config.PRIMARY_SERVICE_ACCOUNT;
 /**
  * Builds a standard response status message for logging
  *

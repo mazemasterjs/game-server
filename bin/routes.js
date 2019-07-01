@@ -183,6 +183,7 @@ exports.abandonGame = (req, res) => __awaiter(this, void 0, void 0, function* ()
  */
 exports.listGames = (req, res) => {
     logRequest('listGames', req);
+    res.status(200).json(fns.getGameStubs());
     try {
         return res.status(200).json(fns.getGameStubs());
     }

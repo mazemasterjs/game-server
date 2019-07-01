@@ -11,8 +11,6 @@ import { LOG_LEVELS, Logger } from '@mazemasterjs/logger';
 import { Request, Response } from 'express';
 import { doTurn } from './controllers/actTurn';
 import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
-import Score from '@mazemasterjs/shared-library/Score';
-import { Engram } from '@mazemasterjs/shared-library/Engram';
 import { doJump } from './controllers/actJump';
 import GameLang from './GameLang';
 
@@ -189,6 +187,7 @@ export const abandonGame = async (req: Request, res: Response) => {
  */
 export const listGames = (req: Request, res: Response) => {
   logRequest('listGames', req);
+  res.status(200).json(fns.getGameStubs());
 
   try {
     return res.status(200).json(fns.getGameStubs());

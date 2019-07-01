@@ -3,10 +3,13 @@ import GameLang from './GameLang';
 import { AxiosResponse } from 'axios';
 import { Cache, CACHE_TYPES } from './Cache';
 import { Cell } from '@mazemasterjs/shared-library/Cell';
-import { CELL_TAGS, CELL_TRAPS, COMMANDS, DIRS, GAME_RESULTS, GAME_STATES, TROPHY_IDS } from '@mazemasterjs/shared-library/Enums';
-import { CellBase } from '@mazemasterjs/shared-library/CellBase';
+import { COMMANDS, DIRS, GAME_RESULTS, GAME_STATES, TROPHY_IDS } from '@mazemasterjs/shared-library/Enums';
 import { Config } from './Config';
+import { doFeelLocal } from './controllers/actFeel';
+import { doListenLocal } from './controllers/actListen';
 import { doLookLocal } from './controllers/actLook';
+import { doSmellLocal } from './controllers/actSmell';
+import { doTasteLocal } from './controllers/actTaste';
 import { Game } from '@mazemasterjs/shared-library/Game';
 import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
 import { IGameStub } from '@mazemasterjs/shared-library/Interfaces/IGameStub';
@@ -16,13 +19,12 @@ import { Request } from 'express';
 import { Score } from '@mazemasterjs/shared-library/Score';
 import { Team } from '@mazemasterjs/shared-library/Team';
 import { Trophy } from '@mazemasterjs/shared-library/Trophy';
-import { doTasteLocal } from './controllers/actTaste';
-import { doFeelLocal } from './controllers/actFeel';
-import { doSmellLocal } from './controllers/actSmell';
-import { doListenLocal } from './controllers/actListen';
 
 const log = Logger.getInstance();
 const config = Config.getInstance();
+
+// tslint:disable-next-line: no-string-literal
+axios.defaults.headers.common['Authorization'] = 'Basic ' + config.PRIMARY_SERVICE_ACCOUNT;
 
 /**
  * Builds a standard response status message for logging
