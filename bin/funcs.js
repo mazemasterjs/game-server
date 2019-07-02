@@ -607,6 +607,7 @@ function trapCheck(game, lang, delayTrigger = false) {
                             }
                             outcomes.push(data.outcomes.deadfallTrap);
                         }
+                        break;
                     }
                     default: {
                         outcomes.push('DEBUG:', Enums_1.CELL_TRAPS[trapEnum], ' currently not implemented!');
