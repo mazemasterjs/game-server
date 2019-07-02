@@ -1,15 +1,15 @@
+import { doTasteLocal } from './controllers/actTaste';
 import { doSmellLocal } from './controllers/actSmell';
-import axios from 'axios';
 import { AxiosResponse } from 'axios';
 import { Cache, CACHE_TYPES } from './Cache';
 import { Cell } from '@mazemasterjs/shared-library/Cell';
-import { COMMANDS, DIRS, GAME_RESULTS, GAME_STATES, PLAYER_STATES, TROPHY_IDS, CELL_TRAPS } from '@mazemasterjs/shared-library/Enums';
+import { CELL_TRAPS, COMMANDS, DIRS, GAME_RESULTS, GAME_STATES, PLAYER_STATES, TROPHY_IDS } from '@mazemasterjs/shared-library/Enums';
 import { Config } from './Config';
 import { doFeelLocal } from './controllers/actFeel';
 import { doListenLocal } from './controllers/actListen';
 import { doLookLocal } from './controllers/actLook';
 import GameLang from './GameLang';
-import { doTasteLocal } from './controllers/actTaste';
+import axios from 'axios';
 import { Game } from '@mazemasterjs/shared-library/Game';
 import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
 import { IGameStub } from '@mazemasterjs/shared-library/Interfaces/IGameStub';
