@@ -36,13 +36,22 @@ function doJump(game, lang) {
     return Promise.resolve(fns.finalizeAction(game, 2, startScore, lang));
 }
 exports.doJump = doJump;
-function jumpNext(game, lang, distance) {
+/**
+ * A recursive function that sees if the cell has an exit in the direction the player is facing.
+ * The player will continue to move cells in that direction until they hit the maxmum distance,
+ * of the player would hit a wall.
+ * @param game
+ * @param lang
+ * @param distance how far the player has traveled
+ * @param maxDistance that maximum distance before the player lands
+ */
+function jumpNext(game, lang, distance, maxDistance = 1) {
     const method = `jumpNext(${game.Id},${lang},${distance})`;
     const cell = game.Maze.getCell(new MazeLoc_1.default(game.Player.Location.row, game.Player.Location.col));
     const dir = game.Actions[game.Actions.length - 1].direction;
     game.Player.Facing = dir;
     const data = GameLang_1.default.getInstance(lang);
-    if (distance <= 1) {
+    if (distance <= maxDistance) {
         if (cell.isDirOpen(dir)) {
             // Check to see if the player jumped into the entrance or exit...
             if (!!(cell.Tags & Enums_1.CELL_TAGS.START) && dir === Enums_1.DIRS.NORTH) {

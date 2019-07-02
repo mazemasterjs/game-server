@@ -31,6 +31,7 @@ const logger_1 = require("@mazemasterjs/logger");
 const actTurn_1 = require("./controllers/actTurn");
 const actJump_1 = require("./controllers/actJump");
 const GameLang_1 = __importDefault(require("./GameLang"));
+const lodash_1 = require("lodash");
 // set constant utility references
 const log = logger_1.Logger.getInstance();
 const config = Config_1.Config.getInstance();
@@ -81,7 +82,7 @@ exports.createGame = (req, res) => __awaiter(this, void 0, void 0, function* () 
                 }
                 else {
                     // break this down into two steps so we can better tell where any errors come from
-                    const game = new Game_1.Game(maze, teamId, botId);
+                    const game = new Game_1.Game(lodash_1.cloneDeep(maze), teamId, botId);
                     // add a visit to the start cell of the maze since the player just walked in
                     game.Maze.Cells[game.Maze.StartCell.row][game.Maze.StartCell.col].addVisit(0);
                     // force-set the gameId if the query parameter was set
@@ -302,6 +303,12 @@ exports.processAction = (req, res) => __awaiter(this, void 0, void 0, function* 
             return res
                 .status(200)
                 .json({ action: writeResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
+        }
+        case Enums_1.COMMANDS.SNEAK: {
+            const moveResult = yield actMove_1.doMove(game, langCode, true);
+            return res
+                .status(200)
+                .json({ action: moveResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
         }
         default: {
             const err = new Error(`${Enums_1.COMMANDS[action.command]} is not recognized. Valid commands are LOOK, MOVE, JUMP, SIT, STAND, and WRITE.`);

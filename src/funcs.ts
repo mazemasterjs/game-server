@@ -551,6 +551,12 @@ export function doWrite(game: Game, lang: string, message: string) {
   return Promise.resolve(finalizeAction(game, 1, startScore, lang));
 }
 
+/**
+ *
+ * @param game
+ * @param lang
+ * @param delayTrigger flag to determine if a trap does not trigger as soon as the player enters a cell
+ */
 export function trapCheck(game: Game, lang: string, delayTrigger: boolean = false) {
   const pCell = game.Maze.getCell(game.Player.Location);
   const outcomes = game.Actions[game.Actions.length - 1].outcomes;
@@ -603,24 +609,12 @@ export function trapCheck(game: Game, lang: string, delayTrigger: boolean = fals
           }
           case CELL_TRAPS.DEADFALL: {
             if (delayTrigger) {
-              switch (game.Player.Facing) {
-                case DIRS.NORTH: {
-                  pCell.removeExit(DIRS.SOUTH, game.Maze.Cells);
-                  break;
-                }
-                case DIRS.SOUTH: {
-                  pCell.removeExit(DIRS.NORTH, game.Maze.Cells);
-                  break;
-                }
-                case DIRS.EAST: {
-                  pCell.removeExit(DIRS.WEST, game.Maze.Cells);
-                  break;
-                }
-                case DIRS.WEST: {
-                  pCell.removeExit(DIRS.EAST, game.Maze.Cells);
-                  break;
-                }
-              }
+              pCell.removeExit(DIRS.NORTH, game.Maze.Cells);
+              pCell.removeExit(DIRS.SOUTH, game.Maze.Cells);
+              pCell.removeExit(DIRS.EAST, game.Maze.Cells);
+              pCell.removeExit(DIRS.WEST, game.Maze.Cells);
+              pCell.addExit(game.Player.Facing, game.Maze.Cells);
+              pCell.removeTrap(CELL_TRAPS.DEADFALL);
               outcomes.push(data.outcomes.deadfallTrap);
             }
             break;

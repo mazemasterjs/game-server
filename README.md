@@ -38,6 +38,12 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 
 ## Change Notes
 
+### v0.9.1
+
+- fixed the changes to the maze due to traps being persistant between different games
+- deadfall trap only no longer traps the player into a single unescapable cell
+- docs added to various functions
+
 ### v0.9.0
 
 - embedded basic-auth security now working

@@ -536,6 +536,12 @@ function doWrite(game, lang, message) {
     return Promise.resolve(finalizeAction(game, 1, startScore, lang));
 }
 exports.doWrite = doWrite;
+/**
+ *
+ * @param game
+ * @param lang
+ * @param delayTrigger flag to determine if a trap does not trigger as soon as the player enters a cell
+ */
 function trapCheck(game, lang, delayTrigger = false) {
     const pCell = game.Maze.getCell(game.Player.Location);
     const outcomes = game.Actions[game.Actions.length - 1].outcomes;
@@ -587,24 +593,12 @@ function trapCheck(game, lang, delayTrigger = false) {
                     }
                     case Enums_1.CELL_TRAPS.DEADFALL: {
                         if (delayTrigger) {
-                            switch (game.Player.Facing) {
-                                case Enums_1.DIRS.NORTH: {
-                                    pCell.removeExit(Enums_1.DIRS.SOUTH, game.Maze.Cells);
-                                    break;
-                                }
-                                case Enums_1.DIRS.SOUTH: {
-                                    pCell.removeExit(Enums_1.DIRS.NORTH, game.Maze.Cells);
-                                    break;
-                                }
-                                case Enums_1.DIRS.EAST: {
-                                    pCell.removeExit(Enums_1.DIRS.WEST, game.Maze.Cells);
-                                    break;
-                                }
-                                case Enums_1.DIRS.WEST: {
-                                    pCell.removeExit(Enums_1.DIRS.EAST, game.Maze.Cells);
-                                    break;
-                                }
-                            }
+                            pCell.removeExit(Enums_1.DIRS.NORTH, game.Maze.Cells);
+                            pCell.removeExit(Enums_1.DIRS.SOUTH, game.Maze.Cells);
+                            pCell.removeExit(Enums_1.DIRS.EAST, game.Maze.Cells);
+                            pCell.removeExit(Enums_1.DIRS.WEST, game.Maze.Cells);
+                            pCell.addExit(game.Player.Facing, game.Maze.Cells);
+                            pCell.removeTrap(Enums_1.CELL_TRAPS.DEADFALL);
                             outcomes.push(data.outcomes.deadfallTrap);
                         }
                         break;

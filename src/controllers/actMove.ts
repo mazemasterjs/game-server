@@ -11,8 +11,13 @@ import Cell from '@mazemasterjs/shared-library/Cell';
 
 // need a config object for some of this
 const config: Config = Config.getInstance();
-
-export async function doMove(game: Game, langCode: string): Promise<IAction> {
+/**
+ *
+ * @param game
+ * @param langCode
+ * @param sneaking boolean to determine if the player will trigger any delayed trigger traps with the move
+ */
+export async function doMove(game: Game, langCode: string, sneaking: boolean = false): Promise<IAction> {
   const method = `doMove(${game.Id})`;
 
   let dir: DIRS = game.Actions[game.Actions.length - 1].direction;
@@ -44,7 +49,9 @@ export async function doMove(game: Game, langCode: string): Promise<IAction> {
     return Promise.resolve(fns.finalizeAction(game, 1, startScore, langCode));
   } else {
     // now check for start/finish cell win & lose conditions
-    fns.trapCheck(game, langCode, true);
+    if (!sneaking) {
+      fns.trapCheck(game, langCode, true);
+    }
     if (game.Maze.getCell(pLoc).isDirOpen(dir)) {
       if (dir === DIRS.NORTH && pLoc.equals(game.Maze.StartCell)) {
         fns.logDebug(__filename, method, 'Player moved north into the entrance (lava).');

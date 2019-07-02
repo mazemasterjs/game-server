@@ -20,10 +20,10 @@ export function doListenLocal(game: Game, lang: string) {
   const data = GameLang.getInstance(lang);
   // get the local sounds
   if (!!(cell.Tags & CELL_TAGS.START)) {
-    setSound(engram.north.hear, { sound: data.entities.lava.sound.adjective, volume: data.entities.lava.sound.intensity });
+    setSound(engram.north.hear, { sound: data.entities.lava.sound.adjective, volume: 1 });
   }
   if (!!(cell.Tags & CELL_TAGS.FINISH)) {
-    setSound(engram.south.hear, { sound: data.entities.cheese.sound.adjective, volume: data.entities.cheese.sound.intensity });
+    setSound(engram.south.hear, { sound: data.entities.cheese.sound.adjective, volume: 1 });
   }
 
   //  loop through the cardinal directions in DIRS
@@ -61,6 +61,16 @@ export function doListenLocal(game: Game, lang: string) {
     } // end switch(dir)
   } // end for (pos<4)
 }
+
+/**
+ *
+ * @param game
+ * @param lang
+ * @param cell
+ * @param engramDir the original direction from which the function is walking through, centered on the player
+ * @param lastDirection used to make sure the function isn't checking going to the direction it just checked
+ * @param distance how many cells from the first call of the function it is checking / depth of recursion
+ */
 export function doListenDirected(game: Game, lang: string, cell: CellBase, engramDir: ISound[], lastDirection: DIRS, distance: number) {
   const data = GameLang.getInstance(lang);
   const method = `doListenDirected(${game.Id}, ${lang}, ${cell.Location}, [emgramDir], ${lastDirection}, ${distance})`;

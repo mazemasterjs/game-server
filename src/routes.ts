@@ -13,6 +13,7 @@ import { doTurn } from './controllers/actTurn';
 import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
 import { doJump } from './controllers/actJump';
 import GameLang from './GameLang';
+import { cloneDeep } from 'lodash';
 
 // set constant utility references
 const log = Logger.getInstance();
@@ -68,7 +69,7 @@ export const createGame = async (req: Request, res: Response) => {
                 .json({ status: 400, message: 'Invalid Request - An active ' + gameType + ' game already exists.', gameId: activeGameId, teamId, botId });
             } else {
               // break this down into two steps so we can better tell where any errors come from
-              const game: Game = new Game(maze, teamId, botId);
+              const game: Game = new Game(cloneDeep(maze), teamId, botId);
 
               // add a visit to the start cell of the maze since the player just walked in
               game.Maze.Cells[game.Maze.StartCell.row][game.Maze.StartCell.col].addVisit(0);
@@ -317,6 +318,12 @@ export const processAction = async (req: Request, res: Response) => {
       return res
         .status(200)
         .json({ action: writeResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
+    }
+    case COMMANDS.SNEAK: {
+      const moveResult = await doMove(game, langCode, true);
+      return res
+        .status(200)
+        .json({ action: moveResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
     }
     default: {
       const err = new Error(`${COMMANDS[action.command]} is not recognized. Valid commands are LOOK, MOVE, JUMP, SIT, STAND, and WRITE.`);

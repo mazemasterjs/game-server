@@ -329,7 +329,7 @@
     "tarTrap": "You trudge through the pit of tar, slowing you down",
     "flamethrowerTrap": "You hear a hiss and a click before you burst into flames",
     "fragileFloorTrap": "The floor collapses into a pit as you run through it.",
-    "deadfallTrap": "The ceiling collapses behind you, blocking the passage!",
+    "deadfallTrap": "The passage way collapses behind you!",
     "teleportTrap": "Your surroundings suddenly seem different"
   }
 }
