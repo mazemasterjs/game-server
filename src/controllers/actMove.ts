@@ -28,18 +28,20 @@ export async function doMove(game: Game, langCode: string): Promise<IAction> {
 
   // first make sure the player can move at all
   if (!!(game.Player.State & PLAYER_STATES.STUNNED)) {
-    if (!(game.Player.State & PLAYER_STATES.STANDING)) {
-      fns.logDebug(__filename, method, 'Player tried to move while not standing.');
+    fns.logDebug(__filename, method, 'Player tried to move while stunned.');
+    game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.stunned);
+    game.Player.removeState(PLAYER_STATES.STUNNED);
+  } else if (!(game.Player.State & PLAYER_STATES.STANDING)) {
+    fns.logDebug(__filename, method, 'Player tried to move while not standing.');
 
-      // add the trophy for walking without standing
-      game = await fns.grantTrophy(game, TROPHY_IDS.SPINNING_YOUR_WHEELS);
+    // add the trophy for walking without standing
+    game = await fns.grantTrophy(game, TROPHY_IDS.SPINNING_YOUR_WHEELS);
 
-      game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.moveWhileSitting);
+    game.Actions[game.Actions.length - 1].outcomes.push(data.outcome.moveWhileSitting);
 
-      // finalize and return action
-      return Promise.resolve(fns.finalizeAction(game, startScore, langCode));
-    }
-
+    // finalize and return action
+    return Promise.resolve(fns.finalizeAction(game, startScore, langCode));
+  } else {
     // now check for start/finish cell win & lose conditions
     if (game.Maze.getCell(pLoc).isDirOpen(dir)) {
       if (dir === DIRS.NORTH && pLoc.equals(game.Maze.StartCell)) {
@@ -71,9 +73,6 @@ export async function doMove(game: Game, langCode: string): Promise<IAction> {
       game.Actions[game.Actions.length - 1].outcomes.push(format(data.outcomes.walkIntoWall, DIRS[dir]));
       game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.stunned);
     }
-  } else {
-    game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.stunned);
-    game.Player.removeState(PLAYER_STATES.STUNNED);
   }
 
   // game continues - return the action (with outcomes and engram)

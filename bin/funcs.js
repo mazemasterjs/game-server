@@ -11,15 +11,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const actSmell_1 = require("./controllers/actSmell");
 const axios_1 = __importDefault(require("axios"));
-const GameLang_1 = __importDefault(require("./GameLang"));
 const Cache_1 = require("./Cache");
 const Enums_1 = require("@mazemasterjs/shared-library/Enums");
 const Config_1 = require("./Config");
 const actFeel_1 = require("./controllers/actFeel");
 const actListen_1 = require("./controllers/actListen");
 const actLook_1 = require("./controllers/actLook");
-const actSmell_1 = require("./controllers/actSmell");
+const GameLang_1 = __importDefault(require("./GameLang"));
 const actTaste_1 = require("./controllers/actTaste");
 const logger_1 = require("@mazemasterjs/logger");
 const MazeLoc_1 = require("@mazemasterjs/shared-library/MazeLoc");
@@ -446,13 +446,16 @@ function finalizeAction(game, startScore, langCode, freeAction = false) {
         logError(__filename, 'finalizeAction(...)', 'Unable to generate text render of maze ->', renderError);
     }
     // update the engrams
-    if (!!(game.Player.State & Enums_1.PLAYER_STATES.STUNNED)) {
+    if (!(game.Player.State & Enums_1.PLAYER_STATES.STUNNED)) {
         getLocal(game, langCode);
         actLook_1.doLookLocal(game, langCode);
         actSmell_1.doSmellLocal(game, langCode);
         actListen_1.doListenLocal(game, langCode);
         actTaste_1.doTasteLocal(game, langCode);
         actFeel_1.doFeelLocal(game, langCode);
+    }
+    else {
+        logWarn(__filename, 'finalizeAction(...)', `Player state is ${Enums_1.PLAYER_STATES[game.Player.State]} (${game.Player.State}) - no engram data collected.`);
     }
     return game.Actions[game.Actions.length - 1];
 }

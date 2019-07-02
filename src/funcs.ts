@@ -1,14 +1,14 @@
+import { doSmellLocal } from './controllers/actSmell';
 import axios from 'axios';
-import GameLang from './GameLang';
 import { AxiosResponse } from 'axios';
 import { Cache, CACHE_TYPES } from './Cache';
 import { Cell } from '@mazemasterjs/shared-library/Cell';
-import { COMMANDS, DIRS, GAME_RESULTS, GAME_STATES, TROPHY_IDS, PLAYER_STATES } from '@mazemasterjs/shared-library/Enums';
+import { COMMANDS, DIRS, GAME_RESULTS, GAME_STATES, PLAYER_STATES, TROPHY_IDS } from '@mazemasterjs/shared-library/Enums';
 import { Config } from './Config';
 import { doFeelLocal } from './controllers/actFeel';
 import { doListenLocal } from './controllers/actListen';
 import { doLookLocal } from './controllers/actLook';
-import { doSmellLocal } from './controllers/actSmell';
+import GameLang from './GameLang';
 import { doTasteLocal } from './controllers/actTaste';
 import { Game } from '@mazemasterjs/shared-library/Game';
 import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
@@ -457,13 +457,15 @@ export function finalizeAction(game: Game, startScore: number, langCode: string,
   }
 
   // update the engrams
-  if (!!(game.Player.State & PLAYER_STATES.STUNNED)) {
+  if (!(game.Player.State & PLAYER_STATES.STUNNED)) {
     getLocal(game, langCode);
     doLookLocal(game, langCode);
     doSmellLocal(game, langCode);
     doListenLocal(game, langCode);
     doTasteLocal(game, langCode);
     doFeelLocal(game, langCode);
+  } else {
+    logWarn(__filename, 'finalizeAction(...)', `Player state is ${PLAYER_STATES[game.Player.State]} (${game.Player.State}) - no engram data collected.`);
   }
 
   return game.Actions[game.Actions.length - 1];

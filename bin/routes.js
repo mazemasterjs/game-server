@@ -136,11 +136,11 @@ exports.getGame = (req, res) => {
         resumeAction.outcomes.push(langData.outcomes.resumeGame);
         game.addAction(resumeAction);
         // finalize the last action and capture as a result
-        const resumeResult = fns.finalizeAction(game, game.Score.getTotalScore(), langCode, true);
+        const getResult = fns.finalizeAction(game, game.Score.getTotalScore(), langCode, true);
         // add the new game outcome
         return res.status(200).json({
             game: game.getStub(config.EXT_URL_GAME),
-            action: resumeResult,
+            action: getResult,
             totalScore: game.Score.getTotalScore(),
             playerState: game.Player.State,
             playerFacing: game.Player.Facing,

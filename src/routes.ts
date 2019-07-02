@@ -1,7 +1,7 @@
 import { Action } from '@mazemasterjs/shared-library/Action';
 import { doMove } from './controllers/actMove';
 import { Cache, CACHE_TYPES } from './Cache';
-import { COMMANDS, DIRS, GAME_RESULTS, GAME_STATES } from '@mazemasterjs/shared-library/Enums';
+import { COMMANDS, DIRS, GAME_RESULTS, GAME_STATES, PLAYER_STATES } from '@mazemasterjs/shared-library/Enums';
 import { Config } from './Config';
 import { doLook } from './controllers/actLook';
 import * as fns from './funcs';
@@ -134,12 +134,12 @@ export const getGame = (req: Request, res: Response) => {
       game.addAction(resumeAction);
 
       // finalize the last action and capture as a result
-      const resumeResult: IAction = fns.finalizeAction(game, game.Score.getTotalScore(), langCode, true);
+      const getResult = fns.finalizeAction(game, game.Score.getTotalScore(), langCode, true);
 
       // add the new game outcome
       return res.status(200).json({
         game: game.getStub(config.EXT_URL_GAME),
-        action: resumeResult,
+        action: getResult,
         totalScore: game.Score.getTotalScore(),
         playerState: game.Player.State,
         playerFacing: game.Player.Facing,

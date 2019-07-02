@@ -38,14 +38,18 @@ function doMove(game, langCode) {
         const pLoc = new MazeLoc_1.MazeLoc(game.Player.Location.row, game.Player.Location.col);
         // first make sure the player can move at all
         if (!!(game.Player.State & Enums_1.PLAYER_STATES.STUNNED)) {
-            if (!(game.Player.State & Enums_1.PLAYER_STATES.STANDING)) {
-                fns.logDebug(__filename, method, 'Player tried to move while not standing.');
-                // add the trophy for walking without standing
-                game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.SPINNING_YOUR_WHEELS);
-                game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.movewhilesitting);
-                // finalize and return action
-                return Promise.resolve(fns.finalizeAction(game, startScore, langCode));
-            }
+            game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.stunned);
+            game.Player.removeState(Enums_1.PLAYER_STATES.STUNNED);
+        }
+        else if (!(game.Player.State & Enums_1.PLAYER_STATES.STANDING)) {
+            fns.logDebug(__filename, method, 'Player tried to move while not standing.');
+            // add the trophy for walking without standing
+            game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.SPINNING_YOUR_WHEELS);
+            game.Actions[game.Actions.length - 1].outcomes.push(data.outcome.moveWhileSitting);
+            // finalize and return action
+            return Promise.resolve(fns.finalizeAction(game, startScore, langCode));
+        }
+        else {
             // now check for start/finish cell win & lose conditions
             if (game.Maze.getCell(pLoc).isDirOpen(dir)) {
                 if (dir === Enums_1.DIRS.NORTH && pLoc.equals(game.Maze.StartCell)) {
@@ -74,13 +78,9 @@ function doMove(game, langCode) {
                 // they tried to walk in a direction that has a wall
                 game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.YOU_FOUGHT_THE_WALL);
                 game.Player.addState(Enums_1.PLAYER_STATES.SITTING);
-                game.Actions[game.Actions.length - 1].outcomes.push(util_1.format(data.outcomes.walkintowall, Enums_1.DIRS[dir]));
+                game.Actions[game.Actions.length - 1].outcomes.push(util_1.format(data.outcomes.walkIntoWall, Enums_1.DIRS[dir]));
                 game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.stunned);
             }
-        }
-        else {
-            game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.stunned);
-            game.Player.removeState(Enums_1.PLAYER_STATES.STUNNED);
         }
         // game continues - return the action (with outcomes and engram)
         return Promise.resolve(fns.finalizeAction(game, startScore, langCode));
