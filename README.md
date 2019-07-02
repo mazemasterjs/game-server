@@ -38,6 +38,12 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 
 ## Change Notes
 
+### v0.9.0
+
+- embedded basic-auth security now working
+- createGame and getGame now return actionResults on game start/resume (just like processAction does)
+- finalizeAction signature changed to accept a move count (and removal of optional "freeAction" param): finalizeAction(game, actionMoveCount startScore, langCode)
+
 ### v0.8.2
 
 - players cannot move or jump while stunned

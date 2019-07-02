@@ -20,7 +20,7 @@ export function doJump(game: Game, lang: string) {
     }
   }
   const startScore = game.Score.getTotalScore();
-  return Promise.resolve(fns.finalizeAction(game, startScore, lang));
+  return Promise.resolve(fns.finalizeAction(game, 2, startScore, lang));
 }
 
 export function jumpNext(game: Game, lang: string, distance: number) {

@@ -428,12 +428,10 @@ exports.getLanguage = getLanguage;
  * @param startScore
  * @param finishScore
  */
-function finalizeAction(game, startScore, langCode, freeAction = false) {
+function finalizeAction(game, actionMoveCount, startScore, langCode) {
     // increment move counters unless freeAction is set (new / resume game)
-    if (!freeAction) {
-        game.Score.addMove();
-        game.Actions[game.Actions.length - 1].moveCount++;
-    }
+    game.Score.addMoves(actionMoveCount);
+    game.Actions[game.Actions.length - 1].moveCount += actionMoveCount;
     // handle game out-of-moves ending
     if (game.Score.MoveCount >= game.Maze.CellCount * 3) {
         const lang = GameLang_1.default.getInstance(langCode);
@@ -528,7 +526,7 @@ function doWrite(game, lang, message) {
     }
     logDebug(__filename, method, 'executed the write command');
     game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.message);
-    return Promise.resolve(finalizeAction(game, startScore, lang));
+    return Promise.resolve(finalizeAction(game, 1, startScore, lang));
 }
 exports.doWrite = doWrite;
 //# sourceMappingURL=funcs.js.map

@@ -91,7 +91,7 @@ export const createGame = async (req: Request, res: Response) => {
               game.addAction(firstAction);
 
               // finalize the last action and capture as a result
-              const createResult: IAction = fns.finalizeAction(game, game.Score.getTotalScore(), langCode, true);
+              const createResult: IAction = fns.finalizeAction(game, 0, game.Score.getTotalScore(), langCode);
 
               // return the newly created game
               return res.status(200).json({
@@ -134,7 +134,7 @@ export const getGame = (req: Request, res: Response) => {
       game.addAction(resumeAction);
 
       // finalize the last action and capture as a result
-      const getResult = fns.finalizeAction(game, game.Score.getTotalScore(), langCode, true);
+      const getResult = fns.finalizeAction(game, 0, game.Score.getTotalScore(), langCode);
 
       // add the new game outcome
       return res.status(200).json({

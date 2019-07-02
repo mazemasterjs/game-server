@@ -7,6 +7,7 @@ import { GameLang } from '../GameLang';
 import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
 import { logDebug } from '../funcs';
 import { MazeLoc } from '@mazemasterjs/shared-library/MazeLoc';
+import Cell from '@mazemasterjs/shared-library/Cell';
 
 // need a config object for some of this
 const config: Config = Config.getInstance();
@@ -40,7 +41,7 @@ export async function doMove(game: Game, langCode: string): Promise<IAction> {
     game.Actions[game.Actions.length - 1].outcomes.push(data.outcome.moveWhileSitting);
 
     // finalize and return action
-    return Promise.resolve(fns.finalizeAction(game, startScore, langCode));
+    return Promise.resolve(fns.finalizeAction(game, 1, startScore, langCode));
   } else {
     // now check for start/finish cell win & lose conditions
     if (game.Maze.getCell(pLoc).isDirOpen(dir)) {
@@ -76,7 +77,7 @@ export async function doMove(game: Game, langCode: string): Promise<IAction> {
   }
 
   // game continues - return the action (with outcomes and engram)
-  return Promise.resolve(fns.finalizeAction(game, startScore, langCode));
+  return Promise.resolve(fns.finalizeAction(game, 1, startScore, langCode));
 }
 
 /**

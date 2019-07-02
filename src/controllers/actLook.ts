@@ -9,7 +9,7 @@ export function doLook(game: Game, langCode: string) {
   const data = GameLang.getInstance(langCode);
   const startScore = game.Score.getTotalScore();
   game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.look);
-  return fns.finalizeAction(game, startScore, langCode);
+  return fns.finalizeAction(game, 1, startScore, langCode);
 }
 
 /**

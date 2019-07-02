@@ -98,7 +98,7 @@ exports.createGame = (req, res) => __awaiter(this, void 0, void 0, function* () 
                     firstAction.outcomes.push(langData.outcomes.newGame);
                     game.addAction(firstAction);
                     // finalize the last action and capture as a result
-                    const createResult = fns.finalizeAction(game, game.Score.getTotalScore(), langCode, true);
+                    const createResult = fns.finalizeAction(game, 0, game.Score.getTotalScore(), langCode);
                     // return the newly created game
                     return res.status(200).json({
                         game: game.getStub(config.EXT_URL_GAME),
@@ -136,7 +136,7 @@ exports.getGame = (req, res) => {
         resumeAction.outcomes.push(langData.outcomes.resumeGame);
         game.addAction(resumeAction);
         // finalize the last action and capture as a result
-        const getResult = fns.finalizeAction(game, game.Score.getTotalScore(), langCode, true);
+        const getResult = fns.finalizeAction(game, 0, game.Score.getTotalScore(), langCode);
         // add the new game outcome
         return res.status(200).json({
             game: game.getStub(config.EXT_URL_GAME),

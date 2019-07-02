@@ -48,7 +48,7 @@ function doMove(game, langCode) {
             game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.SPINNING_YOUR_WHEELS);
             game.Actions[game.Actions.length - 1].outcomes.push(data.outcome.moveWhileSitting);
             // finalize and return action
-            return Promise.resolve(fns.finalizeAction(game, startScore, langCode));
+            return Promise.resolve(fns.finalizeAction(game, 1, startScore, langCode));
         }
         else {
             // now check for start/finish cell win & lose conditions
@@ -84,7 +84,7 @@ function doMove(game, langCode) {
             }
         }
         // game continues - return the action (with outcomes and engram)
-        return Promise.resolve(fns.finalizeAction(game, startScore, langCode));
+        return Promise.resolve(fns.finalizeAction(game, 1, startScore, langCode));
     });
 }
 exports.doMove = doMove;
