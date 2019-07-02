@@ -267,10 +267,11 @@ export const processAction = async (req: Request, res: Response) => {
   if (game.Score.MoveCount >= game.Maze.CellCount * 3) {
     game.State = GAME_STATES.FINISHED;
     game.Score.GameResult = GAME_RESULTS.OUT_OF_MOVES;
+
     if (game.Id.startsWith('FORCED')) {
       game.forceSetId(`${game.Id}__${Date.now()}`);
     }
-    return res.status(400).json({ status: 400, message: 'Game Over', error: 'The game is over.' });
+    return res.status(400).json({ status: 400, message: 'Game Over', error: 'This game has ended.' });
   } else {
     game.State = GAME_STATES.IN_PROGRESS;
   }

@@ -307,6 +307,7 @@
     "RIGHT": "RIGHT"
   },
   "outcomes": {
+    "gameOverOutOfMoves": "You have run out of moves. The game is over.",
     "jumping": "You fly through the air",
     "jumpingIntoLava": "You fly through the air...straight into lava",
     "jumpingIntoWall": "You leap directly into a wall!",

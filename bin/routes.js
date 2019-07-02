@@ -256,7 +256,7 @@ exports.processAction = (req, res) => __awaiter(this, void 0, void 0, function* 
         if (game.Id.startsWith('FORCED')) {
             game.forceSetId(`${game.Id}__${Date.now()}`);
         }
-        return res.status(400).json({ status: 400, message: 'Game Over', error: 'The game is over.' });
+        return res.status(400).json({ status: 400, message: 'Game Over', error: 'This game has ended.' });
     }
     else {
         game.State = Enums_1.GAME_STATES.IN_PROGRESS;

@@ -434,9 +434,20 @@ function finalizeAction(game, startScore, langCode, freeAction = false) {
         game.Score.addMove();
         game.Actions[game.Actions.length - 1].moveCount++;
     }
+    // handle game out-of-moves ending
+    if (game.Score.MoveCount >= game.Maze.CellCount * 3) {
+        const lang = GameLang_1.default.getInstance(langCode);
+        game.State = Enums_1.GAME_STATES.FINISHED;
+        game.Score.GameResult = Enums_1.GAME_RESULTS.OUT_OF_MOVES;
+        game.Score.addTrophy(Enums_1.TROPHY_IDS.OUT_OF_MOVES);
+        if (game.Id.startsWith('FORCED')) {
+            game.forceSetId(`${game.Id}__${Date.now()}`);
+        }
+        game.Actions[game.Actions.length - 1].outcomes.push(lang.outcomes.gameOverOutOfMoves);
+    }
     // track the score change from this one move
     game.Actions[game.Actions.length - 1].score = game.Score.getTotalScore() - startScore;
-    // TODO: text render - here now just for DEV/DEBUG purposess - it should always be the LAST outcome, too
+    // TODO: Move the minimap to it's own element instead of using outcomes
     try {
         const textRender = game.Maze.generateTextRender(true, game.Player.Location);
         game.Actions[game.Actions.length - 1].outcomes.push(textRender);

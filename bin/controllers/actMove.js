@@ -38,6 +38,7 @@ function doMove(game, langCode) {
         const pLoc = new MazeLoc_1.MazeLoc(game.Player.Location.row, game.Player.Location.col);
         // first make sure the player can move at all
         if (!!(game.Player.State & Enums_1.PLAYER_STATES.STUNNED)) {
+            fns.logDebug(__filename, method, 'Player tried to move while stunned.');
             game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.stunned);
             game.Player.removeState(Enums_1.PLAYER_STATES.STUNNED);
         }
