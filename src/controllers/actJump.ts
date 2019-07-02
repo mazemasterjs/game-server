@@ -16,6 +16,7 @@ export function doJump(game: Game, lang: string) {
       game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jumpWhileSitting);
       game.Player.addState(PLAYER_STATES.STANDING);
     } else {
+      fns.trapCheck(game, lang, true);
       jumpNext(game, lang, 0);
     }
   }
@@ -52,7 +53,6 @@ export function jumpNext(game: Game, lang: string, distance: number) {
       // if not, the player moves and it checks the next cell
       fns.movePlayer(game);
       jumpNext(game, lang, distance + 1);
-      game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jumping);
     } else {
       logDebug(__filename, method, 'Player crashed into a wall while jumping');
       game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jumpingIntoWall);
@@ -60,9 +60,7 @@ export function jumpNext(game: Game, lang: string, distance: number) {
       game.Player.addState(PLAYER_STATES.STUNNED);
     }
   } else {
-    game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.landFromJump);
-    if (!!(cell.Traps & CELL_TRAPS.NONE)) {
-      // placeholder for traps
-    }
+    game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jumping);
+    fns.trapCheck(game, lang);
   }
 }

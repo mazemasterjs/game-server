@@ -83,7 +83,7 @@ export function doTasteDirected(game: Game, lang: string, cell: CellBase, engram
           const intensity = data.entities[trapType.toUpperCase()].taste.intensity;
           const adjective = data.entities[trapType.toUpperCase()].taste.adjective;
           if (distance < intensity) {
-            setTaste(engramDir, { taste: adjective, strength: distance });
+            setTaste(engramDir, { taste: adjective, strength: intensity });
           }
         } catch (err) {
           logDebug(__filename, method, err);

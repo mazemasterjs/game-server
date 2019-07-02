@@ -32,9 +32,9 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 - [x] Add logic to automatically end games after a certain period of inactivity (set GAMES_STATES.ABANDONED)
 - [x] When a character turns walls are detected where there should not be
 - [x] Peripheral vision is seeing more cells further than it should be
-- [ ] Senses besides sight not working correctly
-- [ ] Direction of what is being heard not working correctly
 - [ ] Adjust values for the various engrams, current they are all based on distance
+- [ ] Prevent changes to the maze are permanent until the cache is refreshed or server is restarted
+- [ ] Deadfall traps block every exit, instead of only 1
 
 ## Change Notes
 
@@ -43,6 +43,9 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 - embedded basic-auth security now working
 - createGame and getGame now return actionResults on game start/resume (just like processAction does)
 - finalizeAction signature changed to accept a move count (and removal of optional "freeAction" param): finalizeAction(game, actionMoveCount startScore, langCode)
+- added framework for trap triggers
+- following traps are active: pit, tarpit, teleport, flamethrower, fragile floor, and mousetrap
+- fixed descriptions for traps in the language files
 
 ### v0.8.2
 
