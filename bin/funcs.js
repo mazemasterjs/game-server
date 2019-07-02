@@ -11,8 +11,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const actTaste_1 = require("./controllers/actTaste");
 const actSmell_1 = require("./controllers/actSmell");
-const axios_1 = __importDefault(require("axios"));
 const Cache_1 = require("./Cache");
 const Enums_1 = require("@mazemasterjs/shared-library/Enums");
 const Config_1 = require("./Config");
@@ -20,7 +20,7 @@ const actFeel_1 = require("./controllers/actFeel");
 const actListen_1 = require("./controllers/actListen");
 const actLook_1 = require("./controllers/actLook");
 const GameLang_1 = __importDefault(require("./GameLang"));
-const actTaste_1 = require("./controllers/actTaste");
+const axios_1 = __importDefault(require("axios"));
 const logger_1 = require("@mazemasterjs/logger");
 const MazeLoc_1 = require("@mazemasterjs/shared-library/MazeLoc");
 const actMove_1 = require("./controllers/actMove");
@@ -593,11 +593,11 @@ function trapCheck(game, lang, delayTrigger = false) {
                     }
                     case Enums_1.CELL_TRAPS.DEADFALL: {
                         if (delayTrigger) {
-                            pCell.removeExit(Enums_1.DIRS.NORTH, game.Maze.Cells);
-                            pCell.removeExit(Enums_1.DIRS.SOUTH, game.Maze.Cells);
-                            pCell.removeExit(Enums_1.DIRS.EAST, game.Maze.Cells);
-                            pCell.removeExit(Enums_1.DIRS.WEST, game.Maze.Cells);
-                            pCell.addExit(game.Player.Facing, game.Maze.Cells);
+                            game.Maze.removeExit(Enums_1.DIRS.NORTH, pCell);
+                            game.Maze.removeExit(Enums_1.DIRS.SOUTH, pCell);
+                            game.Maze.removeExit(Enums_1.DIRS.EAST, pCell);
+                            game.Maze.removeExit(Enums_1.DIRS.WEST, pCell);
+                            game.Maze.addExit(game.Player.Facing, pCell);
                             pCell.removeTrap(Enums_1.CELL_TRAPS.DEADFALL);
                             outcomes.push(data.outcomes.deadfallTrap);
                         }

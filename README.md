@@ -38,6 +38,10 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 
 ## Change Notes
 
+### v0.9.2
+
+- updated for shared-library 1.12.3's get/remove exit changes and additional command (SNEAK)
+
 ### v0.9.1
 
 - fixed the changes to the maze due to traps being persistant between different games

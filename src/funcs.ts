@@ -609,11 +609,11 @@ export function trapCheck(game: Game, lang: string, delayTrigger: boolean = fals
           }
           case CELL_TRAPS.DEADFALL: {
             if (delayTrigger) {
-              pCell.removeExit(DIRS.NORTH, game.Maze.Cells);
-              pCell.removeExit(DIRS.SOUTH, game.Maze.Cells);
-              pCell.removeExit(DIRS.EAST, game.Maze.Cells);
-              pCell.removeExit(DIRS.WEST, game.Maze.Cells);
-              pCell.addExit(game.Player.Facing, game.Maze.Cells);
+              game.Maze.removeExit(DIRS.NORTH, pCell);
+              game.Maze.removeExit(DIRS.SOUTH, pCell);
+              game.Maze.removeExit(DIRS.EAST, pCell);
+              game.Maze.removeExit(DIRS.WEST, pCell);
+              game.Maze.addExit(game.Player.Facing, pCell);
               pCell.removeTrap(CELL_TRAPS.DEADFALL);
               outcomes.push(data.outcomes.deadfallTrap);
             }

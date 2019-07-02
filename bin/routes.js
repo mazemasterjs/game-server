@@ -38,8 +38,9 @@ const config = Config_1.Config.getInstance();
 /**
  * Creates a new, single-player game.
  *
- * @param req
- * @param res
+ * @param {Request} req
+ * @param {Response} res
+ * @return {void}
  */
 exports.createGame = (req, res) => __awaiter(this, void 0, void 0, function* () {
     logRequest('createGame', req);
