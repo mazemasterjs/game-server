@@ -21,8 +21,9 @@ const config = Config.getInstance();
 /**
  * Creates a new, single-player game.
  *
- * @param req
- * @param res
+ * @param {Request} req
+ * @param {Response} res
+ * @return {void}
  */
 export const createGame = async (req: Request, res: Response) => {
   logRequest('createGame', req);
