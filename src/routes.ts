@@ -1,7 +1,7 @@
 import { Action } from '@mazemasterjs/shared-library/Action';
 import { doMove } from './controllers/actMove';
 import { Cache, CACHE_TYPES } from './Cache';
-import { COMMANDS, DIRS, GAME_RESULTS, GAME_STATES } from '@mazemasterjs/shared-library/Enums';
+import { COMMANDS, DIRS, GAME_RESULTS, GAME_STATES, PLAYER_STATES } from '@mazemasterjs/shared-library/Enums';
 import { Config } from './Config';
 import { doLook } from './controllers/actLook';
 import * as fns from './funcs';
@@ -11,8 +11,6 @@ import { LOG_LEVELS, Logger } from '@mazemasterjs/logger';
 import { Request, Response } from 'express';
 import { doTurn } from './controllers/actTurn';
 import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
-import Score from '@mazemasterjs/shared-library/Score';
-import { Engram } from '@mazemasterjs/shared-library/Engram';
 import { doJump } from './controllers/actJump';
 import GameLang from './GameLang';
 
@@ -84,6 +82,7 @@ export const createGame = async (req: Request, res: Response) => {
               Cache.use().storeItem(CACHE_TYPES.GAME, game);
 
               // add initial game action
+              fns.logDebug(__filename, method, `Loading GameLang (langCode = ${langCode})`);
               const langData = GameLang.getInstance(langCode);
 
               // create the initial game action and add a new-game outcome
@@ -135,12 +134,12 @@ export const getGame = (req: Request, res: Response) => {
       game.addAction(resumeAction);
 
       // finalize the last action and capture as a result
-      const resumeResult: IAction = fns.finalizeAction(game, game.Score.getTotalScore(), langCode, true);
+      const getResult = fns.finalizeAction(game, game.Score.getTotalScore(), langCode, true);
 
       // add the new game outcome
       return res.status(200).json({
         game: game.getStub(config.EXT_URL_GAME),
-        action: resumeResult,
+        action: getResult,
         totalScore: game.Score.getTotalScore(),
         playerState: game.Player.State,
         playerFacing: game.Player.Facing,
@@ -189,6 +188,7 @@ export const abandonGame = async (req: Request, res: Response) => {
  */
 export const listGames = (req: Request, res: Response) => {
   logRequest('listGames', req);
+  res.status(200).json(fns.getGameStubs());
 
   try {
     return res.status(200).json(fns.getGameStubs());
@@ -267,10 +267,11 @@ export const processAction = async (req: Request, res: Response) => {
   if (game.Score.MoveCount >= game.Maze.CellCount * 3) {
     game.State = GAME_STATES.FINISHED;
     game.Score.GameResult = GAME_RESULTS.OUT_OF_MOVES;
+
     if (game.Id.startsWith('FORCED')) {
       game.forceSetId(`${game.Id}__${Date.now()}`);
     }
-    return res.status(400).json({ status: 400, message: 'Game Over', error: 'The game is over.' });
+    return res.status(400).json({ status: 400, message: 'Game Over', error: 'This game has ended.' });
   } else {
     game.State = GAME_STATES.IN_PROGRESS;
   }

@@ -73,8 +73,8 @@ export function doSmellDirected(game: Game, lang: string, cell: CellBase, engram
       const trapType = CELL_TRAPS[trapEnum];
       if (!!(cell.Traps & trapEnum)) {
         try {
-          const intensity = data.entities[trapType.toLowerCase()].smell.intensity;
-          const adjective = data.entities[trapType.toLowerCase()].smell.adjective;
+          const intensity = data.entities[trapType.toUpperCase()].smell.intensity;
+          const adjective = data.entities[trapType.toUpperCase()].smell.adjective;
           if (distance < intensity) {
             if (
               !engramDir.find(smell => {

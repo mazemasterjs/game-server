@@ -18,12 +18,18 @@ const fns = __importStar(require("../funcs"));
 const actMove_1 = require("./actMove");
 function doJump(game, lang) {
     const data = GameLang_1.default.getInstance(lang);
-    if (!!(game.Player.State & Enums_1.PLAYER_STATES.SITTING)) {
-        game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jumpWhileSitting);
-        game.Player.addState(Enums_1.PLAYER_STATES.STANDING);
+    if (!!(game.Player.State & Enums_1.PLAYER_STATES.STUNNED)) {
+        game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.stunned);
+        game.Player.removeState(Enums_1.PLAYER_STATES.STUNNED);
     }
     else {
-        jumpNext(game, lang, 0);
+        if (!!(game.Player.State & Enums_1.PLAYER_STATES.SITTING)) {
+            game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jumpWhileSitting);
+            game.Player.addState(Enums_1.PLAYER_STATES.STANDING);
+        }
+        else {
+            jumpNext(game, lang, 0);
+        }
     }
     const startScore = game.Score.getTotalScore();
     return Promise.resolve(fns.finalizeAction(game, startScore, lang));
@@ -64,6 +70,7 @@ function jumpNext(game, lang, distance) {
             funcs_1.logDebug(__filename, method, 'Player crashed into a wall while jumping');
             game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jumpingIntoWall);
             game.Player.addState(Enums_1.PLAYER_STATES.SITTING);
+            game.Player.addState(Enums_1.PLAYER_STATES.STUNNED);
         }
     }
     else {

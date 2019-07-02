@@ -307,6 +307,7 @@
     "RIGHT": "RIGHT"
   },
   "outcomes": {
+    "gameOverOutOfMoves": "You have run out of moves. The game is over.",
     "jumping": "You fly through the air",
     "jumpingIntoLava": "You fly through the air...straight into lava",
     "jumpingIntoWall": "You leap directly into a wall!",
@@ -317,7 +318,7 @@
     "message": "You write a message on the ground...",
     "moveWhileSitting": "You can't move while sitting!",
     "newGame": "You awake to find yourself sitting just inside the maze's entrance.",
-    "resumeGame": "You find yourself lying on the floor - you must have fainted.",
+    "resumeGame": "You shake your head vigorously in an attempt to reconnect with reality.",
     "stand": "You stand up.",
     "standWhileStanding": "You are already standing!",
     "stunned": "You are stunned!",

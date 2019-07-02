@@ -73,8 +73,8 @@ function doFeelDirected(game, lang, cell, engramDir, lastDirection, distance) {
             const trapType = Enums_1.CELL_TRAPS[trapEnum];
             if (!!(cell.Traps & trapEnum)) {
                 try {
-                    const intensity = data.entities[trapType.toLowerCase()].touch.intensity;
-                    const adjective = data.entities[trapType.toLowerCase()].touch.adjective;
+                    const intensity = data.entities[trapType.toUpperCase()].touch.intensity;
+                    const adjective = data.entities[trapType.toUpperCase()].touch.adjective;
                     if (distance < intensity) {
                         setFeel(engramDir, { feeling: adjective, intensity: distance });
                     }

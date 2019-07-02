@@ -21,6 +21,8 @@ export class Config {
   public readonly BASE_URL_GAME: string;
   public readonly EXT_URL_GAME: string;
   public readonly LOG_LEVEL: number;
+  public readonly AUTH_CACHE_CHECK_INTERVAL: number;
+  public readonly AUTH_CACHE_LIFESPAN: number;
   public readonly CACHE_SIZE_MAZES: number;
   public readonly CACHE_SIZE_GAMES: number;
   public readonly CACHE_SIZE_SCORES: number;
@@ -33,6 +35,7 @@ export class Config {
   public readonly SERVICE_SCORE: string;
   public readonly SERVICE_TEAM: string;
   public readonly SERVICE_TROPHY: string;
+  public readonly PRIMARY_SERVICE_ACCOUNT: string;
 
   // singleton pattern - constructor is private, use static Config.getInstance()
   private constructor() {
@@ -41,6 +44,8 @@ export class Config {
     this.BASE_URL_GAME = this.getVar('BASE_URL_GAME', 'string');
     this.EXT_URL_GAME = this.getVar('EXT_URL_GAME', 'string');
     this.HTTP_PORT_GAME = this.getVar('HTTP_PORT_GAME', 'number');
+    this.AUTH_CACHE_CHECK_INTERVAL = this.getVar('AUTH_CACHE_CHECK_INTERVAL', 'number');
+    this.AUTH_CACHE_LIFESPAN = this.getVar('AUTH_CACHE_LIFESPAN', 'number');
     this.CACHE_SIZE_MAZES = this.getVar('CACHE_SIZE_MAZES', 'number');
     this.CACHE_SIZE_GAMES = this.getVar('CACHE_SIZE_GAMES', 'number');
     this.CACHE_SIZE_SCORES = this.getVar('CACHE_SIZE_SCORES', 'number');
@@ -53,6 +58,7 @@ export class Config {
     this.SERVICE_SCORE = this.getVar('SERVICE_SCORE', 'string');
     this.SERVICE_TEAM = this.getVar('SERVICE_TEAM', 'string');
     this.SERVICE_TROPHY = this.getVar('SERVICE_TROPHY', 'string');
+    this.PRIMARY_SERVICE_ACCOUNT = this.getVar('PRIMARY_SERVICE_ACCOUNT', 'string');
   }
 
   /**

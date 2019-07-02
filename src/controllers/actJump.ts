@@ -8,11 +8,16 @@ import { finishGame } from './actMove';
 
 export function doJump(game: Game, lang: string) {
   const data = GameLang.getInstance(lang);
-  if (!!(game.Player.State & PLAYER_STATES.SITTING)) {
-    game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jumpWhileSitting);
-    game.Player.addState(PLAYER_STATES.STANDING);
+  if (!!(game.Player.State & PLAYER_STATES.STUNNED)) {
+    game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.stunned);
+    game.Player.removeState(PLAYER_STATES.STUNNED);
   } else {
-    jumpNext(game, lang, 0);
+    if (!!(game.Player.State & PLAYER_STATES.SITTING)) {
+      game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jumpWhileSitting);
+      game.Player.addState(PLAYER_STATES.STANDING);
+    } else {
+      jumpNext(game, lang, 0);
+    }
   }
   const startScore = game.Score.getTotalScore();
   return Promise.resolve(fns.finalizeAction(game, startScore, lang));
@@ -52,6 +57,7 @@ export function jumpNext(game: Game, lang: string, distance: number) {
       logDebug(__filename, method, 'Player crashed into a wall while jumping');
       game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jumpingIntoWall);
       game.Player.addState(PLAYER_STATES.SITTING);
+      game.Player.addState(PLAYER_STATES.STUNNED);
     }
   } else {
     game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.landFromJump);

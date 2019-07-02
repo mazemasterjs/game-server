@@ -1,12 +1,15 @@
+import { doSmellLocal } from './controllers/actSmell';
 import axios from 'axios';
-import GameLang from './GameLang';
 import { AxiosResponse } from 'axios';
 import { Cache, CACHE_TYPES } from './Cache';
 import { Cell } from '@mazemasterjs/shared-library/Cell';
-import { CELL_TAGS, CELL_TRAPS, COMMANDS, DIRS, GAME_RESULTS, GAME_STATES, TROPHY_IDS } from '@mazemasterjs/shared-library/Enums';
-import { CellBase } from '@mazemasterjs/shared-library/CellBase';
+import { COMMANDS, DIRS, GAME_RESULTS, GAME_STATES, PLAYER_STATES, TROPHY_IDS } from '@mazemasterjs/shared-library/Enums';
 import { Config } from './Config';
+import { doFeelLocal } from './controllers/actFeel';
+import { doListenLocal } from './controllers/actListen';
 import { doLookLocal } from './controllers/actLook';
+import GameLang from './GameLang';
+import { doTasteLocal } from './controllers/actTaste';
 import { Game } from '@mazemasterjs/shared-library/Game';
 import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
 import { IGameStub } from '@mazemasterjs/shared-library/Interfaces/IGameStub';
@@ -16,13 +19,12 @@ import { Request } from 'express';
 import { Score } from '@mazemasterjs/shared-library/Score';
 import { Team } from '@mazemasterjs/shared-library/Team';
 import { Trophy } from '@mazemasterjs/shared-library/Trophy';
-import { doTasteLocal } from './controllers/actTaste';
-import { doFeelLocal } from './controllers/actFeel';
-import { doSmellLocal } from './controllers/actSmell';
-import { doListenLocal } from './controllers/actListen';
 
 const log = Logger.getInstance();
 const config = Config.getInstance();
+
+// tslint:disable-next-line: no-string-literal
+axios.defaults.headers.common['Authorization'] = 'Basic ' + config.PRIMARY_SERVICE_ACCOUNT;
 
 /**
  * Builds a standard response status message for logging
@@ -257,28 +259,36 @@ export function getCmdByName(cmdName: string): number {
  * @param game: Game - the current game
  * @param action: IAction - the pre-validated IAction behind this move
  */
-export function movePlayer(game: Game): Game {
+export function movePlayer(game: Game, printOutcome: boolean = false): Game {
   const act = game.Actions[game.Actions.length - 1];
   // reposition the player - all move validation is preformed prior to this call
   switch (act.direction) {
     case DIRS.NORTH: {
       game.Player.Location.row--;
-      act.outcomes.push('You move to the North.');
+      if (printOutcome) {
+        act.outcomes.push('You move to the North.');
+      }
       break;
     }
     case DIRS.SOUTH: {
       game.Player.Location.row++;
-      act.outcomes.push('You move to the South.');
+      if (printOutcome) {
+        act.outcomes.push('You move to the South.');
+      }
       break;
     }
     case DIRS.EAST: {
       game.Player.Location.col++;
-      act.outcomes.push('You move to the East.');
+      if (printOutcome) {
+        act.outcomes.push('You move to the East.');
+      }
       break;
     }
     case DIRS.WEST: {
       game.Player.Location.col--;
-      act.outcomes.push('You move to the West.');
+      if (printOutcome) {
+        act.outcomes.push('You move to the West.');
+      }
       break;
     }
   } // end switch(act.direction)
@@ -434,10 +444,23 @@ export function finalizeAction(game: Game, startScore: number, langCode: string,
     game.Actions[game.Actions.length - 1].moveCount++;
   }
 
+  // handle game out-of-moves ending
+  if (game.Score.MoveCount >= game.Maze.CellCount * 3) {
+    const lang = GameLang.getInstance(langCode);
+    game.State = GAME_STATES.FINISHED;
+    game.Score.GameResult = GAME_RESULTS.OUT_OF_MOVES;
+    game.Score.addTrophy(TROPHY_IDS.OUT_OF_MOVES);
+
+    if (game.Id.startsWith('FORCED')) {
+      game.forceSetId(`${game.Id}__${Date.now()}`);
+    }
+    game.Actions[game.Actions.length - 1].outcomes.push(lang.outcomes.gameOverOutOfMoves);
+  }
+
   // track the score change from this one move
   game.Actions[game.Actions.length - 1].score = game.Score.getTotalScore() - startScore;
 
-  // TODO: text render - here now just for DEV/DEBUG purposess - it should always be the LAST outcome, too
+  // TODO: Move the minimap to it's own element instead of using outcomes
   try {
     const textRender = game.Maze.generateTextRender(true, game.Player.Location);
     game.Actions[game.Actions.length - 1].outcomes.push(textRender);
@@ -447,12 +470,16 @@ export function finalizeAction(game: Game, startScore: number, langCode: string,
   }
 
   // update the engrams
-  getLocal(game, langCode);
-  doLookLocal(game, langCode);
-  doSmellLocal(game, langCode);
-  doListenLocal(game, langCode);
-  doTasteLocal(game, langCode);
-  doFeelLocal(game, langCode);
+  if (!(game.Player.State & PLAYER_STATES.STUNNED)) {
+    getLocal(game, langCode);
+    doLookLocal(game, langCode);
+    doSmellLocal(game, langCode);
+    doListenLocal(game, langCode);
+    doTasteLocal(game, langCode);
+    doFeelLocal(game, langCode);
+  } else {
+    logWarn(__filename, 'finalizeAction(...)', `Player state is ${PLAYER_STATES[game.Player.State]} (${game.Player.State}) - no engram data collected.`);
+  }
 
   return game.Actions[game.Actions.length - 1];
 }

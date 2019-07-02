@@ -91,6 +91,7 @@ exports.createGame = (req, res) => __awaiter(this, void 0, void 0, function* () 
                     // store the game on the  cache
                     Cache_1.Cache.use().storeItem(Cache_1.CACHE_TYPES.GAME, game);
                     // add initial game action
+                    fns.logDebug(__filename, method, `Loading GameLang (langCode = ${langCode})`);
                     const langData = GameLang_1.default.getInstance(langCode);
                     // create the initial game action and add a new-game outcome
                     const firstAction = new Action_1.Action(Enums_1.COMMANDS.WAIT, Enums_1.DIRS.NONE, '');
@@ -135,11 +136,11 @@ exports.getGame = (req, res) => {
         resumeAction.outcomes.push(langData.outcomes.resumeGame);
         game.addAction(resumeAction);
         // finalize the last action and capture as a result
-        const resumeResult = fns.finalizeAction(game, game.Score.getTotalScore(), langCode, true);
+        const getResult = fns.finalizeAction(game, game.Score.getTotalScore(), langCode, true);
         // add the new game outcome
         return res.status(200).json({
             game: game.getStub(config.EXT_URL_GAME),
-            action: resumeResult,
+            action: getResult,
             totalScore: game.Score.getTotalScore(),
             playerState: game.Player.State,
             playerFacing: game.Player.Facing,
@@ -183,6 +184,7 @@ exports.abandonGame = (req, res) => __awaiter(this, void 0, void 0, function* ()
  */
 exports.listGames = (req, res) => {
     logRequest('listGames', req);
+    res.status(200).json(fns.getGameStubs());
     try {
         return res.status(200).json(fns.getGameStubs());
     }
@@ -254,7 +256,7 @@ exports.processAction = (req, res) => __awaiter(this, void 0, void 0, function* 
         if (game.Id.startsWith('FORCED')) {
             game.forceSetId(`${game.Id}__${Date.now()}`);
         }
-        return res.status(400).json({ status: 400, message: 'Game Over', error: 'The game is over.' });
+        return res.status(400).json({ status: 400, message: 'Game Over', error: 'This game has ended.' });
     }
     else {
         game.State = Enums_1.GAME_STATES.IN_PROGRESS;

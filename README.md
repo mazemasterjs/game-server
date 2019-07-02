@@ -38,6 +38,11 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 
 ## Change Notes
 
+### v0.8.2
+
+- players cannot move or jump while stunned
+- fixed retrival of trap information from language files
+
 ### v0.8.1
 
 - all actions now return gameStub
