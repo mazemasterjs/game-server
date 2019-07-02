@@ -86,7 +86,7 @@ function doSmellDirected(game, lang, cell, engramDir, lastDirection, distance) {
                         if (!engramDir.find(smell => {
                             if (smell.scent === adjective) {
                                 if (smell.strength > distance) {
-                                    smell.strength = distance;
+                                    smell.strength = intensity - distance;
                                 }
                                 return true;
                             }
@@ -94,7 +94,7 @@ function doSmellDirected(game, lang, cell, engramDir, lastDirection, distance) {
                                 return false;
                             }
                         })) {
-                            setSmell(engramDir, { scent: adjective, strength: distance });
+                            setSmell(engramDir, { scent: adjective, strength: intensity - distance });
                         }
                     }
                 }

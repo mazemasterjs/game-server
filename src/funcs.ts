@@ -3,7 +3,7 @@ import axios from 'axios';
 import { AxiosResponse } from 'axios';
 import { Cache, CACHE_TYPES } from './Cache';
 import { Cell } from '@mazemasterjs/shared-library/Cell';
-import { COMMANDS, DIRS, GAME_RESULTS, GAME_STATES, PLAYER_STATES, TROPHY_IDS } from '@mazemasterjs/shared-library/Enums';
+import { COMMANDS, DIRS, GAME_RESULTS, GAME_STATES, PLAYER_STATES, TROPHY_IDS, CELL_TRAPS } from '@mazemasterjs/shared-library/Enums';
 import { Config } from './Config';
 import { doFeelLocal } from './controllers/actFeel';
 import { doListenLocal } from './controllers/actListen';
@@ -19,6 +19,7 @@ import { Request } from 'express';
 import { Score } from '@mazemasterjs/shared-library/Score';
 import { Team } from '@mazemasterjs/shared-library/Team';
 import { Trophy } from '@mazemasterjs/shared-library/Trophy';
+import { finishGame } from './controllers/actMove';
 
 const log = Logger.getInstance();
 const config = Config.getInstance();
@@ -297,17 +298,23 @@ export function movePlayer(game: Game, printOutcome: boolean = false): Game {
 
   // until blindness or something is added, always see exits
   // commented for testing purposes
-  // act.engram.sight = 'You see exits: ' + game.Maze.Cells[pLoc.row][pLoc.col].listExits();
 
   // check for backtracking
   if (game.Maze.Cells[game.Player.Location.row][game.Player.Location.col].VisitCount > 0) {
     game.Score.addBacktrack();
-    // act.engram.sight += ' Footprints mar the dusty floor. ';
   }
 
   // and update the cell visit count
   cell.addVisit(game.Score.MoveCount);
 
+  // send the updated game back
+  return game;
+}
+
+export function movePlayerAbsolute(game: Game, lang: string, x: number, y: number) {
+  const cell: Cell = game.Maze.Cells[y][x];
+  cell.addVisit(game.Score.MoveCount);
+  game.Player.Location = new MazeLoc(y, x);
   // send the updated game back
   return game;
 }
@@ -545,3 +552,86 @@ export function doWrite(game: Game, lang: string, message: string) {
   game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.message);
   return Promise.resolve(finalizeAction(game, startScore, lang));
 }
+
+export function trapCheck(game: Game, lang: string, delayTrigger: boolean = false) {
+  const pCell = game.Maze.getCell(game.Player.Location);
+  const outcomes = game.Actions[game.Actions.length - 1].outcomes;
+  const data = GameLang.getInstance(lang);
+  if (!(pCell.Traps & CELL_TRAPS.NONE)) {
+    for (let pos = 0; pos < 9; pos++) {
+      const trapEnum = 1 << pos;
+      if (!!(pCell.Traps & trapEnum)) {
+        switch (trapEnum) {
+          case CELL_TRAPS.PIT: {
+            outcomes.push(data.outcomes.pitTrap);
+            game.Player.addState(PLAYER_STATES.DEAD);
+            finishGame(game, GAME_RESULTS.DEATH_TRAP);
+            break;
+          }
+          case CELL_TRAPS.MOUSETRAP: {
+            outcomes.push(data.outcomes.mouseTrap);
+            game.Player.addState(PLAYER_STATES.DEAD);
+            finishGame(game, GAME_RESULTS.DEATH_TRAP);
+            break;
+          }
+          case CELL_TRAPS.TARPIT: {
+            outcomes.push(data.outcomes.tarTrap);
+            game.Player.addState(PLAYER_STATES.SLOWED);
+            break;
+          }
+          case CELL_TRAPS.FLAMETHROWER: {
+            if (!(game.Player.State & PLAYER_STATES.LYING) && delayTrigger) {
+              outcomes.push(data.outcomes.flamethrowerTrap);
+              game.Player.addState(PLAYER_STATES.DEAD);
+              finishGame(game, GAME_RESULTS.DEATH_TRAP);
+            }
+            break;
+          }
+          case CELL_TRAPS.FRAGILE_FLOOR: {
+            if (delayTrigger) {
+              outcomes.push(data.outcomes.fragileFloorTrap);
+              pCell.removeTrap(CELL_TRAPS.FRAGILE_FLOOR);
+              pCell.addTrap(CELL_TRAPS.PIT);
+            }
+            break;
+          }
+          case CELL_TRAPS.TELEPORTER: {
+            const newX = Math.floor(Math.random() * (game.Maze.Width - 1));
+            const newY = Math.floor(Math.random() * (game.Maze.Height - 1));
+            movePlayerAbsolute(game, lang, newX, newY);
+            outcomes.push(data.outcomes.teleportTrap);
+
+            break;
+          }
+          case CELL_TRAPS.DEADFALL: {
+            if (delayTrigger) {
+              switch (game.Player.Facing) {
+                case DIRS.NORTH: {
+                  pCell.removeExit(DIRS.SOUTH, game.Maze.Cells);
+                  break;
+                }
+                case DIRS.SOUTH: {
+                  pCell.removeExit(DIRS.NORTH, game.Maze.Cells);
+                  break;
+                }
+                case DIRS.EAST: {
+                  pCell.removeExit(DIRS.WEST, game.Maze.Cells);
+                  break;
+                }
+                case DIRS.WEST: {
+                  pCell.removeExit(DIRS.EAST, game.Maze.Cells);
+                  break;
+                }
+              }
+              outcomes.push(data.outcomes.deadfallTrap);
+            }
+            break;
+          }
+          default: {
+            outcomes.push('DEBUG:', CELL_TRAPS[trapEnum], ' currently not implemented!');
+          }
+        } // end switch
+      } // end if (!!(pCell.Traps & trapEnum))
+    } // end for
+  } // end if CELL_TRAPS.NONE
+} // end trapCheck()

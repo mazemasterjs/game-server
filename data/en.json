@@ -4,23 +4,23 @@
     "lava": {
       "sight": {
         "adjective": "LAVA",
-        "intensity": 50
+        "intensity": 10
       },
       "sound": {
-        "adjective": "sizzle",
-        "intensity": 2500
+        "adjective": "bubbling",
+        "intensity": 2
       },
       "smell": {
         "adjective": "sulphur",
-        "intensity": 3500
+        "intensity": 5
       },
       "touch": {
         "adjective": "hot",
-        "intensity": 100
+        "intensity": -1
       },
       "taste": {
         "adjective": "nothing",
-        "intensity": 0
+        "intensity": -1
       }
     },
     "smoke": {
@@ -34,266 +34,266 @@
     },
     "wall": {
       "sight": {
-        "adjective": "WALL",
-        "intensity": 30
+        "adjective": "wall",
+        "intensity": 3
       },
       "sound": {
         "adjective": "none",
-        "intensity": 0
+        "intensity": -1
       },
       "smell": {
         "adjective": "earth",
-        "intensity": 10
+        "intensity": -1
       },
       "touch": {
         "adjective": "solid",
-        "intensity": 0
+        "intensity": -1
       },
       "taste": {
         "adjective": "dirt",
-        "intensity": 0
+        "intensity": -1
       }
     },
     "cheese": {
       "sight": {
-        "adjective": "golden",
-        "intensity": 30
+        "adjective": "cheese",
+        "intensity": 3
       },
       "sound": {
         "adjective": "cheese",
-        "intensity": 10000
+        "intensity": -1
       },
       "smell": {
-        "adjective": "cheesy",
-        "intensity": 100
+        "adjective": "cheese",
+        "intensity": 10
       },
       "touch": {
         "adjective": "soft",
-        "intensity": 0
+        "intensity": -1
       },
       "taste": {
         "adjective": "cheese",
-        "intensity": 0
+        "intensity": -1
       }
     },
     "PIT": {
       "sight": {
-        "adjective": "PIT",
-        "intensity": 30
+        "adjective": "Pit",
+        "intensity": 3
       },
       "sound": {
-        "adjective": "WIND",
-        "intensity": 50
+        "adjective": "Wind",
+        "intensity": 1
       },
       "smell": {
-        "adjective": "DIRT",
-        "intensity": 30
+        "adjective": "Dirt",
+        "intensity": -1
       },
       "touch": {
         "adjective": "Wind",
-        "intensity": 20
+        "intensity": 2
       },
       "taste": {
         "adjective": "none",
-        "intensity": 0
+        "intensity": -1
       }
     },
     "MOUSETRAP": {
       "sight": {
-        "adjective": "MOUSETRAP",
-        "intensity": 30
+        "adjective": "Cheese",
+        "intensity": 3
       },
       "sound": {
         "adjective": "",
-        "intensity": 0
+        "intensity": -1
       },
       "smell": {
-        "adjective": "RUST",
-        "intensity": 1000000
+        "adjective": "Cheese",
+        "intensity": 5
       },
       "touch": {
-        "adjective": "PAIN",
-        "intensity": 0
+        "adjective": "Pain",
+        "intensity": -1
       },
       "taste": {
-        "adjective": "METALLIC",
-        "intensity": 0
+        "adjective": "Metallic",
+        "intensity": -1
       }
     },
     "TARPIT": {
       "sight": {
-        "adjective": "TAR",
-        "intensity": 30
+        "adjective": "Tar",
+        "intensity": 3
       },
       "sound": {
-        "adjective": "BUBBLING",
-        "intensity": 30
+        "adjective": "Bubbling",
+        "intensity": 3
       },
       "smell": {
-        "adjective": "TAR",
-        "intensity": 50
+        "adjective": "Tar",
+        "intensity": -1
       },
       "touch": {
-        "adjective": "STICKY",
-        "intensity": 10
+        "adjective": "Sticky",
+        "intensity": 0
       },
       "taste": {
-        "adjective": "TAR",
-        "intensity": 0
+        "adjective": "Tar",
+        "intensity": -1
       }
     },
     "FLAMETHROWER": {
       "sight": {
-        "adjective": "PUDDLE",
-        "intensity": 20
+        "adjective": "Puddle",
+        "intensity": 2
       },
       "sound": {
-        "adjective": "HISSING",
-        "intensity": 10
+        "adjective": "Hissing",
+        "intensity": 0
       },
       "smell": {
-        "adjective": "KEROSENE",
-        "intensity": 40
+        "adjective": "Kerosene",
+        "intensity": 4
       },
       "touch": {
-        "adjective": "WET",
-        "intensity": 10
+        "adjective": "Wet",
+        "intensity": 0
       },
       "taste": {
-        "adjective": "BURNT",
-        "intensity": 0
+        "adjective": "Burning",
+        "intensity": -1
       }
     },
     "POISON_DART": {
       "sight": {
-        "adjective": "PUDDLE",
-        "intensity": 20
+        "adjective": "none",
+        "intensity": -1
       },
       "sound": {
-        "adjective": "HISSING",
-        "intensity": 10
+        "adjective": "Clicking",
+        "intensity": 1
       },
       "smell": {
-        "adjective": "KEROSENE",
-        "intensity": 40
+        "adjective": "none",
+        "intensity": -1
       },
       "touch": {
-        "adjective": "WET",
-        "intensity": 10
+        "adjective": "none",
+        "intensity": -1
       },
       "taste": {
-        "adjective": "BURNT",
-        "intensity": 0
+        "adjective": "none",
+        "intensity": -1
       }
     },
     "TELEPORTER": {
       "sight": {
-        "adjective": "PUDDLE",
-        "intensity": 20
+        "adjective": "glow",
+        "intensity": 1
       },
       "sound": {
-        "adjective": "HISSING",
-        "intensity": 10
+        "adjective": "Hum",
+        "intensity": 1
       },
       "smell": {
-        "adjective": "KEROSENE",
-        "intensity": 40
+        "adjective": "magic",
+        "intensity": -1
       },
       "touch": {
-        "adjective": "WET",
-        "intensity": 10
+        "adjective": "none",
+        "intensity": -1
       },
       "taste": {
-        "adjective": "BURNT",
-        "intensity": 0
+        "adjective": "none",
+        "intensity": -1
       }
     },
     "DEADFALL": {
       "sight": {
-        "adjective": "PUDDLE",
-        "intensity": 20
+        "adjective": "Tile",
+        "intensity": 0
       },
       "sound": {
-        "adjective": "HISSING",
-        "intensity": 10
+        "adjective": "none",
+        "intensity": -1
       },
       "smell": {
-        "adjective": "KEROSENE",
-        "intensity": 40
+        "adjective": "none",
+        "intensity": -1
       },
       "touch": {
-        "adjective": "WET",
-        "intensity": 10
+        "adjective": "none",
+        "intensity": -1
       },
       "taste": {
-        "adjective": "BURNT",
-        "intensity": 0
+        "adjective": "none",
+        "intensity": -1
       }
     },
     "FRAGILE_FLOOR": {
       "sight": {
-        "adjective": "PUDDLE",
-        "intensity": 20
+        "adjective": "Crumbling",
+        "intensity": 3
       },
       "sound": {
-        "adjective": "HISSING",
-        "intensity": 10
+        "adjective": "Cracking",
+        "intensity": 0
       },
       "smell": {
-        "adjective": "KEROSENE",
-        "intensity": 40
+        "adjective": "none",
+        "intensity": -1
       },
       "touch": {
-        "adjective": "WET",
-        "intensity": 10
+        "adjective": "Breaking",
+        "intensity": 0
       },
       "taste": {
-        "adjective": "BURNT",
-        "intensity": 0
+        "adjective": "none",
+        "intensity": -1
       }
     },
     "CHEESE": {
       "sight": {
-        "adjective": "CHEESE",
-        "intensity": 1000
+        "adjective": "Cheese",
+        "intensity": 3
       },
       "sound": {
-        "adjective": "HISSING",
-        "intensity": 1000
+        "adjective": "none",
+        "intensity": -1
       },
       "smell": {
-        "adjective": "KEROSENE",
-        "intensity": 1000
+        "adjective": "Cheese",
+        "intensity": 8
       },
       "touch": {
-        "adjective": "WET",
-        "intensity": 10
+        "adjective": "Cheese",
+        "intensity": -1
       },
       "taste": {
-        "adjective": "BURNT",
-        "intensity": 0
+        "adjective": "Cheese",
+        "intensity": -1
       }
     },
     "DARKNESS": {
       "sight": {
         "adjective": "DARKNESS",
-        "intensity": 20
+        "intensity": 40
       },
       "sound": {
         "adjective": "none",
-        "intensity": 0
+        "intensity": -1
       },
       "smell": {
         "adjective": "none",
-        "intensity": 0
+        "intensity": -1
       },
       "touch": {
         "adjective": "none",
-        "intensity": 0
+        "intensity": -1
       },
       "taste": {
         "adjective": "none",
-        "intensity": 0
+        "intensity": -1
       }
     }
   },
@@ -323,6 +323,13 @@
     "standWhileStanding": "You are already standing!",
     "stunned": "You are stunned!",
     "walkIntoWall": "You crash into the wall to the [%s]",
-    "win": "Winner, winner, CHEDDAR DINNER!"
+    "win": "Winner, winner, CHEDDAR DINNER!",
+    "pitTrap": "You fall into a bottomless hole. You will have a lot of time to consider your mistakes...",
+    "mouseTrap": "The last thing you hear is a snapping sound.",
+    "tarTrap": "You trudge through the pit of tar, slowing you down",
+    "flamethrowerTrap": "You hear a hiss and a click before you burst into flames",
+    "fragileFloorTrap": "The floor collapses into a pit as you run through it.",
+    "deadfallTrap": "The ceiling collapses behind you, blocking the passage!",
+    "teleportTrap": "Your surroundings suddenly seem different"
   }
 }

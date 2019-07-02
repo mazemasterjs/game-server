@@ -79,8 +79,11 @@ function doListenDirected(game, lang, cell, engramDir, lastDirection, distance) 
                     // const adjectiveString = `data.entities.${trapType}.smell.adjective`;
                     // const intensity = eval(intensityString);  <-- very clever, but an unsafe operation that the linter opposes
                     // const adjective = eval(adjectiveString);  <-- very clever, but an unsafe operation that the linter opposes
-                    if (distance < intensity) {
-                        setSound(engramDir, { sound: adjective, volume: distance });
+                    if (distance < intensity && distance !== 0) {
+                        setSound(engramDir, { sound: adjective, volume: parseFloat((distance / intensity).toFixed(2)) });
+                    }
+                    else if (distance < intensity && distance === 0) {
+                        setSound(engramDir, { sound: adjective, volume: 1 });
                     }
                 }
                 catch (err) {
