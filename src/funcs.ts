@@ -584,7 +584,10 @@ export function trapCheck(game: Game, lang: string, delayTrigger: boolean = fals
             break;
           }
           case CELL_TRAPS.FLAMETHROWER: {
-            if (!(game.Player.State & PLAYER_STATES.LYING) && delayTrigger) {
+            if (!delayTrigger) {
+              outcomes.push('CLICK');
+            }
+            if (delayTrigger) {
               outcomes.push(data.outcomes.flamethrowerTrap);
               game.Player.addState(PLAYER_STATES.DEAD);
               finishGame(game, GAME_RESULTS.DEATH_TRAP);
@@ -592,6 +595,9 @@ export function trapCheck(game: Game, lang: string, delayTrigger: boolean = fals
             break;
           }
           case CELL_TRAPS.FRAGILE_FLOOR: {
+            if (!delayTrigger) {
+              outcomes.push('CLICK');
+            }
             if (delayTrigger) {
               outcomes.push(data.outcomes.fragileFloorTrap);
               pCell.removeTrap(CELL_TRAPS.FRAGILE_FLOOR);
@@ -608,6 +614,9 @@ export function trapCheck(game: Game, lang: string, delayTrigger: boolean = fals
             break;
           }
           case CELL_TRAPS.DEADFALL: {
+            if (!delayTrigger) {
+              outcomes.push('CLICK');
+            }
             if (delayTrigger) {
               game.Maze.removeExit(DIRS.NORTH, pCell);
               game.Maze.removeExit(DIRS.SOUTH, pCell);

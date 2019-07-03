@@ -23,15 +23,6 @@
         "intensity": -1
       }
     },
-    "smoke": {
-      "sight": {
-        "color": "red"
-      },
-      "sound": "sizzle",
-      "smell": "sulfer",
-      "touch": "hot",
-      "taste": "chicken"
-    },
     "wall": {
       "sight": {
         "adjective": "wall",
@@ -60,7 +51,7 @@
         "intensity": 3
       },
       "sound": {
-        "adjective": "cheese",
+        "adjective": "cheesesound",
         "intensity": -1
       },
       "smell": {
@@ -76,6 +67,30 @@
         "intensity": -1
       }
     },
+    "darkness": {
+      "sight": {
+        "adjective": "darkness",
+        "intensity": 40
+      },
+      "sound": {
+        "adjective": "none",
+        "intensity": -1
+      },
+      "smell": {
+        "adjective": "none",
+        "intensity": -1
+      },
+      "touch": {
+        "adjective": "none",
+        "intensity": -1
+      },
+      "taste": {
+        "adjective": "none",
+        "intensity": -1
+      }
+    }
+  },
+  "traps": {
     "PIT": {
       "sight": {
         "adjective": "pit",
@@ -251,31 +266,9 @@
         "adjective": "none",
         "intensity": -1
       }
-    },
-    "darkness": {
-      "sight": {
-        "adjective": "darkness",
-        "intensity": 40
-      },
-      "sound": {
-        "adjective": "none",
-        "intensity": -1
-      },
-      "smell": {
-        "adjective": "none",
-        "intensity": -1
-      },
-      "touch": {
-        "adjective": "none",
-        "intensity": -1
-      },
-      "taste": {
-        "adjective": "none",
-        "intensity": -1
-      }
     }
   },
-  "direction": {
+  "directions": {
     "NONE": "NONE",
     "NORTH": "NORTH",
     "SOUTH": "SOUTH",
@@ -285,21 +278,25 @@
     "RIGHT": "RIGHT"
   },
   "outcomes": {
+    "jump": {
+      "lava": "You fly through the air...straight into lava",
+      "wall": "You leap directly into a wall!",
+      "sitting": "You leap to your feet",
+      "jumping": "You fly through the air",
+      "land": "You land on your feet"
+    },
     "gameOverOutOfMoves": "You have run out of moves. The game is over.",
-    "jumping": "You fly through the air",
-    "jumpingIntoLava": "You fly through the air...straight into lava",
-    "jumpingIntoWall": "You leap directly into a wall!",
-    "jumpWhileSitting": "You leap to your feet",
-    "landFromJump": "You land on your feet",
     "lava": "You walked into lava. YOU DIED.",
     "look": "You take a look around",
     "message": "You write a message on the ground...",
-    "moveEast": "You move to the east.",
-    "moveForward": "You move to the forward.",
-    "moveNorth": "You move to the north.",
-    "moveSouth": "You move to the south.",
-    "moveWest": "You move to the west.",
-    "moveWhileSitting": "You can't move while sitting!",
+    "move": {
+      "east": "You move to the east.",
+      "forward": "You move to the forward.",
+      "north": "You move to the north.",
+      "south": "You move to the south.",
+      "west": "You move to the west.",
+      "sitting": "You can't move while sitting!"
+    },
     "newGame": "You awake to find yourself sitting just inside the maze's entrance.",
     "resumeGame": "You shake your head vigorously in an attempt to reconnect with reality.",
     "stand": "You stand up.",
@@ -307,12 +304,15 @@
     "stunned": "You are stunned!",
     "walkIntoWall": "You crash into the wall to the [%s]",
     "win": "Winner, winner, CHEDDAR DINNER!",
-    "pitTrap": "You fall into a bottomless hole. You will have a lot of time to consider your mistakes...",
-    "mouseTrap": "The last thing you hear is a snapping sound.",
-    "tarTrap": "You trudge through the pit of tar, slowing you down",
-    "flamethrowerTrap": "You hear a hiss and a click before you burst into flames",
-    "fragileFloorTrap": "The floor collapses into a pit as you run through it.",
-    "deadfallTrap": "The passage way collapses behind you!",
-    "teleportTrap": "Your surroundings suddenly seem different"
+    "trapOutcomes": {
+      "pit": "You fall into a bottomless hole. You will have a lot of time to consider your mistakes...",
+      "mouse": "The last thing you hear is a snapping sound.",
+      "tarTrap": "You trudge through the pit of tar, slowing you down",
+      "flamethrower": "You hear a hiss and a click before you burst into flames",
+      "fragileFloor": "The floor collapses into a pit as you run through it.",
+      "deadfall": "The passage way collapses behind you!",
+      "teleport": "Your surroundings suddenly seem different",
+      "trigger": "CLICK"
+    }
   }
 }

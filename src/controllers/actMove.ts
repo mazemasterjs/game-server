@@ -85,6 +85,9 @@ export async function doMove(game: Game, langCode: string, sneaking: boolean = f
   }
   fns.trapCheck(game, langCode);
   // game continues - return the action (with outcomes and engram)
+  if (!!(game.Player.State & PLAYER_STATES.SLOWED)) {
+    return Promise.resolve(fns.finalizeAction(game, 2, startScore, langCode));
+  }
   return Promise.resolve(fns.finalizeAction(game, 1, startScore, langCode));
 }
 

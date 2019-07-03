@@ -569,7 +569,10 @@ function trapCheck(game, lang, delayTrigger = false) {
                         break;
                     }
                     case Enums_1.CELL_TRAPS.FLAMETHROWER: {
-                        if (!(game.Player.State & Enums_1.PLAYER_STATES.LYING) && delayTrigger) {
+                        if (!delayTrigger) {
+                            outcomes.push('CLICK');
+                        }
+                        if (delayTrigger) {
                             outcomes.push(data.outcomes.flamethrowerTrap);
                             game.Player.addState(Enums_1.PLAYER_STATES.DEAD);
                             actMove_1.finishGame(game, Enums_1.GAME_RESULTS.DEATH_TRAP);
@@ -577,6 +580,9 @@ function trapCheck(game, lang, delayTrigger = false) {
                         break;
                     }
                     case Enums_1.CELL_TRAPS.FRAGILE_FLOOR: {
+                        if (!delayTrigger) {
+                            outcomes.push('CLICK');
+                        }
                         if (delayTrigger) {
                             outcomes.push(data.outcomes.fragileFloorTrap);
                             pCell.removeTrap(Enums_1.CELL_TRAPS.FRAGILE_FLOOR);
@@ -592,6 +598,9 @@ function trapCheck(game, lang, delayTrigger = false) {
                         break;
                     }
                     case Enums_1.CELL_TRAPS.DEADFALL: {
+                        if (!delayTrigger) {
+                            outcomes.push('CLICK');
+                        }
                         if (delayTrigger) {
                             game.Maze.removeExit(Enums_1.DIRS.NORTH, pCell);
                             game.Maze.removeExit(Enums_1.DIRS.SOUTH, pCell);
