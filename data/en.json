@@ -252,28 +252,6 @@
         "intensity": -1
       }
     },
-    "cheese": {
-      "sight": {
-        "adjective": "cheese",
-        "intensity": 3
-      },
-      "sound": {
-        "adjective": "none",
-        "intensity": -1
-      },
-      "smell": {
-        "adjective": "cheese",
-        "intensity": 8
-      },
-      "touch": {
-        "adjective": "cheese",
-        "intensity": -1
-      },
-      "taste": {
-        "adjective": "cheese",
-        "intensity": -1
-      }
-    },
     "darkness": {
       "sight": {
         "adjective": "darkness",
