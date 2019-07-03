@@ -499,7 +499,7 @@ function getLocal(game, lang) {
             }
             case Enums_1.DIRS.EAST: {
                 if (cell.isDirOpen(Enums_1.DIRS.EAST)) {
-                    engram.exitSouth = true;
+                    engram.exitEast = true;
                 }
                 break;
             }
