@@ -39,7 +39,7 @@ function doStand(game, langCode) {
             game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.stand);
         }
         // finalize and return action
-        return Promise.resolve(fns.finalizeAction(game, startScore, langCode));
+        return Promise.resolve(fns.finalizeAction(game, 1, startScore, langCode));
     });
 }
 exports.doStand = doStand;

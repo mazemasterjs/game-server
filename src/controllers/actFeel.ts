@@ -61,6 +61,16 @@ export function doFeelLocal(game: Game, lang: string) {
     } // end switch(dir)
   } // end for (pos<4)
 }
+
+/**
+ *
+ * @param game
+ * @param lang
+ * @param cell
+ * @param engramDir the original direction from which the function is walking through, centered on the player
+ * @param lastDirection used to make sure the function isn't checking going to the direction it just checked
+ * @param distance how many cells from the first call of the function it is checking / depth of recursion
+ */
 export function doFeelDirected(game: Game, lang: string, cell: CellBase, engramDir: IFeeling[], lastDirection: DIRS, distance: number) {
   const data = GameLang.getInstance(lang);
   const method = `dofeelDirected(${game.Id}, ${lang}, ${cell.Location}, [emgramDir], ${lastDirection}, ${distance})`;

@@ -13,6 +13,7 @@ import { doTurn } from './controllers/actTurn';
 import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
 import { doJump } from './controllers/actJump';
 import GameLang from './GameLang';
+import { cloneDeep } from 'lodash';
 
 // set constant utility references
 const log = Logger.getInstance();
@@ -21,8 +22,9 @@ const config = Config.getInstance();
 /**
  * Creates a new, single-player game.
  *
- * @param req
- * @param res
+ * @param {Request} req
+ * @param {Response} res
+ * @return {void}
  */
 export const createGame = async (req: Request, res: Response) => {
   logRequest('createGame', req);
@@ -68,7 +70,7 @@ export const createGame = async (req: Request, res: Response) => {
                 .json({ status: 400, message: 'Invalid Request - An active ' + gameType + ' game already exists.', gameId: activeGameId, teamId, botId });
             } else {
               // break this down into two steps so we can better tell where any errors come from
-              const game: Game = new Game(maze, teamId, botId);
+              const game: Game = new Game(cloneDeep(maze), teamId, botId);
 
               // add a visit to the start cell of the maze since the player just walked in
               game.Maze.Cells[game.Maze.StartCell.row][game.Maze.StartCell.col].addVisit(0);
@@ -91,7 +93,7 @@ export const createGame = async (req: Request, res: Response) => {
               game.addAction(firstAction);
 
               // finalize the last action and capture as a result
-              const createResult: IAction = fns.finalizeAction(game, game.Score.getTotalScore(), langCode, true);
+              const createResult: IAction = fns.finalizeAction(game, 0, game.Score.getTotalScore(), langCode);
 
               // return the newly created game
               return res.status(200).json({
@@ -134,7 +136,7 @@ export const getGame = (req: Request, res: Response) => {
       game.addAction(resumeAction);
 
       // finalize the last action and capture as a result
-      const getResult = fns.finalizeAction(game, game.Score.getTotalScore(), langCode, true);
+      const getResult = fns.finalizeAction(game, 0, game.Score.getTotalScore(), langCode);
 
       // add the new game outcome
       return res.status(200).json({
@@ -317,6 +319,12 @@ export const processAction = async (req: Request, res: Response) => {
       return res
         .status(200)
         .json({ action: writeResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
+    }
+    case COMMANDS.SNEAK: {
+      const moveResult = await doMove(game, langCode, true);
+      return res
+        .status(200)
+        .json({ action: moveResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
     }
     default: {
       const err = new Error(`${COMMANDS[action.command]} is not recognized. Valid commands are LOOK, MOVE, JUMP, SIT, STAND, and WRITE.`);

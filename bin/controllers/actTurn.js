@@ -45,7 +45,7 @@ function doTurn(game, langCode) {
         action.outcomes.push(data.outcomes.stunned);
     }
     // finalize and return the turn action results
-    return Promise.resolve(fns.finalizeAction(game, startScore, langCode));
+    return Promise.resolve(fns.finalizeAction(game, 1, startScore, langCode));
 }
 exports.doTurn = doTurn;
 //# sourceMappingURL=actTurn.js.map

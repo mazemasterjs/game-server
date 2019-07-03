@@ -24,7 +24,13 @@ const funcs_1 = require("../funcs");
 const MazeLoc_1 = require("@mazemasterjs/shared-library/MazeLoc");
 // need a config object for some of this
 const config = Config_1.Config.getInstance();
-function doMove(game, langCode) {
+/**
+ *
+ * @param game
+ * @param langCode
+ * @param sneaking boolean to determine if the player will trigger any delayed trigger traps with the move
+ */
+function doMove(game, langCode, sneaking = false) {
     return __awaiter(this, void 0, void 0, function* () {
         const method = `doMove(${game.Id})`;
         let dir = game.Actions[game.Actions.length - 1].direction;
@@ -46,12 +52,15 @@ function doMove(game, langCode) {
             fns.logDebug(__filename, method, 'Player tried to move while not standing.');
             // add the trophy for walking without standing
             game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.SPINNING_YOUR_WHEELS);
-            game.Actions[game.Actions.length - 1].outcomes.push(data.outcome.moveWhileSitting);
+            game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.moveWhileSitting);
             // finalize and return action
-            return Promise.resolve(fns.finalizeAction(game, startScore, langCode));
+            return Promise.resolve(fns.finalizeAction(game, 1, startScore, langCode));
         }
         else {
             // now check for start/finish cell win & lose conditions
+            if (!sneaking) {
+                fns.trapCheck(game, langCode, true);
+            }
             if (game.Maze.getCell(pLoc).isDirOpen(dir)) {
                 if (dir === Enums_1.DIRS.NORTH && pLoc.equals(game.Maze.StartCell)) {
                     fns.logDebug(__filename, method, 'Player moved north into the entrance (lava).');
@@ -79,12 +88,13 @@ function doMove(game, langCode) {
                 // they tried to walk in a direction that has a wall
                 game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.YOU_FOUGHT_THE_WALL);
                 game.Player.addState(Enums_1.PLAYER_STATES.SITTING);
-                game.Actions[game.Actions.length - 1].outcomes.push(util_1.format(data.outcomes.walkIntoWall, Enums_1.DIRS[dir]));
+                game.Actions[game.Actions.length - 1].outcomes.push(util_1.format(data.outcomes.walkIntoWall, data.direction[Enums_1.DIRS[dir]]));
                 game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.stunned);
             }
         }
+        fns.trapCheck(game, langCode);
         // game continues - return the action (with outcomes and engram)
-        return Promise.resolve(fns.finalizeAction(game, startScore, langCode));
+        return Promise.resolve(fns.finalizeAction(game, 1, startScore, langCode));
     });
 }
 exports.doMove = doMove;

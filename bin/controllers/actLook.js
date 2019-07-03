@@ -18,7 +18,7 @@ function doLook(game, langCode) {
     const data = GameLang_1.default.getInstance(langCode);
     const startScore = game.Score.getTotalScore();
     game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.look);
-    return fns.finalizeAction(game, startScore, langCode);
+    return fns.finalizeAction(game, 1, startScore, langCode);
 }
 exports.doLook = doLook;
 /**
@@ -45,7 +45,7 @@ function doLookLocal(game, langCode) {
                     const distance = Math.abs(cell.Location.row - nRow);
                     // bail out if we hit max distance
                     if (distance > MAX_DISTANCE) {
-                        setSee(engram.north.see, { sight: data.entities.DARKNESS.sight.adjective, distance: OUT_OF_RANGE });
+                        setSee(engram.north.see, { sight: data.entities.darkness.sight.adjective, distance: OUT_OF_RANGE });
                         break;
                     }
                     // no exit north, report wall and stop travelling
@@ -68,7 +68,7 @@ function doLookLocal(game, langCode) {
                     const distance = Math.abs(sRow - cell.Location.row);
                     // bail out if we hit max distance
                     if (distance > MAX_DISTANCE) {
-                        setSee(engram.south.see, { sight: data.entities.DARKNESS.sight.adjective, distance: OUT_OF_RANGE });
+                        setSee(engram.south.see, { sight: data.entities.darkness.sight.adjective, distance: OUT_OF_RANGE });
                         break;
                     }
                     // no exit south, report wall and stop travelling
@@ -91,7 +91,7 @@ function doLookLocal(game, langCode) {
                     const distance = Math.abs(eCol - cell.Location.col);
                     // bail out if we hit max distance
                     if (distance > MAX_DISTANCE) {
-                        setSee(engram.east.see, { sight: data.entities.DARKNESS.sight.adjective, distance: OUT_OF_RANGE });
+                        setSee(engram.east.see, { sight: data.entities.darkness.sight.adjective, distance: OUT_OF_RANGE });
                         break;
                     }
                     // no exit east, report wall and stop travelling
@@ -109,7 +109,7 @@ function doLookLocal(game, langCode) {
                     const distance = Math.abs(wCol - cell.Location.col);
                     // bail out if we hit max distance
                     if (distance > MAX_DISTANCE) {
-                        setSee(engram.west.see, { sight: data.entities.DARKNESS.sight.adjective, distance: OUT_OF_RANGE });
+                        setSee(engram.west.see, { sight: data.entities.darkness.sight.adjective, distance: OUT_OF_RANGE });
                         break;
                     }
                     // no exit west, report wall and stop travelling

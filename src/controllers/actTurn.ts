@@ -36,5 +36,5 @@ export function doTurn(game: Game, langCode: string): Promise<IAction> {
   }
 
   // finalize and return the turn action results
-  return Promise.resolve(fns.finalizeAction(game, startScore, langCode));
+  return Promise.resolve(fns.finalizeAction(game, 1, startScore, langCode));
 }

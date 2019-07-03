@@ -28,20 +28,30 @@ function doJump(game, lang) {
             game.Player.addState(Enums_1.PLAYER_STATES.STANDING);
         }
         else {
+            fns.trapCheck(game, lang, true);
             jumpNext(game, lang, 0);
         }
     }
     const startScore = game.Score.getTotalScore();
-    return Promise.resolve(fns.finalizeAction(game, startScore, lang));
+    return Promise.resolve(fns.finalizeAction(game, 2, startScore, lang));
 }
 exports.doJump = doJump;
-function jumpNext(game, lang, distance) {
+/**
+ * A recursive function that sees if the cell has an exit in the direction the player is facing.
+ * The player will continue to move cells in that direction until they hit the maxmum distance,
+ * of the player would hit a wall.
+ * @param game
+ * @param lang
+ * @param distance how far the player has traveled
+ * @param maxDistance that maximum distance before the player lands
+ */
+function jumpNext(game, lang, distance, maxDistance = 1) {
     const method = `jumpNext(${game.Id},${lang},${distance})`;
     const cell = game.Maze.getCell(new MazeLoc_1.default(game.Player.Location.row, game.Player.Location.col));
     const dir = game.Actions[game.Actions.length - 1].direction;
     game.Player.Facing = dir;
     const data = GameLang_1.default.getInstance(lang);
-    if (distance <= 1) {
+    if (distance <= maxDistance) {
         if (cell.isDirOpen(dir)) {
             // Check to see if the player jumped into the entrance or exit...
             if (!!(cell.Tags & Enums_1.CELL_TAGS.START) && dir === Enums_1.DIRS.NORTH) {
@@ -64,7 +74,6 @@ function jumpNext(game, lang, distance) {
             // if not, the player moves and it checks the next cell
             fns.movePlayer(game);
             jumpNext(game, lang, distance + 1);
-            game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jumping);
         }
         else {
             funcs_1.logDebug(__filename, method, 'Player crashed into a wall while jumping');
@@ -74,10 +83,8 @@ function jumpNext(game, lang, distance) {
         }
     }
     else {
-        game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.landFromJump);
-        if (!!(cell.Traps & Enums_1.CELL_TRAPS.NONE)) {
-            // placeholder for traps
-        }
+        game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jumping);
+        fns.trapCheck(game, lang);
     }
 }
 exports.jumpNext = jumpNext;

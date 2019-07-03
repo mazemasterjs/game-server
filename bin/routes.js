@@ -31,14 +31,16 @@ const logger_1 = require("@mazemasterjs/logger");
 const actTurn_1 = require("./controllers/actTurn");
 const actJump_1 = require("./controllers/actJump");
 const GameLang_1 = __importDefault(require("./GameLang"));
+const lodash_1 = require("lodash");
 // set constant utility references
 const log = logger_1.Logger.getInstance();
 const config = Config_1.Config.getInstance();
 /**
  * Creates a new, single-player game.
  *
- * @param req
- * @param res
+ * @param {Request} req
+ * @param {Response} res
+ * @return {void}
  */
 exports.createGame = (req, res) => __awaiter(this, void 0, void 0, function* () {
     logRequest('createGame', req);
@@ -81,7 +83,7 @@ exports.createGame = (req, res) => __awaiter(this, void 0, void 0, function* () 
                 }
                 else {
                     // break this down into two steps so we can better tell where any errors come from
-                    const game = new Game_1.Game(maze, teamId, botId);
+                    const game = new Game_1.Game(lodash_1.cloneDeep(maze), teamId, botId);
                     // add a visit to the start cell of the maze since the player just walked in
                     game.Maze.Cells[game.Maze.StartCell.row][game.Maze.StartCell.col].addVisit(0);
                     // force-set the gameId if the query parameter was set
@@ -98,7 +100,7 @@ exports.createGame = (req, res) => __awaiter(this, void 0, void 0, function* () 
                     firstAction.outcomes.push(langData.outcomes.newGame);
                     game.addAction(firstAction);
                     // finalize the last action and capture as a result
-                    const createResult = fns.finalizeAction(game, game.Score.getTotalScore(), langCode, true);
+                    const createResult = fns.finalizeAction(game, 0, game.Score.getTotalScore(), langCode);
                     // return the newly created game
                     return res.status(200).json({
                         game: game.getStub(config.EXT_URL_GAME),
@@ -136,7 +138,7 @@ exports.getGame = (req, res) => {
         resumeAction.outcomes.push(langData.outcomes.resumeGame);
         game.addAction(resumeAction);
         // finalize the last action and capture as a result
-        const getResult = fns.finalizeAction(game, game.Score.getTotalScore(), langCode, true);
+        const getResult = fns.finalizeAction(game, 0, game.Score.getTotalScore(), langCode);
         // add the new game outcome
         return res.status(200).json({
             game: game.getStub(config.EXT_URL_GAME),
@@ -302,6 +304,12 @@ exports.processAction = (req, res) => __awaiter(this, void 0, void 0, function* 
             return res
                 .status(200)
                 .json({ action: writeResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
+        }
+        case Enums_1.COMMANDS.SNEAK: {
+            const moveResult = yield actMove_1.doMove(game, langCode, true);
+            return res
+                .status(200)
+                .json({ action: moveResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
         }
         default: {
             const err = new Error(`${Enums_1.COMMANDS[action.command]} is not recognized. Valid commands are LOOK, MOVE, JUMP, SIT, STAND, and WRITE.`);

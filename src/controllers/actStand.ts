@@ -23,5 +23,5 @@ export async function doStand(game: Game, langCode: string): Promise<IAction> {
   }
 
   // finalize and return action
-  return Promise.resolve(fns.finalizeAction(game, startScore, langCode));
+  return Promise.resolve(fns.finalizeAction(game, 1, startScore, langCode));
 }

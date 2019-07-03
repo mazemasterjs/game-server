@@ -56,6 +56,15 @@ function doTasteLocal(game, lang) {
     } // end for (pos<4)
 }
 exports.doTasteLocal = doTasteLocal;
+/**
+ *
+ * @param game
+ * @param lang
+ * @param cell
+ * @param engramDir the original direction from which the function is walking through, centered on the player
+ * @param lastDirection used to make sure the function isn't checking going to the direction it just checked
+ * @param distance how many cells from the first call of the function it is checking / depth of recursion
+ */
 function doTasteDirected(game, lang, cell, engramDir, lastDirection, distance) {
     const data = GameLang_1.default.getInstance(lang);
     const method = `dotasteDirected(${game.Id}, ${lang}, ${cell.Location}, [emgramDir], ${lastDirection}, ${distance})`;
@@ -76,7 +85,7 @@ function doTasteDirected(game, lang, cell, engramDir, lastDirection, distance) {
                     const intensity = data.entities[trapType.toUpperCase()].taste.intensity;
                     const adjective = data.entities[trapType.toUpperCase()].taste.adjective;
                     if (distance < intensity) {
-                        setTaste(engramDir, { taste: adjective, strength: distance });
+                        setTaste(engramDir, { taste: adjective, strength: intensity });
                     }
                 }
                 catch (err) {

@@ -15,10 +15,10 @@ function doListenLocal(game, lang) {
     const data = GameLang_1.default.getInstance(lang);
     // get the local sounds
     if (!!(cell.Tags & Enums_1.CELL_TAGS.START)) {
-        setSound(engram.north.hear, { sound: data.entities.lava.sound.adjective, volume: data.entities.lava.sound.intensity });
+        setSound(engram.north.hear, { sound: data.entities.lava.sound.adjective, volume: 1 });
     }
     if (!!(cell.Tags & Enums_1.CELL_TAGS.FINISH)) {
-        setSound(engram.south.hear, { sound: data.entities.cheese.sound.adjective, volume: data.entities.cheese.sound.intensity });
+        setSound(engram.south.hear, { sound: data.entities.cheese.sound.adjective, volume: 1 });
     }
     //  loop through the cardinal directions in DIRS
     for (let pos = 0; pos < 4; pos++) {
@@ -56,6 +56,15 @@ function doListenLocal(game, lang) {
     } // end for (pos<4)
 }
 exports.doListenLocal = doListenLocal;
+/**
+ *
+ * @param game
+ * @param lang
+ * @param cell
+ * @param engramDir the original direction from which the function is walking through, centered on the player
+ * @param lastDirection used to make sure the function isn't checking going to the direction it just checked
+ * @param distance how many cells from the first call of the function it is checking / depth of recursion
+ */
 function doListenDirected(game, lang, cell, engramDir, lastDirection, distance) {
     const data = GameLang_1.default.getInstance(lang);
     const method = `doListenDirected(${game.Id}, ${lang}, ${cell.Location}, [emgramDir], ${lastDirection}, ${distance})`;
@@ -79,8 +88,11 @@ function doListenDirected(game, lang, cell, engramDir, lastDirection, distance) 
                     // const adjectiveString = `data.entities.${trapType}.smell.adjective`;
                     // const intensity = eval(intensityString);  <-- very clever, but an unsafe operation that the linter opposes
                     // const adjective = eval(adjectiveString);  <-- very clever, but an unsafe operation that the linter opposes
-                    if (distance < intensity) {
-                        setSound(engramDir, { sound: adjective, volume: distance });
+                    if (distance < intensity && distance !== 0) {
+                        setSound(engramDir, { sound: adjective, volume: parseFloat((distance / intensity).toFixed(2)) });
+                    }
+                    else if (distance < intensity && distance === 0) {
+                        setSound(engramDir, { sound: adjective, volume: 1 });
                     }
                 }
                 catch (err) {
