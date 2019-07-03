@@ -88,7 +88,7 @@ function doMove(game, langCode, sneaking = false) {
                 // they tried to walk in a direction that has a wall
                 game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.YOU_FOUGHT_THE_WALL);
                 game.Player.addState(Enums_1.PLAYER_STATES.SITTING);
-                game.Actions[game.Actions.length - 1].outcomes.push(util_1.format(data.outcomes.walkIntoWall, data.direction[Enums_1.DIRS[dir]]));
+                game.Actions[game.Actions.length - 1].outcomes.push(util_1.format(data.outcomes.walkIntoWall, data.directions[Enums_1.DIRS[dir]]));
                 game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.stunned);
             }
         }

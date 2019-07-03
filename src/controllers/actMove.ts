@@ -79,7 +79,7 @@ export async function doMove(game: Game, langCode: string, sneaking: boolean = f
 
       game.Player.addState(PLAYER_STATES.SITTING);
 
-      game.Actions[game.Actions.length - 1].outcomes.push(format(data.outcomes.walkIntoWall, data.direction[DIRS[dir]]));
+      game.Actions[game.Actions.length - 1].outcomes.push(format(data.outcomes.walkIntoWall, data.directions[DIRS[dir]]));
       game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.stunned);
     }
   }
