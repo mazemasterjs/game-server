@@ -3,7 +3,7 @@
   "entities": {
     "lava": {
       "sight": {
-        "adjective": "LAVA",
+        "adjective": "lava",
         "intensity": 10
       },
       "sound": {
@@ -78,19 +78,19 @@
     },
     "PIT": {
       "sight": {
-        "adjective": "Pit",
+        "adjective": "pit",
         "intensity": 3
       },
       "sound": {
-        "adjective": "Wind",
+        "adjective": "pind",
         "intensity": 1
       },
       "smell": {
-        "adjective": "Dirt",
+        "adjective": "dirt",
         "intensity": -1
       },
       "touch": {
-        "adjective": "Wind",
+        "adjective": "wind",
         "intensity": 2
       },
       "taste": {
@@ -100,7 +100,7 @@
     },
     "MOUSETRAP": {
       "sight": {
-        "adjective": "Cheese",
+        "adjective": "cheese",
         "intensity": 3
       },
       "sound": {
@@ -108,59 +108,59 @@
         "intensity": -1
       },
       "smell": {
-        "adjective": "Cheese",
+        "adjective": "cheese",
         "intensity": 5
       },
       "touch": {
-        "adjective": "Pain",
+        "adjective": "pain",
         "intensity": -1
       },
       "taste": {
-        "adjective": "Metallic",
+        "adjective": "metallic",
         "intensity": -1
       }
     },
     "TARPIT": {
       "sight": {
-        "adjective": "Tar",
+        "adjective": "tar",
         "intensity": 3
       },
       "sound": {
-        "adjective": "Bubbling",
+        "adjective": "bubbling",
         "intensity": 3
       },
       "smell": {
-        "adjective": "Tar",
+        "adjective": "tar",
         "intensity": -1
       },
       "touch": {
-        "adjective": "Sticky",
+        "adjective": "sticky",
         "intensity": 0
       },
       "taste": {
-        "adjective": "Tar",
+        "adjective": "tar",
         "intensity": -1
       }
     },
     "FLAMETHROWER": {
       "sight": {
-        "adjective": "Puddle",
+        "adjective": "puddle",
         "intensity": 2
       },
       "sound": {
-        "adjective": "Hissing",
+        "adjective": "hissing",
         "intensity": 0
       },
       "smell": {
-        "adjective": "Kerosene",
+        "adjective": "kerosene",
         "intensity": 4
       },
       "touch": {
-        "adjective": "Wet",
+        "adjective": "wet",
         "intensity": 0
       },
       "taste": {
-        "adjective": "Burning",
+        "adjective": "burning",
         "intensity": -1
       }
     },
@@ -170,7 +170,7 @@
         "intensity": -1
       },
       "sound": {
-        "adjective": "Clicking",
+        "adjective": "clicking",
         "intensity": 1
       },
       "smell": {
@@ -192,7 +192,7 @@
         "intensity": 1
       },
       "sound": {
-        "adjective": "Hum",
+        "adjective": "hum",
         "intensity": 1
       },
       "smell": {
@@ -210,7 +210,7 @@
     },
     "DEADFALL": {
       "sight": {
-        "adjective": "Tile",
+        "adjective": "tile",
         "intensity": 0
       },
       "sound": {
@@ -232,11 +232,11 @@
     },
     "FRAGILE_FLOOR": {
       "sight": {
-        "adjective": "Crumbling",
+        "adjective": "crumbling",
         "intensity": 3
       },
       "sound": {
-        "adjective": "Cracking",
+        "adjective": "cracking",
         "intensity": 0
       },
       "smell": {
@@ -244,7 +244,7 @@
         "intensity": -1
       },
       "touch": {
-        "adjective": "Breaking",
+        "adjective": "breaking",
         "intensity": 0
       },
       "taste": {
@@ -252,9 +252,9 @@
         "intensity": -1
       }
     },
-    "CHEESE": {
+    "cheese": {
       "sight": {
-        "adjective": "Cheese",
+        "adjective": "cheese",
         "intensity": 3
       },
       "sound": {
@@ -262,21 +262,21 @@
         "intensity": -1
       },
       "smell": {
-        "adjective": "Cheese",
+        "adjective": "cheese",
         "intensity": 8
       },
       "touch": {
-        "adjective": "Cheese",
+        "adjective": "cheese",
         "intensity": -1
       },
       "taste": {
-        "adjective": "Cheese",
+        "adjective": "cheese",
         "intensity": -1
       }
     },
-    "DARKNESS": {
+    "darkness": {
       "sight": {
-        "adjective": "DARKNESS",
+        "adjective": "darkness",
         "intensity": 40
       },
       "sound": {
