@@ -39,6 +39,9 @@ function doStand(game, langCode) {
             game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.stand);
         }
         // finalize and return action
+        if (!!(game.Player.State & Enums_1.PLAYER_STATES.SLOWED)) {
+            return Promise.resolve(fns.finalizeAction(game, 2, startScore, langCode));
+        }
         return Promise.resolve(fns.finalizeAction(game, 1, startScore, langCode));
     });
 }

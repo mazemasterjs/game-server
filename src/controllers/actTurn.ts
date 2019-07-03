@@ -12,7 +12,7 @@ export function doTurn(game: Game, langCode: string): Promise<IAction> {
   const action = game.Actions[game.Actions.length - 1];
   const direction = action.direction;
   const data = GameLang.getInstance(langCode);
-  if (!!(game.Player.State & PLAYER_STATES.STUNNED)) {
+  if (!(game.Player.State & PLAYER_STATES.STUNNED)) {
     {
       // Turns left or right
       switch (direction) {
