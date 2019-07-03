@@ -567,7 +567,7 @@ export function trapCheck(game: Game, lang: string, delayTrigger: boolean = fals
       if (!!(pCell.Traps & trapEnum)) {
         switch (trapEnum) {
           case CELL_TRAPS.PIT: {
-            outcomes.push(data.outcomes.trapOutcomes.traps.pit);
+            outcomes.push(data.outcomes.trapOutcomes.pit);
             game.Player.addState(PLAYER_STATES.DEAD);
             finishGame(game, GAME_RESULTS.DEATH_TRAP);
             break;

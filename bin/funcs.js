@@ -552,7 +552,7 @@ function trapCheck(game, lang, delayTrigger = false) {
             if (!!(pCell.Traps & trapEnum)) {
                 switch (trapEnum) {
                     case Enums_1.CELL_TRAPS.PIT: {
-                        outcomes.push(data.outcomes.trapOutcomes.traps.pit);
+                        outcomes.push(data.outcomes.trapOutcomes.pit);
                         game.Player.addState(Enums_1.PLAYER_STATES.DEAD);
                         actMove_1.finishGame(game, Enums_1.GAME_RESULTS.DEATH_TRAP);
                         break;

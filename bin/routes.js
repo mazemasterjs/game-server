@@ -173,7 +173,8 @@ exports.abandonGame = (req, res) => __awaiter(this, void 0, void 0, function* ()
             game.forceSetId(`${game.Id}__${Date.now()}`);
         }
         // go ahead and abandon the game
-        log.warn(__filename, 'abandonGame', `${game.Id} forcibly abandoned by request from ${req.ip}`);
+        game.State = Enums_1.GAME_STATES.ABORTED;
+        log.warn(__filename, 'abandonGame', `${game.Id} abandoned.`);
         return res.status(200).json(game.getStub(config.EXT_URL_GAME));
     })
         .catch(fetchError => {
