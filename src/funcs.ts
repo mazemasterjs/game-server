@@ -567,33 +567,39 @@ export function trapCheck(game: Game, lang: string, delayTrigger: boolean = fals
       if (!!(pCell.Traps & trapEnum)) {
         switch (trapEnum) {
           case CELL_TRAPS.PIT: {
-            outcomes.push(data.outcomes.pitTrap);
+            outcomes.push(data.outcomes.trapOutcomes.pit);
             game.Player.addState(PLAYER_STATES.DEAD);
             finishGame(game, GAME_RESULTS.DEATH_TRAP);
             break;
           }
           case CELL_TRAPS.MOUSETRAP: {
-            outcomes.push(data.outcomes.mouseTrap);
+            outcomes.push(data.outcomes.trapOutcomes.mouse);
             game.Player.addState(PLAYER_STATES.DEAD);
             finishGame(game, GAME_RESULTS.DEATH_TRAP);
             break;
           }
           case CELL_TRAPS.TARPIT: {
-            outcomes.push(data.outcomes.tarTrap);
+            outcomes.push(data.outcomes.trapOutcomes.tar);
             game.Player.addState(PLAYER_STATES.SLOWED);
             break;
           }
           case CELL_TRAPS.FLAMETHROWER: {
-            if (!(game.Player.State & PLAYER_STATES.LYING) && delayTrigger) {
-              outcomes.push(data.outcomes.flamethrowerTrap);
+            if (!delayTrigger) {
+              outcomes.push('CLICK');
+            }
+            if (delayTrigger) {
+              outcomes.push(data.outcomes.trapOutcomes.flamethrower);
               game.Player.addState(PLAYER_STATES.DEAD);
               finishGame(game, GAME_RESULTS.DEATH_TRAP);
             }
             break;
           }
           case CELL_TRAPS.FRAGILE_FLOOR: {
+            if (!delayTrigger) {
+              outcomes.push('CLICK');
+            }
             if (delayTrigger) {
-              outcomes.push(data.outcomes.fragileFloorTrap);
+              outcomes.push(data.outcomes.trapOutcomes.fragileFloor);
               pCell.removeTrap(CELL_TRAPS.FRAGILE_FLOOR);
               pCell.addTrap(CELL_TRAPS.PIT);
             }
@@ -603,11 +609,14 @@ export function trapCheck(game: Game, lang: string, delayTrigger: boolean = fals
             const newX = Math.floor(Math.random() * (game.Maze.Width - 1));
             const newY = Math.floor(Math.random() * (game.Maze.Height - 1));
             movePlayerAbsolute(game, lang, newX, newY);
-            outcomes.push(data.outcomes.teleportTrap);
+            outcomes.push(data.outcomes.trapOutcomes.teleport);
 
             break;
           }
           case CELL_TRAPS.DEADFALL: {
+            if (!delayTrigger) {
+              outcomes.push('CLICK');
+            }
             if (delayTrigger) {
               game.Maze.removeExit(DIRS.NORTH, pCell);
               game.Maze.removeExit(DIRS.SOUTH, pCell);
@@ -615,7 +624,7 @@ export function trapCheck(game: Game, lang: string, delayTrigger: boolean = fals
               game.Maze.removeExit(DIRS.WEST, pCell);
               game.Maze.addExit(game.Player.Facing, pCell);
               pCell.removeTrap(CELL_TRAPS.DEADFALL);
-              outcomes.push(data.outcomes.deadfallTrap);
+              outcomes.push(data.outcomes.trapOutcomes.deadfall);
             }
             break;
           }

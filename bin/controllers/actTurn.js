@@ -21,7 +21,7 @@ function doTurn(game, langCode) {
     const action = game.Actions[game.Actions.length - 1];
     const direction = action.direction;
     const data = GameLang_1.default.getInstance(langCode);
-    if (!!(game.Player.State & Enums_1.PLAYER_STATES.STUNNED)) {
+    if (!(game.Player.State & Enums_1.PLAYER_STATES.STUNNED)) {
         {
             // Turns left or right
             switch (direction) {

@@ -552,33 +552,39 @@ function trapCheck(game, lang, delayTrigger = false) {
             if (!!(pCell.Traps & trapEnum)) {
                 switch (trapEnum) {
                     case Enums_1.CELL_TRAPS.PIT: {
-                        outcomes.push(data.outcomes.pitTrap);
+                        outcomes.push(data.outcomes.trapOutcomes.pit);
                         game.Player.addState(Enums_1.PLAYER_STATES.DEAD);
                         actMove_1.finishGame(game, Enums_1.GAME_RESULTS.DEATH_TRAP);
                         break;
                     }
                     case Enums_1.CELL_TRAPS.MOUSETRAP: {
-                        outcomes.push(data.outcomes.mouseTrap);
+                        outcomes.push(data.outcomes.trapOutcomes.mouse);
                         game.Player.addState(Enums_1.PLAYER_STATES.DEAD);
                         actMove_1.finishGame(game, Enums_1.GAME_RESULTS.DEATH_TRAP);
                         break;
                     }
                     case Enums_1.CELL_TRAPS.TARPIT: {
-                        outcomes.push(data.outcomes.tarTrap);
+                        outcomes.push(data.outcomes.trapOutcomes.tar);
                         game.Player.addState(Enums_1.PLAYER_STATES.SLOWED);
                         break;
                     }
                     case Enums_1.CELL_TRAPS.FLAMETHROWER: {
-                        if (!(game.Player.State & Enums_1.PLAYER_STATES.LYING) && delayTrigger) {
-                            outcomes.push(data.outcomes.flamethrowerTrap);
+                        if (!delayTrigger) {
+                            outcomes.push('CLICK');
+                        }
+                        if (delayTrigger) {
+                            outcomes.push(data.outcomes.trapOutcomes.flamethrower);
                             game.Player.addState(Enums_1.PLAYER_STATES.DEAD);
                             actMove_1.finishGame(game, Enums_1.GAME_RESULTS.DEATH_TRAP);
                         }
                         break;
                     }
                     case Enums_1.CELL_TRAPS.FRAGILE_FLOOR: {
+                        if (!delayTrigger) {
+                            outcomes.push('CLICK');
+                        }
                         if (delayTrigger) {
-                            outcomes.push(data.outcomes.fragileFloorTrap);
+                            outcomes.push(data.outcomes.trapOutcomes.fragileFloor);
                             pCell.removeTrap(Enums_1.CELL_TRAPS.FRAGILE_FLOOR);
                             pCell.addTrap(Enums_1.CELL_TRAPS.PIT);
                         }
@@ -588,10 +594,13 @@ function trapCheck(game, lang, delayTrigger = false) {
                         const newX = Math.floor(Math.random() * (game.Maze.Width - 1));
                         const newY = Math.floor(Math.random() * (game.Maze.Height - 1));
                         movePlayerAbsolute(game, lang, newX, newY);
-                        outcomes.push(data.outcomes.teleportTrap);
+                        outcomes.push(data.outcomes.trapOutcomes.teleport);
                         break;
                     }
                     case Enums_1.CELL_TRAPS.DEADFALL: {
+                        if (!delayTrigger) {
+                            outcomes.push('CLICK');
+                        }
                         if (delayTrigger) {
                             game.Maze.removeExit(Enums_1.DIRS.NORTH, pCell);
                             game.Maze.removeExit(Enums_1.DIRS.SOUTH, pCell);
@@ -599,7 +608,7 @@ function trapCheck(game, lang, delayTrigger = false) {
                             game.Maze.removeExit(Enums_1.DIRS.WEST, pCell);
                             game.Maze.addExit(game.Player.Facing, pCell);
                             pCell.removeTrap(Enums_1.CELL_TRAPS.DEADFALL);
-                            outcomes.push(data.outcomes.deadfallTrap);
+                            outcomes.push(data.outcomes.trapOutcomes.deadfall);
                         }
                         break;
                     }

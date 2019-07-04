@@ -176,7 +176,8 @@ export const abandonGame = async (req: Request, res: Response) => {
       }
 
       // go ahead and abandon the game
-      log.warn(__filename, 'abandonGame', `${game.Id} forcibly abandoned by request from ${req.ip}`);
+      game.State = GAME_STATES.ABORTED;
+      log.warn(__filename, 'abandonGame', `${game.Id} abandoned.`);
       return res.status(200).json(game.getStub(config.EXT_URL_GAME));
     })
     .catch(fetchError => {

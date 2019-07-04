@@ -23,5 +23,8 @@ export async function doStand(game: Game, langCode: string): Promise<IAction> {
   }
 
   // finalize and return action
+  if (!!(game.Player.State & PLAYER_STATES.SLOWED)) {
+    return Promise.resolve(fns.finalizeAction(game, 2, startScore, langCode));
+  }
   return Promise.resolve(fns.finalizeAction(game, 1, startScore, langCode));
 }

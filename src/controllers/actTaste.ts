@@ -89,8 +89,8 @@ export function doTasteDirected(game: Game, lang: string, cell: CellBase, engram
       const trapType = CELL_TRAPS[trapEnum];
       if (!!(cell.Traps & trapEnum)) {
         try {
-          const intensity = data.entities[trapType.toUpperCase()].taste.intensity;
-          const adjective = data.entities[trapType.toUpperCase()].taste.adjective;
+          const intensity = data.traps[trapType.toUpperCase()].taste.intensity;
+          const adjective = data.traps[trapType.toUpperCase()].taste.adjective;
           if (distance < intensity) {
             setTaste(engramDir, { taste: adjective, strength: intensity });
           }

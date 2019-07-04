@@ -21,7 +21,9 @@ export function doJump(game: Game, lang: string) {
     }
   }
   const startScore = game.Score.getTotalScore();
-
+  if (!!(game.Player.State & PLAYER_STATES.SLOWED)) {
+    return Promise.resolve(fns.finalizeAction(game, 4, startScore, lang));
+  }
   return Promise.resolve(fns.finalizeAction(game, 2, startScore, lang));
 }
 /**

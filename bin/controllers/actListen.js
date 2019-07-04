@@ -68,13 +68,13 @@ exports.doListenLocal = doListenLocal;
 function doListenDirected(game, lang, cell, engramDir, lastDirection, distance) {
     const data = GameLang_1.default.getInstance(lang);
     const method = `doListenDirected(${game.Id}, ${lang}, ${cell.Location}, [emgramDir], ${lastDirection}, ${distance})`;
-    const MAX_DISTANCE = 5;
+    const MAX_DISTANCE = 10;
     funcs_1.logDebug(__filename, method, 'Entering');
-    if (!!(cell.Tags & Enums_1.CELL_TAGS.START)) {
-        setSound(engramDir, { sound: data.entities.lava.sight.adjective, volume: distance });
+    if (!!(cell.Tags & Enums_1.CELL_TAGS.START) && distance < data.entities.lava.sound.intensity) {
+        setSound(engramDir, { sound: data.entities.lava.sound.adjective, volume: parseFloat((distance / data.entities.lava.sound.intensity).toFixed(2)) });
     }
-    if (!!(cell.Tags & Enums_1.CELL_TAGS.FINISH)) {
-        setSound(engramDir, { sound: data.entities.cheese.sight.adjective, volume: distance });
+    if (!!(cell.Tags & Enums_1.CELL_TAGS.FINISH) && distance < data.entities.cheese.sound.intensity) {
+        setSound(engramDir, { sound: data.entities.cheese.sound.adjective, volume: parseFloat((distance / data.entities.cheese.sound.intensity).toFixed(2)) });
     }
     if (cell.Traps !== Enums_1.CELL_TRAPS.NONE) {
         for (let pos = 0; pos < 9; pos++) {
@@ -82,8 +82,8 @@ function doListenDirected(game, lang, cell, engramDir, lastDirection, distance) 
             const trapType = Enums_1.CELL_TRAPS[trapEnum];
             if (!!(cell.Traps & trapEnum)) {
                 try {
-                    const intensity = data.entities[trapType.toUpperCase()].sound.intensity;
-                    const adjective = data.entities[trapType.toUpperCase()].sound.adjective;
+                    const intensity = data.traps[trapType.toUpperCase()].sound.intensity;
+                    const adjective = data.traps[trapType.toUpperCase()].sound.adjective;
                     // const intensityString = `data.entities.${trapType}.smell.intensity`;
                     // const adjectiveString = `data.entities.${trapType}.smell.adjective`;
                     // const intensity = eval(intensityString);  <-- very clever, but an unsafe operation that the linter opposes

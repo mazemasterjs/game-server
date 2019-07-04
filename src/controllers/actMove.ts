@@ -79,12 +79,15 @@ export async function doMove(game: Game, langCode: string, sneaking: boolean = f
 
       game.Player.addState(PLAYER_STATES.SITTING);
 
-      game.Actions[game.Actions.length - 1].outcomes.push(format(data.outcomes.walkIntoWall, data.direction[DIRS[dir]]));
+      game.Actions[game.Actions.length - 1].outcomes.push(format(data.outcomes.walkIntoWall, data.directions[DIRS[dir]]));
       game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.stunned);
     }
   }
   fns.trapCheck(game, langCode);
   // game continues - return the action (with outcomes and engram)
+  if (!!(game.Player.State & PLAYER_STATES.SLOWED)) {
+    return Promise.resolve(fns.finalizeAction(game, 2, startScore, langCode));
+  }
   return Promise.resolve(fns.finalizeAction(game, 1, startScore, langCode));
 }
 

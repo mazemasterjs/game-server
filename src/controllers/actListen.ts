@@ -74,13 +74,13 @@ export function doListenLocal(game: Game, lang: string) {
 export function doListenDirected(game: Game, lang: string, cell: CellBase, engramDir: ISound[], lastDirection: DIRS, distance: number) {
   const data = GameLang.getInstance(lang);
   const method = `doListenDirected(${game.Id}, ${lang}, ${cell.Location}, [emgramDir], ${lastDirection}, ${distance})`;
-  const MAX_DISTANCE = 5;
+  const MAX_DISTANCE = 10;
   logDebug(__filename, method, 'Entering');
-  if (!!(cell.Tags & CELL_TAGS.START)) {
-    setSound(engramDir, { sound: data.entities.lava.sight.adjective, volume: distance });
+  if (!!(cell.Tags & CELL_TAGS.START) && distance < data.entities.lava.sound.intensity) {
+    setSound(engramDir, { sound: data.entities.lava.sound.adjective, volume: parseFloat((distance / data.entities.lava.sound.intensity).toFixed(2)) });
   }
-  if (!!(cell.Tags & CELL_TAGS.FINISH)) {
-    setSound(engramDir, { sound: data.entities.cheese.sight.adjective, volume: distance });
+  if (!!(cell.Tags & CELL_TAGS.FINISH) && distance < data.entities.cheese.sound.intensity) {
+    setSound(engramDir, { sound: data.entities.cheese.sound.adjective, volume: parseFloat((distance / data.entities.cheese.sound.intensity).toFixed(2)) });
   }
 
   if (cell.Traps !== CELL_TRAPS.NONE) {
@@ -89,8 +89,8 @@ export function doListenDirected(game: Game, lang: string, cell: CellBase, engra
       const trapType = CELL_TRAPS[trapEnum];
       if (!!(cell.Traps & trapEnum)) {
         try {
-          const intensity = data.entities[trapType.toUpperCase()].sound.intensity;
-          const adjective = data.entities[trapType.toUpperCase()].sound.adjective;
+          const intensity = data.traps[trapType.toUpperCase()].sound.intensity;
+          const adjective = data.traps[trapType.toUpperCase()].sound.adjective;
           // const intensityString = `data.entities.${trapType}.smell.intensity`;
           // const adjectiveString = `data.entities.${trapType}.smell.adjective`;
           // const intensity = eval(intensityString);  <-- very clever, but an unsafe operation that the linter opposes
