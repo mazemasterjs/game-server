@@ -27,7 +27,11 @@ function doStand(game, langCode) {
         funcs_1.logDebug(__filename, `doStand(${game.Id}, ${langCode})`, 'Player has issued the STAND command.');
         const startScore = game.Score.getTotalScore();
         const data = GameLang_1.default.getInstance(langCode);
-        if (!!(game.Player.State & Enums_1.PLAYER_STATES.STANDING)) {
+        if (!!(game.Player.State & Enums_1.PLAYER_STATES.STUNNED)) {
+            game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.stunned);
+            game.Player.removeState(Enums_1.PLAYER_STATES.STUNNED);
+        }
+        else if (!!(game.Player.State & Enums_1.PLAYER_STATES.STANDING)) {
             game = yield funcs_1.grantTrophy(game, Enums_1.TROPHY_IDS.STAND_HARDER);
             game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.standWhileStanding);
         }

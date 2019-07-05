@@ -18,7 +18,7 @@ function doListenLocal(game, lang) {
         setSound(engram.north.hear, { sound: data.entities.lava.sound.adjective, volume: 1 });
     }
     if (!!(cell.Tags & Enums_1.CELL_TAGS.FINISH)) {
-        setSound(engram.south.hear, { sound: data.entities.cheese.sound.adjective, volume: 1 });
+        setSound(engram.south.hear, { sound: data.entities.exit.sound.adjective, volume: 1 });
     }
     //  loop through the cardinal directions in DIRS
     for (let pos = 0; pos < 4; pos++) {
@@ -73,8 +73,8 @@ function doListenDirected(game, lang, cell, engramDir, lastDirection, distance) 
     if (!!(cell.Tags & Enums_1.CELL_TAGS.START) && distance < data.entities.lava.sound.intensity) {
         setSound(engramDir, { sound: data.entities.lava.sound.adjective, volume: parseFloat((distance / data.entities.lava.sound.intensity).toFixed(2)) });
     }
-    if (!!(cell.Tags & Enums_1.CELL_TAGS.FINISH) && distance < data.entities.cheese.sound.intensity) {
-        setSound(engramDir, { sound: data.entities.cheese.sound.adjective, volume: parseFloat((distance / data.entities.cheese.sound.intensity).toFixed(2)) });
+    if (!!(cell.Tags & Enums_1.CELL_TAGS.FINISH) && distance < data.entities.exit.sound.intensity) {
+        setSound(engramDir, { sound: data.entities.exit.sound.adjective, volume: parseFloat((distance / data.entities.exit.sound.intensity).toFixed(2)) });
     }
     if (cell.Traps !== Enums_1.CELL_TRAPS.NONE) {
         for (let pos = 0; pos < 9; pos++) {

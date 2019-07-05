@@ -18,7 +18,7 @@ function doFeelLocal(game, lang) {
         setFeel(engram.north.feel, { feeling: data.entities.lava.touch.adjective, intensity: data.entities.lava.touch.intensity });
     }
     if (!!(cell.Tags & Enums_1.CELL_TAGS.FINISH)) {
-        setFeel(engram.south.feel, { feeling: data.entities.cheese.touch.adjective, intensity: data.entities.cheese.touch.intensity });
+        setFeel(engram.south.feel, { feeling: data.entities.exit.touch.adjective, intensity: data.entities.exit.touch.intensity });
     }
     //  loop through the cardinal directions in DIRS
     for (let pos = 0; pos < 4; pos++) {
@@ -74,7 +74,7 @@ function doFeelDirected(game, lang, cell, engramDir, lastDirection, distance) {
         setFeel(engramDir, { feeling: data.entities.lava.touch.adjective, intensity: distance });
     }
     if (!!(cell.Tags & Enums_1.CELL_TAGS.FINISH)) {
-        setFeel(engramDir, { feeling: data.entities.cheese.touch.adjective, intensity: distance });
+        setFeel(engramDir, { feeling: data.entities.exit.touch.adjective, intensity: distance });
     }
     if (cell.Traps !== Enums_1.CELL_TRAPS.NONE) {
         for (let pos = 0; pos < 9; pos++) {

@@ -618,11 +618,7 @@ export function trapCheck(game: Game, lang: string, delayTrigger: boolean = fals
               outcomes.push('CLICK');
             }
             if (delayTrigger) {
-              game.Maze.removeExit(DIRS.NORTH, pCell);
-              game.Maze.removeExit(DIRS.SOUTH, pCell);
-              game.Maze.removeExit(DIRS.EAST, pCell);
-              game.Maze.removeExit(DIRS.WEST, pCell);
-              game.Maze.addExit(game.Player.Facing, pCell);
+              game.Maze.removeExit(game.Player.Facing, pCell);
               pCell.removeTrap(CELL_TRAPS.DEADFALL);
               outcomes.push(data.outcomes.trapOutcomes.deadfall);
             }

@@ -1,6 +1,28 @@
 {
   "language": "en",
   "entities": {
+    "exit": {
+      "sight": {
+        "adjective": "light",
+        "intensity": 10
+      },
+      "sound": {
+        "adjective": "none",
+        "intensity": -1
+      },
+      "smell": {
+        "adjective": "cheese",
+        "intensity": 5
+      },
+      "touch": {
+        "adjective": "none",
+        "intensity": -1
+      },
+      "taste": {
+        "adjective": "nothing",
+        "intensity": -1
+      }
+    },
     "lava": {
       "sight": {
         "adjective": "lava",

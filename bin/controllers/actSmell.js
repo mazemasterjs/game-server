@@ -25,7 +25,7 @@ function doSmellLocal(game, lang) {
         setSmell(engram.north.smell, { scent: data.entities.lava.smell.adjective, strength: data.entities.lava.smell.intensity });
     }
     if (!!(cell.Tags & Enums_1.CELL_TAGS.FINISH)) {
-        setSmell(engram.south.smell, { scent: data.entities.cheese.smell.adjective, strength: data.entities.cheese.smell.intensity });
+        setSmell(engram.south.smell, { scent: data.entities.exit.smell.adjective, strength: data.entities.exit.smell.intensity });
     }
     //  loop through the cardinal directions in DIRS
     for (let pos = 0; pos < 4; pos++) {
@@ -81,9 +81,9 @@ function doSmellDirected(game, lang, cell, engramDir, lastDirection, distance) {
         const intensity = data.entities.lava.smell.intensity;
         setSmell(engramDir, { scent: data.entities.lava.smell.adjective, strength: Math.floor(intensity / distance) });
     }
-    if (!!(cell.Tags & Enums_1.CELL_TAGS.FINISH) && distance < data.entities.cheese.smell.intensity) {
-        const intensity = data.entities.cheese.smell.intensity;
-        setSmell(engramDir, { scent: data.entities.cheese.smell.adjective, strength: Math.floor(intensity / distance) });
+    if (!!(cell.Tags & Enums_1.CELL_TAGS.FINISH) && distance < data.entities.exit.smell.intensity) {
+        const intensity = data.entities.exit.smell.intensity;
+        setSmell(engramDir, { scent: data.entities.exit.smell.adjective, strength: Math.floor(intensity / distance) });
     }
     if (cell.Traps !== Enums_1.CELL_TRAPS.NONE) {
         for (let pos = 0; pos < 9; pos++) {

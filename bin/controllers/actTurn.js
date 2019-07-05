@@ -43,6 +43,7 @@ function doTurn(game, langCode) {
     }
     else {
         action.outcomes.push(data.outcomes.stunned);
+        game.Player.removeState(Enums_1.PLAYER_STATES.STUNNED);
     }
     // finalize and return the turn action results
     return Promise.resolve(fns.finalizeAction(game, 1, startScore, langCode));

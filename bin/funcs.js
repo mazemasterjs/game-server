@@ -602,11 +602,7 @@ function trapCheck(game, lang, delayTrigger = false) {
                             outcomes.push('CLICK');
                         }
                         if (delayTrigger) {
-                            game.Maze.removeExit(Enums_1.DIRS.NORTH, pCell);
-                            game.Maze.removeExit(Enums_1.DIRS.SOUTH, pCell);
-                            game.Maze.removeExit(Enums_1.DIRS.EAST, pCell);
-                            game.Maze.removeExit(Enums_1.DIRS.WEST, pCell);
-                            game.Maze.addExit(game.Player.Facing, pCell);
+                            game.Maze.removeExit(game.Player.Facing, pCell);
                             pCell.removeTrap(Enums_1.CELL_TRAPS.DEADFALL);
                             outcomes.push(data.outcomes.trapOutcomes.deadfall);
                         }

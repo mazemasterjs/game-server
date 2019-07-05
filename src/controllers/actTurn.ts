@@ -33,6 +33,7 @@ export function doTurn(game: Game, langCode: string): Promise<IAction> {
     }
   } else {
     action.outcomes.push(data.outcomes.stunned);
+    game.Player.removeState(PLAYER_STATES.STUNNED);
   }
 
   // finalize and return the turn action results
