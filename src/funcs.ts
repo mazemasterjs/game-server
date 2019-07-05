@@ -485,7 +485,7 @@ export function finalizeAction(game: Game, actionMoveCount: number, startScore: 
   } else {
     logWarn(__filename, 'finalizeAction(...)', `Player state is ${PLAYER_STATES[game.Player.State]} (${game.Player.State}) - no engram data collected.`);
   }
-
+  lifeCheck(game, langCode);
   return game.Actions[game.Actions.length - 1];
 }
 
@@ -585,7 +585,7 @@ export function trapCheck(game: Game, lang: string, delayTrigger: boolean = fals
           }
           case CELL_TRAPS.FLAMETHROWER: {
             if (!delayTrigger) {
-              outcomes.push('CLICK');
+              outcomes.push(data.outcomes.trapOutcomes.trigger);
             }
             if (delayTrigger) {
               outcomes.push(data.outcomes.trapOutcomes.flamethrower);
@@ -594,9 +594,27 @@ export function trapCheck(game: Game, lang: string, delayTrigger: boolean = fals
             }
             break;
           }
+          case CELL_TRAPS.POISON_DART: {
+            if (!delayTrigger) {
+              outcomes.push(data.outcomes.trapOutcomes.trigger);
+            }
+            if (delayTrigger) {
+              outcomes.push(data.outcomes.trapOutcomes.poisonDart);
+              outcomes.push(data.outcomes.trapOutcomes.poisoned);
+              game.Player.addState(PLAYER_STATES.POISONED);
+            }
+            break;
+          }
+          case CELL_TRAPS.CHEESE: {
+            outcomes.push(data.outcomes.trapOutcomes.cheese);
+            outcomes.push(data.outcomes.trapOutcomes.poisoned);
+            game.Player.addState(PLAYER_STATES.POISONED);
+            pCell.removeTrap(CELL_TRAPS.CHEESE);
+            break;
+          }
           case CELL_TRAPS.FRAGILE_FLOOR: {
             if (!delayTrigger) {
-              outcomes.push('CLICK');
+              outcomes.push(data.outcomes.trapOutcomes.trigger);
             }
             if (delayTrigger) {
               outcomes.push(data.outcomes.trapOutcomes.fragileFloor);
@@ -615,7 +633,7 @@ export function trapCheck(game: Game, lang: string, delayTrigger: boolean = fals
           }
           case CELL_TRAPS.DEADFALL: {
             if (!delayTrigger) {
-              outcomes.push('CLICK');
+              outcomes.push(data.outcomes.trapOutcomes.trigger);
             }
             if (delayTrigger) {
               game.Maze.removeExit(game.Player.Facing, pCell);
@@ -632,3 +650,19 @@ export function trapCheck(game: Game, lang: string, delayTrigger: boolean = fals
     } // end for
   } // end if CELL_TRAPS.NONE
 } // end trapCheck()
+
+export function lifeCheck(game: Game, lang: string) {
+  const status = game.Player.State;
+  const outcomes = game.Actions[game.Actions.length - 1].outcomes;
+  const data = GameLang.getInstance(lang);
+
+  if (!!(status & PLAYER_STATES.POISONED)) {
+    game.Player.Life -= 3;
+  }
+
+  if (game.Player.Life <= 0) {
+    game.Player.addState(PLAYER_STATES.DEAD);
+    outcomes.push(data.outcomes.deathPoison);
+    finishGame(game, GAME_RESULTS.DEATH_POISON);
+  }
+}

@@ -8,6 +8,10 @@ import { finishGame } from './actMove';
 
 export function doJump(game: Game, lang: string) {
   const data = GameLang.getInstance(lang);
+  let moveCost = 2;
+  if (!!(game.Player.State & PLAYER_STATES.SLOWED)) {
+    moveCost += 2;
+  }
   if (!!(game.Player.State & PLAYER_STATES.STUNNED)) {
     game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.stunned);
     game.Player.removeState(PLAYER_STATES.STUNNED);
@@ -21,10 +25,7 @@ export function doJump(game: Game, lang: string) {
     }
   }
   const startScore = game.Score.getTotalScore();
-  if (!!(game.Player.State & PLAYER_STATES.SLOWED)) {
-    return Promise.resolve(fns.finalizeAction(game, 4, startScore, lang));
-  }
-  return Promise.resolve(fns.finalizeAction(game, 2, startScore, lang));
+  return Promise.resolve(fns.finalizeAction(game, moveCost, startScore, lang));
 }
 /**
  * A recursive function that sees if the cell has an exit in the direction the player is facing.

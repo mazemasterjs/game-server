@@ -38,6 +38,12 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 
 ## Change Notes
 
+### v0.9.3
+
+- poison traps are now active
+- players have 100 life, poison reduces life at 3 per round.
+- various other changes
+
 ### v0.9.2
 
 - updated for shared-library 1.12.3's get/remove exit changes and additional command (SNEAK)

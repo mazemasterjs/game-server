@@ -19,6 +19,13 @@ const config: Config = Config.getInstance();
  */
 export async function doMove(game: Game, langCode: string, sneaking: boolean = false): Promise<IAction> {
   const method = `doMove(${game.Id})`;
+  let moveCost = 1;
+  if (!!(game.Player.State & PLAYER_STATES.SLOWED)) {
+    moveCost++;
+  }
+  if (sneaking) {
+    moveCost++;
+  }
 
   let dir: DIRS = game.Actions[game.Actions.length - 1].direction;
   if (dir === 0) {
@@ -31,7 +38,6 @@ export async function doMove(game: Game, langCode: string, sneaking: boolean = f
 
   // seems that that embedded objects reliable... have to keep reinstantiating things??
   const pLoc: MazeLoc = new MazeLoc(game.Player.Location.row, game.Player.Location.col);
-
   // first make sure the player can move at all
   if (!!(game.Player.State & PLAYER_STATES.STUNNED)) {
     fns.logDebug(__filename, method, 'Player tried to move while stunned.');
@@ -85,10 +91,7 @@ export async function doMove(game: Game, langCode: string, sneaking: boolean = f
   }
   fns.trapCheck(game, langCode);
   // game continues - return the action (with outcomes and engram)
-  if (!!(game.Player.State & PLAYER_STATES.SLOWED)) {
-    return Promise.resolve(fns.finalizeAction(game, 2, startScore, langCode));
-  }
-  return Promise.resolve(fns.finalizeAction(game, 1, startScore, langCode));
+  return Promise.resolve(fns.finalizeAction(game, moveCost, startScore, langCode));
 }
 
 /**

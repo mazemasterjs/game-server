@@ -334,7 +334,12 @@
       "fragileFloor": "The floor collapses into a pit as you run through it.",
       "deadfall": "The passage way collapses behind you!",
       "teleport": "Your surroundings suddenly seem different",
-      "trigger": "CLICK"
-    }
+      "poisonDart": "A dart flies out from the darkness and hits you!",
+      "trigger": "CLICK",
+      "poisoned": "POISONED!!",
+      "cheese": "You see a chunk of cheese, you can't help but take a bite!"
+    },
+    "deathPoison": "You succumb to the poison and die..."
+
   }
 }

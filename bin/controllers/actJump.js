@@ -18,6 +18,10 @@ const fns = __importStar(require("../funcs"));
 const actMove_1 = require("./actMove");
 function doJump(game, lang) {
     const data = GameLang_1.default.getInstance(lang);
+    let moveCost = 2;
+    if (!!(game.Player.State & Enums_1.PLAYER_STATES.SLOWED)) {
+        moveCost += 2;
+    }
     if (!!(game.Player.State & Enums_1.PLAYER_STATES.STUNNED)) {
         game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.stunned);
         game.Player.removeState(Enums_1.PLAYER_STATES.STUNNED);
@@ -33,10 +37,7 @@ function doJump(game, lang) {
         }
     }
     const startScore = game.Score.getTotalScore();
-    if (!!(game.Player.State & Enums_1.PLAYER_STATES.SLOWED)) {
-        return Promise.resolve(fns.finalizeAction(game, 4, startScore, lang));
-    }
-    return Promise.resolve(fns.finalizeAction(game, 2, startScore, lang));
+    return Promise.resolve(fns.finalizeAction(game, moveCost, startScore, lang));
 }
 exports.doJump = doJump;
 /**
