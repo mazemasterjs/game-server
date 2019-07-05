@@ -38,6 +38,10 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 
 ## Change Notes
 
+### v0.9.5
+
+- Fixed 32 weird conditions that looked like if (someVal === true && !(someValue === false))
+
 ### v0.9.4
 
 - Updated shared-library (removeExit bug fix) and updated calls to Maze.removeExit() to use new signature
