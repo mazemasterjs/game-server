@@ -59,7 +59,7 @@ function doMove(game, langCode, sneaking = false) {
             fns.logDebug(__filename, method, 'Player tried to move while not standing.');
             // add the trophy for walking without standing
             game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.SPINNING_YOUR_WHEELS);
-            game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.moveWhileSitting);
+            game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.move.sitting);
             // finalize and return action
             return Promise.resolve(fns.finalizeAction(game, 1, startScore, langCode));
         }

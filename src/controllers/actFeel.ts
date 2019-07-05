@@ -77,10 +77,10 @@ export function doFeelDirected(game: Game, lang: string, cell: CellBase, engramD
   logDebug(__filename, method, 'Entering');
   const MAX_DISTANCE = 3;
   if (!!(cell.Tags & CELL_TAGS.START)) {
-    setFeel(engramDir, { feeling: data.entities.lava.touch.adjective, intensity: distance });
+    setFeel(engramDir, { feeling: data.entities.lava.touch.adjective, intensity: data.entities.lava.touch.intensity });
   }
   if (!!(cell.Tags & CELL_TAGS.FINISH)) {
-    setFeel(engramDir, { feeling: data.entities.exit.touch.adjective, intensity: distance });
+    setFeel(engramDir, { feeling: data.entities.exit.touch.adjective, intensity: data.entities.exit.touch.intensity });
   }
 
   if (cell.Traps !== CELL_TRAPS.NONE) {
@@ -89,10 +89,10 @@ export function doFeelDirected(game: Game, lang: string, cell: CellBase, engramD
       const trapType = CELL_TRAPS[trapEnum];
       if (!!(cell.Traps & trapEnum)) {
         try {
-          const intensity = data.entities[trapType.toUpperCase()].touch.intensity;
+          const int = data.entities[trapType.toUpperCase()].touch.intensity;
           const adjective = data.entities[trapType.toUpperCase()].touch.adjective;
-          if (distance < intensity) {
-            setFeel(engramDir, { feeling: adjective, intensity: distance });
+          if (distance < int) {
+            setFeel(engramDir, { feeling: adjective, intensity: int / distance });
           }
         } catch (err) {
           logDebug(__filename, method, err);

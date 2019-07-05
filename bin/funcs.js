@@ -599,13 +599,13 @@ function trapCheck(game, lang, delayTrigger = false) {
                         break;
                     }
                     case Enums_1.CELL_TRAPS.FRAGILE_FLOOR: {
-                        if (!delayTrigger) {
-                            outcomes.push(data.outcomes.trapOutcomes.trigger);
-                        }
-                        if (delayTrigger) {
+                        if (pCell.VisitCount < 2) {
                             outcomes.push(data.outcomes.trapOutcomes.fragileFloor);
-                            pCell.removeTrap(Enums_1.CELL_TRAPS.FRAGILE_FLOOR);
-                            pCell.addTrap(Enums_1.CELL_TRAPS.PIT);
+                        }
+                        if (pCell.VisitCount >= 2) {
+                            outcomes.push(data.outcomes.trapOutcomes.fragileFloorCollapse);
+                            game.Player.addState(Enums_1.PLAYER_STATES.DEAD);
+                            actMove_1.finishGame(game, Enums_1.GAME_RESULTS.DEATH_TRAP);
                         }
                         break;
                     }
@@ -618,10 +618,27 @@ function trapCheck(game, lang, delayTrigger = false) {
                     }
                     case Enums_1.CELL_TRAPS.DEADFALL: {
                         if (!delayTrigger) {
-                            outcomes.push(data.outcomes.trapOutcomes.trigger);
+                            // outcomes.push(data.outcomes.trapOutcomes.trigger);
                         }
                         if (delayTrigger) {
-                            game.Maze.removeExit(game.Player.Facing, pCell);
+                            switch (game.Player.Facing) {
+                                case Enums_1.DIRS.NORTH: {
+                                    game.Maze.removeExit(Enums_1.DIRS.SOUTH, pCell);
+                                    break;
+                                }
+                                case Enums_1.DIRS.SOUTH: {
+                                    game.Maze.removeExit(Enums_1.DIRS.NORTH, pCell);
+                                    break;
+                                }
+                                case Enums_1.DIRS.EAST: {
+                                    game.Maze.removeExit(Enums_1.DIRS.WEST, pCell);
+                                    break;
+                                }
+                                case Enums_1.DIRS.WEST: {
+                                    game.Maze.removeExit(Enums_1.DIRS.EAST, pCell);
+                                    break;
+                                }
+                            }
                             pCell.removeTrap(Enums_1.CELL_TRAPS.DEADFALL);
                             outcomes.push(data.outcomes.trapOutcomes.deadfall);
                         }

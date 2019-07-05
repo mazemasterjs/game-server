@@ -49,7 +49,7 @@ export async function doMove(game: Game, langCode: string, sneaking: boolean = f
     // add the trophy for walking without standing
     game = await fns.grantTrophy(game, TROPHY_IDS.SPINNING_YOUR_WHEELS);
 
-    game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.moveWhileSitting);
+    game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.move.sitting);
 
     // finalize and return action
     return Promise.resolve(fns.finalizeAction(game, 1, startScore, langCode));

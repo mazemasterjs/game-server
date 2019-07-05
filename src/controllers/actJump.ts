@@ -64,6 +64,11 @@ export function jumpNext(game: Game, lang: string, distance: number, maxDistance
       }
       // if not, the player moves and it checks the next cell
       fns.movePlayer(game);
+      // If the player tried to jump over a flamethrower trap, it triggers anyways
+      const pCell = game.Maze.getCell(game.Player.Location);
+      if (!!(pCell.Traps & CELL_TRAPS.FLAMETHROWER)) {
+        fns.trapCheck(game, lang, true);
+      }
       jumpNext(game, lang, distance + 1);
     } else {
       logDebug(__filename, method, 'Player crashed into a wall while jumping');
@@ -72,7 +77,7 @@ export function jumpNext(game: Game, lang: string, distance: number, maxDistance
       game.Player.addState(PLAYER_STATES.STUNNED);
     }
   } else {
-    game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jumping);
+    game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jump.jumping);
     fns.trapCheck(game, lang);
   }
 }

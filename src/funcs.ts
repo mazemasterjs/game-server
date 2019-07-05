@@ -613,13 +613,13 @@ export function trapCheck(game: Game, lang: string, delayTrigger: boolean = fals
             break;
           }
           case CELL_TRAPS.FRAGILE_FLOOR: {
-            if (!delayTrigger) {
-              outcomes.push(data.outcomes.trapOutcomes.trigger);
-            }
-            if (delayTrigger) {
+            if (pCell.VisitCount < 2) {
               outcomes.push(data.outcomes.trapOutcomes.fragileFloor);
-              pCell.removeTrap(CELL_TRAPS.FRAGILE_FLOOR);
-              pCell.addTrap(CELL_TRAPS.PIT);
+            }
+            if (pCell.VisitCount >= 2) {
+              outcomes.push(data.outcomes.trapOutcomes.fragileFloorCollapse);
+              game.Player.addState(PLAYER_STATES.DEAD);
+              finishGame(game, GAME_RESULTS.DEATH_TRAP);
             }
             break;
           }
@@ -633,10 +633,27 @@ export function trapCheck(game: Game, lang: string, delayTrigger: boolean = fals
           }
           case CELL_TRAPS.DEADFALL: {
             if (!delayTrigger) {
-              outcomes.push(data.outcomes.trapOutcomes.trigger);
+              // outcomes.push(data.outcomes.trapOutcomes.trigger);
             }
             if (delayTrigger) {
-              game.Maze.removeExit(game.Player.Facing, pCell);
+              switch (game.Player.Facing) {
+                case DIRS.NORTH: {
+                  game.Maze.removeExit(DIRS.SOUTH, pCell);
+                  break;
+                }
+                case DIRS.SOUTH: {
+                  game.Maze.removeExit(DIRS.NORTH, pCell);
+                  break;
+                }
+                case DIRS.EAST: {
+                  game.Maze.removeExit(DIRS.WEST, pCell);
+                  break;
+                }
+                case DIRS.WEST: {
+                  game.Maze.removeExit(DIRS.EAST, pCell);
+                  break;
+                }
+              }
               pCell.removeTrap(CELL_TRAPS.DEADFALL);
               outcomes.push(data.outcomes.trapOutcomes.deadfall);
             }

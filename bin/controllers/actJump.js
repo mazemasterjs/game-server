@@ -77,6 +77,11 @@ function jumpNext(game, lang, distance, maxDistance = 1) {
             }
             // if not, the player moves and it checks the next cell
             fns.movePlayer(game);
+            // If the player tried to jump over a flamethrower trap, it triggers anyways
+            const pCell = game.Maze.getCell(game.Player.Location);
+            if (!!(pCell.Traps & Enums_1.CELL_TRAPS.FLAMETHROWER)) {
+                fns.trapCheck(game, lang, true);
+            }
             jumpNext(game, lang, distance + 1);
         }
         else {
@@ -87,7 +92,7 @@ function jumpNext(game, lang, distance, maxDistance = 1) {
         }
     }
     else {
-        game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jumping);
+        game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jump.jumping);
         fns.trapCheck(game, lang);
     }
 }
