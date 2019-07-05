@@ -623,19 +623,19 @@ function trapCheck(game, lang, delayTrigger = false) {
                         if (delayTrigger) {
                             switch (game.Player.Facing) {
                                 case Enums_1.DIRS.NORTH: {
-                                    game.Maze.removeExit(Enums_1.DIRS.SOUTH, pCell);
+                                    game.Maze.removeExit(pCell, Enums_1.DIRS.SOUTH);
                                     break;
                                 }
                                 case Enums_1.DIRS.SOUTH: {
-                                    game.Maze.removeExit(Enums_1.DIRS.NORTH, pCell);
+                                    game.Maze.removeExit(pCell, Enums_1.DIRS.NORTH);
                                     break;
                                 }
                                 case Enums_1.DIRS.EAST: {
-                                    game.Maze.removeExit(Enums_1.DIRS.WEST, pCell);
+                                    game.Maze.removeExit(pCell, Enums_1.DIRS.WEST);
                                     break;
                                 }
                                 case Enums_1.DIRS.WEST: {
-                                    game.Maze.removeExit(Enums_1.DIRS.EAST, pCell);
+                                    game.Maze.removeExit(pCell, Enums_1.DIRS.EAST);
                                     break;
                                 }
                             }
