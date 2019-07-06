@@ -23,7 +23,7 @@ export function doFeelLocal(game: Game, lang: string) {
     setFeel(engram.north.feel, { feeling: data.entities.lava.touch.adjective, intensity: data.entities.lava.touch.intensity });
   }
   if (!!(cell.Tags & CELL_TAGS.FINISH)) {
-    setFeel(engram.south.feel, { feeling: data.entities.cheese.touch.adjective, intensity: data.entities.cheese.touch.intensity });
+    setFeel(engram.south.feel, { feeling: data.entities.exit.touch.adjective, intensity: data.entities.exit.touch.intensity });
   }
 
   //  loop through the cardinal directions in DIRS
@@ -77,10 +77,10 @@ export function doFeelDirected(game: Game, lang: string, cell: CellBase, engramD
   logDebug(__filename, method, 'Entering');
   const MAX_DISTANCE = 3;
   if (!!(cell.Tags & CELL_TAGS.START)) {
-    setFeel(engramDir, { feeling: data.entities.lava.touch.adjective, intensity: distance });
+    setFeel(engramDir, { feeling: data.entities.lava.touch.adjective, intensity: data.entities.lava.touch.intensity });
   }
   if (!!(cell.Tags & CELL_TAGS.FINISH)) {
-    setFeel(engramDir, { feeling: data.entities.cheese.touch.adjective, intensity: distance });
+    setFeel(engramDir, { feeling: data.entities.exit.touch.adjective, intensity: data.entities.exit.touch.intensity });
   }
 
   if (cell.Traps !== CELL_TRAPS.NONE) {
@@ -89,10 +89,10 @@ export function doFeelDirected(game: Game, lang: string, cell: CellBase, engramD
       const trapType = CELL_TRAPS[trapEnum];
       if (!!(cell.Traps & trapEnum)) {
         try {
-          const intensity = data.entities[trapType.toUpperCase()].touch.intensity;
+          const int = data.entities[trapType.toUpperCase()].touch.intensity;
           const adjective = data.entities[trapType.toUpperCase()].touch.adjective;
-          if (distance < intensity) {
-            setFeel(engramDir, { feeling: adjective, intensity: distance });
+          if (distance < int) {
+            setFeel(engramDir, { feeling: adjective, intensity: int / distance });
           }
         } catch (err) {
           logDebug(__filename, method, err);
@@ -106,28 +106,28 @@ export function doFeelDirected(game: Game, lang: string, cell: CellBase, engramD
       const dir = 1 << pos; // bitwish shift (1, 2, 4, 8)
       switch (dir) {
         case DIRS.NORTH: {
-          if (cell.isDirOpen(DIRS.NORTH) && cell.Location.row - 1 >= 0 && !(lastDirection === dir)) {
+          if (cell.isDirOpen(DIRS.NORTH) && cell.Location.row - 1 >= 0 && lastDirection !== dir) {
             const nextCell = game.Maze.getCell(new MazeLoc(cell.Location.row - 1, cell.Location.col));
             doFeelDirected(game, lang, nextCell, engramDir, DIRS.SOUTH, distance + 1);
           }
           break;
         }
         case DIRS.SOUTH: {
-          if (cell.isDirOpen(DIRS.SOUTH) && cell.Location.row + 1 < game.Maze.Height && !(lastDirection === dir)) {
+          if (cell.isDirOpen(DIRS.SOUTH) && cell.Location.row + 1 < game.Maze.Height && lastDirection !== dir) {
             const nextCell = game.Maze.getCell(new MazeLoc(cell.Location.row + 1, cell.Location.col));
             doFeelDirected(game, lang, nextCell, engramDir, DIRS.NORTH, distance + 1);
           }
           break;
         }
         case DIRS.EAST: {
-          if (cell.isDirOpen(DIRS.EAST) && cell.Location.col + 1 < game.Maze.Width && !(lastDirection === dir)) {
+          if (cell.isDirOpen(DIRS.EAST) && cell.Location.col + 1 < game.Maze.Width && lastDirection !== dir) {
             const nextCell = game.Maze.getCell(new MazeLoc(cell.Location.row, cell.Location.col + 1));
             doFeelDirected(game, lang, nextCell, engramDir, DIRS.WEST, distance + 1);
           }
           break;
         }
         case DIRS.WEST: {
-          if (cell.isDirOpen(DIRS.WEST) && cell.Location.col - 1 >= 0 && !(lastDirection === dir)) {
+          if (cell.isDirOpen(DIRS.WEST) && cell.Location.col - 1 >= 0 && lastDirection !== dir) {
             const nextCell = game.Maze.getCell(new MazeLoc(cell.Location.row, cell.Location.col - 1));
             doFeelDirected(game, lang, nextCell, engramDir, DIRS.EAST, distance + 1);
           }

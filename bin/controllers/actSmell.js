@@ -25,7 +25,7 @@ function doSmellLocal(game, lang) {
         setSmell(engram.north.smell, { scent: data.entities.lava.smell.adjective, strength: data.entities.lava.smell.intensity });
     }
     if (!!(cell.Tags & Enums_1.CELL_TAGS.FINISH)) {
-        setSmell(engram.south.smell, { scent: data.entities.cheese.smell.adjective, strength: data.entities.cheese.smell.intensity });
+        setSmell(engram.south.smell, { scent: data.entities.exit.smell.adjective, strength: data.entities.exit.smell.intensity });
     }
     //  loop through the cardinal directions in DIRS
     for (let pos = 0; pos < 4; pos++) {
@@ -81,9 +81,9 @@ function doSmellDirected(game, lang, cell, engramDir, lastDirection, distance) {
         const intensity = data.entities.lava.smell.intensity;
         setSmell(engramDir, { scent: data.entities.lava.smell.adjective, strength: Math.floor(intensity / distance) });
     }
-    if (!!(cell.Tags & Enums_1.CELL_TAGS.FINISH) && distance < data.entities.cheese.smell.intensity) {
-        const intensity = data.entities.cheese.smell.intensity;
-        setSmell(engramDir, { scent: data.entities.cheese.smell.adjective, strength: Math.floor(intensity / distance) });
+    if (!!(cell.Tags & Enums_1.CELL_TAGS.FINISH) && distance < data.entities.exit.smell.intensity) {
+        const intensity = data.entities.exit.smell.intensity;
+        setSmell(engramDir, { scent: data.entities.exit.smell.adjective, strength: Math.floor(intensity / distance) });
     }
     if (cell.Traps !== Enums_1.CELL_TRAPS.NONE) {
         for (let pos = 0; pos < 9; pos++) {
@@ -121,28 +121,28 @@ function doSmellDirected(game, lang, cell, engramDir, lastDirection, distance) {
             const dir = 1 << pos; // bitwish shift (1, 2, 4, 8)
             switch (dir) {
                 case Enums_1.DIRS.NORTH: {
-                    if (cell.isDirOpen(Enums_1.DIRS.NORTH) && cell.Location.row - 1 >= 0 && !(lastDirection === dir)) {
+                    if (cell.isDirOpen(Enums_1.DIRS.NORTH) && cell.Location.row - 1 >= 0 && lastDirection !== dir) {
                         const nextCell = game.Maze.getCell(new MazeLoc_1.default(cell.Location.row - 1, cell.Location.col));
                         doSmellDirected(game, lang, nextCell, engramDir, Enums_1.DIRS.SOUTH, distance + 1);
                     }
                     break;
                 }
                 case Enums_1.DIRS.SOUTH: {
-                    if (cell.isDirOpen(Enums_1.DIRS.SOUTH) && cell.Location.row + 1 < game.Maze.Height && !(lastDirection === dir)) {
+                    if (cell.isDirOpen(Enums_1.DIRS.SOUTH) && cell.Location.row + 1 < game.Maze.Height && lastDirection !== dir) {
                         const nextCell = game.Maze.getCell(new MazeLoc_1.default(cell.Location.row + 1, cell.Location.col));
                         doSmellDirected(game, lang, nextCell, engramDir, Enums_1.DIRS.NORTH, distance + 1);
                     }
                     break;
                 }
                 case Enums_1.DIRS.EAST: {
-                    if (cell.isDirOpen(Enums_1.DIRS.EAST) && cell.Location.col + 1 < game.Maze.Width && !(lastDirection === dir)) {
+                    if (cell.isDirOpen(Enums_1.DIRS.EAST) && cell.Location.col + 1 < game.Maze.Width && lastDirection !== dir) {
                         const nextCell = game.Maze.getCell(new MazeLoc_1.default(cell.Location.row, cell.Location.col + 1));
                         doSmellDirected(game, lang, nextCell, engramDir, Enums_1.DIRS.WEST, distance + 1);
                     }
                     break;
                 }
                 case Enums_1.DIRS.WEST: {
-                    if (cell.isDirOpen(Enums_1.DIRS.WEST) && cell.Location.col - 1 >= 0 && !(lastDirection === dir)) {
+                    if (cell.isDirOpen(Enums_1.DIRS.WEST) && cell.Location.col - 1 >= 0 && lastDirection !== dir) {
                         const nextCell = game.Maze.getCell(new MazeLoc_1.default(cell.Location.row, cell.Location.col - 1));
                         doSmellDirected(game, lang, nextCell, engramDir, Enums_1.DIRS.EAST, distance + 1);
                     }

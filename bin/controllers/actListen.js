@@ -18,7 +18,7 @@ function doListenLocal(game, lang) {
         setSound(engram.north.hear, { sound: data.entities.lava.sound.adjective, volume: 1 });
     }
     if (!!(cell.Tags & Enums_1.CELL_TAGS.FINISH)) {
-        setSound(engram.south.hear, { sound: data.entities.cheese.sound.adjective, volume: 1 });
+        setSound(engram.south.hear, { sound: data.entities.exit.sound.adjective, volume: 1 });
     }
     //  loop through the cardinal directions in DIRS
     for (let pos = 0; pos < 4; pos++) {
@@ -73,8 +73,8 @@ function doListenDirected(game, lang, cell, engramDir, lastDirection, distance) 
     if (!!(cell.Tags & Enums_1.CELL_TAGS.START) && distance < data.entities.lava.sound.intensity) {
         setSound(engramDir, { sound: data.entities.lava.sound.adjective, volume: parseFloat((distance / data.entities.lava.sound.intensity).toFixed(2)) });
     }
-    if (!!(cell.Tags & Enums_1.CELL_TAGS.FINISH) && distance < data.entities.cheese.sound.intensity) {
-        setSound(engramDir, { sound: data.entities.cheese.sound.adjective, volume: parseFloat((distance / data.entities.cheese.sound.intensity).toFixed(2)) });
+    if (!!(cell.Tags & Enums_1.CELL_TAGS.FINISH) && distance < data.entities.exit.sound.intensity) {
+        setSound(engramDir, { sound: data.entities.exit.sound.adjective, volume: parseFloat((distance / data.entities.exit.sound.intensity).toFixed(2)) });
     }
     if (cell.Traps !== Enums_1.CELL_TRAPS.NONE) {
         for (let pos = 0; pos < 9; pos++) {
@@ -107,28 +107,28 @@ function doListenDirected(game, lang, cell, engramDir, lastDirection, distance) 
             const dir = 1 << pos; // bitwish shift (1, 2, 4, 8)
             switch (dir) {
                 case Enums_1.DIRS.NORTH: {
-                    if (cell.isDirOpen(Enums_1.DIRS.NORTH) && cell.Location.row - 1 >= 0 && !(lastDirection === dir)) {
+                    if (cell.isDirOpen(Enums_1.DIRS.NORTH) && cell.Location.row - 1 >= 0 && lastDirection !== dir) {
                         const nextCell = game.Maze.getCell(new MazeLoc_1.default(cell.Location.row - 1, cell.Location.col));
                         doListenDirected(game, lang, nextCell, engramDir, Enums_1.DIRS.SOUTH, distance + 1);
                     }
                     break;
                 }
                 case Enums_1.DIRS.SOUTH: {
-                    if (cell.isDirOpen(Enums_1.DIRS.SOUTH) && cell.Location.row + 1 < game.Maze.Height && !(lastDirection === dir)) {
+                    if (cell.isDirOpen(Enums_1.DIRS.SOUTH) && cell.Location.row + 1 < game.Maze.Height && lastDirection !== dir) {
                         const nextCell = game.Maze.getCell(new MazeLoc_1.default(cell.Location.row + 1, cell.Location.col));
                         doListenDirected(game, lang, nextCell, engramDir, Enums_1.DIRS.NORTH, distance + 1);
                     }
                     break;
                 }
                 case Enums_1.DIRS.EAST: {
-                    if (cell.isDirOpen(Enums_1.DIRS.EAST) && cell.Location.col + 1 < game.Maze.Width && !(lastDirection === dir)) {
+                    if (cell.isDirOpen(Enums_1.DIRS.EAST) && cell.Location.col + 1 < game.Maze.Width && lastDirection !== dir) {
                         const nextCell = game.Maze.getCell(new MazeLoc_1.default(cell.Location.row, cell.Location.col + 1));
                         doListenDirected(game, lang, nextCell, engramDir, Enums_1.DIRS.WEST, distance + 1);
                     }
                     break;
                 }
                 case Enums_1.DIRS.WEST: {
-                    if (cell.isDirOpen(Enums_1.DIRS.WEST) && cell.Location.col - 1 >= 0 && !(lastDirection === dir)) {
+                    if (cell.isDirOpen(Enums_1.DIRS.WEST) && cell.Location.col - 1 >= 0 && lastDirection !== dir) {
                         const nextCell = game.Maze.getCell(new MazeLoc_1.default(cell.Location.row, cell.Location.col - 1));
                         doListenDirected(game, lang, nextCell, engramDir, Enums_1.DIRS.EAST, distance + 1);
                     }

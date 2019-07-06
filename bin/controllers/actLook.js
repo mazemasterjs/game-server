@@ -79,7 +79,7 @@ function doLookLocal(game, langCode) {
                     }
                     // at the exit - report exit and cheese, then stop travelling
                     if (!!(thisCell.Tags & Enums_1.CELL_TAGS.FINISH)) {
-                        setSee(engram.south.see, { sight: data.entities.cheese.sight.adjective, distance: distance + 1 }); // cheese is just *outside* the maze
+                        setSee(engram.south.see, { sight: data.entities.exit.sight.adjective, distance: distance + 1 }); // cheese is just *outside* the maze
                         break;
                     }
                     sRow++;

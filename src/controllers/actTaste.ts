@@ -1,15 +1,9 @@
 import { Game } from '@mazemasterjs/shared-library/Game';
-
 import { logDebug } from '../funcs';
-
-import { DIRS, CELL_TAGS, CELL_TRAPS } from '@mazemasterjs/shared-library/Enums';
-
+import { CELL_TAGS, CELL_TRAPS, DIRS } from '@mazemasterjs/shared-library/Enums';
 import MazeLoc from '@mazemasterjs/shared-library/MazeLoc';
-
 import CellBase from '@mazemasterjs/shared-library/CellBase';
-
 import { ITaste } from '@mazemasterjs/shared-library/Interfaces/ISenses';
-
 import GameLang from '../GameLang';
 
 export function doTasteLocal(game: Game, lang: string) {
@@ -106,28 +100,28 @@ export function doTasteDirected(game: Game, lang: string, cell: CellBase, engram
       const dir = 1 << pos; // bitwish shift (1, 2, 4, 8)
       switch (dir) {
         case DIRS.NORTH: {
-          if (cell.isDirOpen(DIRS.NORTH) && cell.Location.row - 1 >= 0 && !(lastDirection === dir)) {
+          if (cell.isDirOpen(DIRS.NORTH) && cell.Location.row - 1 >= 0 && lastDirection !== dir) {
             const nextCell = game.Maze.getCell(new MazeLoc(cell.Location.row - 1, cell.Location.col));
             doTasteDirected(game, lang, nextCell, engramDir, DIRS.SOUTH, distance + 1);
           }
           break;
         }
         case DIRS.SOUTH: {
-          if (cell.isDirOpen(DIRS.SOUTH) && cell.Location.row + 1 < game.Maze.Height && !(lastDirection === dir)) {
+          if (cell.isDirOpen(DIRS.SOUTH) && cell.Location.row + 1 < game.Maze.Height && lastDirection !== dir) {
             const nextCell = game.Maze.getCell(new MazeLoc(cell.Location.row + 1, cell.Location.col));
             doTasteDirected(game, lang, nextCell, engramDir, DIRS.NORTH, distance + 1);
           }
           break;
         }
         case DIRS.EAST: {
-          if (cell.isDirOpen(DIRS.EAST) && cell.Location.col + 1 < game.Maze.Width && !(lastDirection === dir)) {
+          if (cell.isDirOpen(DIRS.EAST) && cell.Location.col + 1 < game.Maze.Width && lastDirection !== dir) {
             const nextCell = game.Maze.getCell(new MazeLoc(cell.Location.row, cell.Location.col + 1));
             doTasteDirected(game, lang, nextCell, engramDir, DIRS.WEST, distance + 1);
           }
           break;
         }
         case DIRS.WEST: {
-          if (cell.isDirOpen(DIRS.WEST) && cell.Location.col - 1 >= 0 && !(lastDirection === dir)) {
+          if (cell.isDirOpen(DIRS.WEST) && cell.Location.col - 1 >= 0 && lastDirection !== dir) {
             const nextCell = game.Maze.getCell(new MazeLoc(cell.Location.row, cell.Location.col - 1));
             doTasteDirected(game, lang, nextCell, engramDir, DIRS.EAST, distance + 1);
           }

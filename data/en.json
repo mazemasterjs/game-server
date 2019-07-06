@@ -1,6 +1,28 @@
 {
   "language": "en",
   "entities": {
+    "exit": {
+      "sight": {
+        "adjective": "light",
+        "intensity": 10
+      },
+      "sound": {
+        "adjective": "none",
+        "intensity": -1
+      },
+      "smell": {
+        "adjective": "cheese",
+        "intensity": 5
+      },
+      "touch": {
+        "adjective": "none",
+        "intensity": -1
+      },
+      "taste": {
+        "adjective": "nothing",
+        "intensity": -1
+      }
+    },
     "lava": {
       "sight": {
         "adjective": "lava",
@@ -204,11 +226,11 @@
     "TELEPORTER": {
       "sight": {
         "adjective": "glow",
-        "intensity": 1
+        "intensity": 2
       },
       "sound": {
         "adjective": "hum",
-        "intensity": 1
+        "intensity": 2
       },
       "smell": {
         "adjective": "magic",
@@ -237,8 +259,8 @@
         "intensity": -1
       },
       "touch": {
-        "adjective": "none",
-        "intensity": -1
+        "adjective": "unstable",
+        "intensity": 2
       },
       "taste": {
         "adjective": "none",
@@ -248,19 +270,19 @@
     "FRAGILE_FLOOR": {
       "sight": {
         "adjective": "crumbling",
-        "intensity": 3
+        "intensity": -1
       },
       "sound": {
         "adjective": "cracking",
-        "intensity": 0
+        "intensity": -1
       },
       "smell": {
         "adjective": "none",
         "intensity": -1
       },
       "touch": {
-        "adjective": "breaking",
-        "intensity": 0
+        "adjective": "fragile",
+        "intensity": -1
       },
       "taste": {
         "adjective": "none",
@@ -307,12 +329,18 @@
     "trapOutcomes": {
       "pit": "You fall into a bottomless hole. You will have a lot of time to consider your mistakes...",
       "mouse": "The last thing you hear is a snapping sound.",
-      "tarTrap": "You trudge through the pit of tar, slowing you down",
+      "tar": "You trudge through the pit of tar, slowing you down",
       "flamethrower": "You hear a hiss and a click before you burst into flames",
-      "fragileFloor": "The floor collapses into a pit as you run through it.",
+      "fragileFloor": "The floor crumbles.",
+      "fragileFloorCollapse": "The floor collapses beneath you!",
       "deadfall": "The passage way collapses behind you!",
       "teleport": "Your surroundings suddenly seem different",
-      "trigger": "CLICK"
-    }
+      "poisonDart": "A dart flies out from the darkness and hits you!",
+      "trigger": "CLICK",
+      "poisoned": "POISONED!!",
+      "cheese": "You see a chunk of cheese, you can't help but take a bite!"
+    },
+    "deathPoison": "You succumb to the poison and die..."
+
   }
 }

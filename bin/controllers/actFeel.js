@@ -18,7 +18,7 @@ function doFeelLocal(game, lang) {
         setFeel(engram.north.feel, { feeling: data.entities.lava.touch.adjective, intensity: data.entities.lava.touch.intensity });
     }
     if (!!(cell.Tags & Enums_1.CELL_TAGS.FINISH)) {
-        setFeel(engram.south.feel, { feeling: data.entities.cheese.touch.adjective, intensity: data.entities.cheese.touch.intensity });
+        setFeel(engram.south.feel, { feeling: data.entities.exit.touch.adjective, intensity: data.entities.exit.touch.intensity });
     }
     //  loop through the cardinal directions in DIRS
     for (let pos = 0; pos < 4; pos++) {
@@ -71,10 +71,10 @@ function doFeelDirected(game, lang, cell, engramDir, lastDirection, distance) {
     funcs_1.logDebug(__filename, method, 'Entering');
     const MAX_DISTANCE = 3;
     if (!!(cell.Tags & Enums_1.CELL_TAGS.START)) {
-        setFeel(engramDir, { feeling: data.entities.lava.touch.adjective, intensity: distance });
+        setFeel(engramDir, { feeling: data.entities.lava.touch.adjective, intensity: data.entities.lava.touch.intensity });
     }
     if (!!(cell.Tags & Enums_1.CELL_TAGS.FINISH)) {
-        setFeel(engramDir, { feeling: data.entities.cheese.touch.adjective, intensity: distance });
+        setFeel(engramDir, { feeling: data.entities.exit.touch.adjective, intensity: data.entities.exit.touch.intensity });
     }
     if (cell.Traps !== Enums_1.CELL_TRAPS.NONE) {
         for (let pos = 0; pos < 9; pos++) {
@@ -82,10 +82,10 @@ function doFeelDirected(game, lang, cell, engramDir, lastDirection, distance) {
             const trapType = Enums_1.CELL_TRAPS[trapEnum];
             if (!!(cell.Traps & trapEnum)) {
                 try {
-                    const intensity = data.entities[trapType.toUpperCase()].touch.intensity;
+                    const int = data.entities[trapType.toUpperCase()].touch.intensity;
                     const adjective = data.entities[trapType.toUpperCase()].touch.adjective;
-                    if (distance < intensity) {
-                        setFeel(engramDir, { feeling: adjective, intensity: distance });
+                    if (distance < int) {
+                        setFeel(engramDir, { feeling: adjective, intensity: int / distance });
                     }
                 }
                 catch (err) {
@@ -100,28 +100,28 @@ function doFeelDirected(game, lang, cell, engramDir, lastDirection, distance) {
             const dir = 1 << pos; // bitwish shift (1, 2, 4, 8)
             switch (dir) {
                 case Enums_1.DIRS.NORTH: {
-                    if (cell.isDirOpen(Enums_1.DIRS.NORTH) && cell.Location.row - 1 >= 0 && !(lastDirection === dir)) {
+                    if (cell.isDirOpen(Enums_1.DIRS.NORTH) && cell.Location.row - 1 >= 0 && lastDirection !== dir) {
                         const nextCell = game.Maze.getCell(new MazeLoc_1.default(cell.Location.row - 1, cell.Location.col));
                         doFeelDirected(game, lang, nextCell, engramDir, Enums_1.DIRS.SOUTH, distance + 1);
                     }
                     break;
                 }
                 case Enums_1.DIRS.SOUTH: {
-                    if (cell.isDirOpen(Enums_1.DIRS.SOUTH) && cell.Location.row + 1 < game.Maze.Height && !(lastDirection === dir)) {
+                    if (cell.isDirOpen(Enums_1.DIRS.SOUTH) && cell.Location.row + 1 < game.Maze.Height && lastDirection !== dir) {
                         const nextCell = game.Maze.getCell(new MazeLoc_1.default(cell.Location.row + 1, cell.Location.col));
                         doFeelDirected(game, lang, nextCell, engramDir, Enums_1.DIRS.NORTH, distance + 1);
                     }
                     break;
                 }
                 case Enums_1.DIRS.EAST: {
-                    if (cell.isDirOpen(Enums_1.DIRS.EAST) && cell.Location.col + 1 < game.Maze.Width && !(lastDirection === dir)) {
+                    if (cell.isDirOpen(Enums_1.DIRS.EAST) && cell.Location.col + 1 < game.Maze.Width && lastDirection !== dir) {
                         const nextCell = game.Maze.getCell(new MazeLoc_1.default(cell.Location.row, cell.Location.col + 1));
                         doFeelDirected(game, lang, nextCell, engramDir, Enums_1.DIRS.WEST, distance + 1);
                     }
                     break;
                 }
                 case Enums_1.DIRS.WEST: {
-                    if (cell.isDirOpen(Enums_1.DIRS.WEST) && cell.Location.col - 1 >= 0 && !(lastDirection === dir)) {
+                    if (cell.isDirOpen(Enums_1.DIRS.WEST) && cell.Location.col - 1 >= 0 && lastDirection !== dir) {
                         const nextCell = game.Maze.getCell(new MazeLoc_1.default(cell.Location.row, cell.Location.col - 1));
                         doFeelDirected(game, lang, nextCell, engramDir, Enums_1.DIRS.EAST, distance + 1);
                     }

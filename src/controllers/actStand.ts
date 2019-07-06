@@ -9,8 +9,10 @@ export async function doStand(game: Game, langCode: string): Promise<IAction> {
   logDebug(__filename, `doStand(${game.Id}, ${langCode})`, 'Player has issued the STAND command.');
   const startScore = game.Score.getTotalScore();
   const data = GameLang.getInstance(langCode);
-
-  if (!!(game.Player.State & PLAYER_STATES.STANDING)) {
+  if (!!(game.Player.State & PLAYER_STATES.STUNNED)) {
+    game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.stunned);
+    game.Player.removeState(PLAYER_STATES.STUNNED);
+  } else if (!!(game.Player.State & PLAYER_STATES.STANDING)) {
     game = await grantTrophy(game, TROPHY_IDS.STAND_HARDER);
     game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.standWhileStanding);
   } else {

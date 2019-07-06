@@ -8,6 +8,10 @@ import { finishGame } from './actMove';
 
 export function doJump(game: Game, lang: string) {
   const data = GameLang.getInstance(lang);
+  let moveCost = 2;
+  if (!!(game.Player.State & PLAYER_STATES.SLOWED)) {
+    moveCost += 2;
+  }
   if (!!(game.Player.State & PLAYER_STATES.STUNNED)) {
     game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.stunned);
     game.Player.removeState(PLAYER_STATES.STUNNED);
@@ -21,10 +25,7 @@ export function doJump(game: Game, lang: string) {
     }
   }
   const startScore = game.Score.getTotalScore();
-  if (!!(game.Player.State & PLAYER_STATES.SLOWED)) {
-    return Promise.resolve(fns.finalizeAction(game, 4, startScore, lang));
-  }
-  return Promise.resolve(fns.finalizeAction(game, 2, startScore, lang));
+  return Promise.resolve(fns.finalizeAction(game, moveCost, startScore, lang));
 }
 /**
  * A recursive function that sees if the cell has an exit in the direction the player is facing.
@@ -63,6 +64,11 @@ export function jumpNext(game: Game, lang: string, distance: number, maxDistance
       }
       // if not, the player moves and it checks the next cell
       fns.movePlayer(game);
+      // If the player tried to jump over a flamethrower trap, it triggers anyways
+      const pCell = game.Maze.getCell(game.Player.Location);
+      if (!!(pCell.Traps & CELL_TRAPS.FLAMETHROWER)) {
+        fns.trapCheck(game, lang, true);
+      }
       jumpNext(game, lang, distance + 1);
     } else {
       logDebug(__filename, method, 'Player crashed into a wall while jumping');
@@ -71,7 +77,7 @@ export function jumpNext(game: Game, lang: string, distance: number, maxDistance
       game.Player.addState(PLAYER_STATES.STUNNED);
     }
   } else {
-    game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jumping);
+    game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jump.jumping);
     fns.trapCheck(game, lang);
   }
 }

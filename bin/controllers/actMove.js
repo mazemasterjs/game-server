@@ -33,6 +33,13 @@ const config = Config_1.Config.getInstance();
 function doMove(game, langCode, sneaking = false) {
     return __awaiter(this, void 0, void 0, function* () {
         const method = `doMove(${game.Id})`;
+        let moveCost = 1;
+        if (!!(game.Player.State & Enums_1.PLAYER_STATES.SLOWED)) {
+            moveCost++;
+        }
+        if (sneaking) {
+            moveCost++;
+        }
         let dir = game.Actions[game.Actions.length - 1].direction;
         if (dir === 0) {
             dir = game.Actions[game.Actions.length - 1].direction = game.Player.Facing;
@@ -52,7 +59,7 @@ function doMove(game, langCode, sneaking = false) {
             fns.logDebug(__filename, method, 'Player tried to move while not standing.');
             // add the trophy for walking without standing
             game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.SPINNING_YOUR_WHEELS);
-            game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.moveWhileSitting);
+            game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.move.sitting);
             // finalize and return action
             return Promise.resolve(fns.finalizeAction(game, 1, startScore, langCode));
         }
@@ -94,10 +101,7 @@ function doMove(game, langCode, sneaking = false) {
         }
         fns.trapCheck(game, langCode);
         // game continues - return the action (with outcomes and engram)
-        if (!!(game.Player.State & Enums_1.PLAYER_STATES.SLOWED)) {
-            return Promise.resolve(fns.finalizeAction(game, 2, startScore, langCode));
-        }
-        return Promise.resolve(fns.finalizeAction(game, 1, startScore, langCode));
+        return Promise.resolve(fns.finalizeAction(game, moveCost, startScore, langCode));
     });
 }
 exports.doMove = doMove;
