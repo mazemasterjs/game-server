@@ -191,7 +191,6 @@ export const abandonGame = async (req: Request, res: Response) => {
  */
 export const listGames = (req: Request, res: Response) => {
   logRequest('listGames', req);
-  res.status(200).json(fns.getGameStubs());
 
   try {
     return res.status(200).json(fns.getGameStubs());
@@ -281,7 +280,7 @@ export const processAction = async (req: Request, res: Response) => {
 
   switch (action.command) {
     case COMMANDS.LOOK: {
-      const lookResult = await doLook(game, langCode);
+      const lookResult = doLook(game, langCode);
       return res
         .status(200)
         .json({ action: lookResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });

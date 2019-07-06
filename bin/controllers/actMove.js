@@ -88,7 +88,7 @@ function doMove(game, langCode, sneaking = false) {
                 else {
                     // Changes the facing of the player and looks in that direction
                     game.Player.Facing = dir;
-                    fns.movePlayer(game);
+                    fns.movePlayer(game, langCode);
                 }
             }
             else {

@@ -21,7 +21,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const fns = __importStar(require("./funcs"));
 const CacheEntry_1 = require("./CacheEntry");
 const Config_1 = __importDefault(require("./Config"));
-const logger_1 = __importStar(require("@mazemasterjs/logger"));
+const logger_1 = __importDefault(require("@mazemasterjs/logger"));
 const Enums_1 = require("@mazemasterjs/shared-library/Enums");
 // useful constants
 const config = Config_1.default.getInstance();
@@ -250,10 +250,6 @@ class Cache {
      * @param cacheType
      */
     dumpCache(cacheType) {
-        // don't do this if the log level isn't high enough!
-        if (log.LogLevel < logger_1.LOG_LEVELS.DEBUG) {
-            return;
-        }
         const method = `dumpCache(${CACHE_TYPES[cacheType]})`;
         const cache = this.getCache(cacheType);
         for (const ci of cache) {
@@ -293,6 +289,7 @@ class Cache {
         cache.push(cacheEntry);
         // offer the new cacheEntry as a return
         fns.logDebug(__filename, method, 'Item cached.');
+        this.logCacheStatus();
         return cacheEntry;
     }
     /**

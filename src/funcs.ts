@@ -639,19 +639,19 @@ export function trapCheck(game: Game, lang: string, delayTrigger: boolean = fals
             if (delayTrigger) {
               switch (game.Player.Facing) {
                 case DIRS.NORTH: {
-                  game.Maze.removeExit(DIRS.SOUTH, pCell);
+                  game.Maze.removeExit(pCell, DIRS.SOUTH);
                   break;
                 }
                 case DIRS.SOUTH: {
-                  game.Maze.removeExit(DIRS.NORTH, pCell);
+                  game.Maze.removeExit(pCell, DIRS.NORTH);
                   break;
                 }
                 case DIRS.EAST: {
-                  game.Maze.removeExit(DIRS.WEST, pCell);
+                  game.Maze.removeExit(pCell, DIRS.WEST);
                   break;
                 }
                 case DIRS.WEST: {
-                  game.Maze.removeExit(DIRS.EAST, pCell);
+                  game.Maze.removeExit(pCell, DIRS.EAST);
                   break;
                 }
               }

@@ -115,28 +115,28 @@ export function doSmellDirected(game: Game, lang: string, cell: CellBase, engram
       const dir = 1 << pos; // bitwish shift (1, 2, 4, 8)
       switch (dir) {
         case DIRS.NORTH: {
-          if (cell.isDirOpen(DIRS.NORTH) && cell.Location.row - 1 >= 0 && !(lastDirection === dir)) {
+          if (cell.isDirOpen(DIRS.NORTH) && cell.Location.row - 1 >= 0 && lastDirection !== dir) {
             const nextCell = game.Maze.getCell(new MazeLoc(cell.Location.row - 1, cell.Location.col));
             doSmellDirected(game, lang, nextCell, engramDir, DIRS.SOUTH, distance + 1);
           }
           break;
         }
         case DIRS.SOUTH: {
-          if (cell.isDirOpen(DIRS.SOUTH) && cell.Location.row + 1 < game.Maze.Height && !(lastDirection === dir)) {
+          if (cell.isDirOpen(DIRS.SOUTH) && cell.Location.row + 1 < game.Maze.Height && lastDirection !== dir) {
             const nextCell = game.Maze.getCell(new MazeLoc(cell.Location.row + 1, cell.Location.col));
             doSmellDirected(game, lang, nextCell, engramDir, DIRS.NORTH, distance + 1);
           }
           break;
         }
         case DIRS.EAST: {
-          if (cell.isDirOpen(DIRS.EAST) && cell.Location.col + 1 < game.Maze.Width && !(lastDirection === dir)) {
+          if (cell.isDirOpen(DIRS.EAST) && cell.Location.col + 1 < game.Maze.Width && lastDirection !== dir) {
             const nextCell = game.Maze.getCell(new MazeLoc(cell.Location.row, cell.Location.col + 1));
             doSmellDirected(game, lang, nextCell, engramDir, DIRS.WEST, distance + 1);
           }
           break;
         }
         case DIRS.WEST: {
-          if (cell.isDirOpen(DIRS.WEST) && cell.Location.col - 1 >= 0 && !(lastDirection === dir)) {
+          if (cell.isDirOpen(DIRS.WEST) && cell.Location.col - 1 >= 0 && lastDirection !== dir) {
             const nextCell = game.Maze.getCell(new MazeLoc(cell.Location.row, cell.Location.col - 1));
             doSmellDirected(game, lang, nextCell, engramDir, DIRS.EAST, distance + 1);
           }

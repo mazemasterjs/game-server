@@ -100,28 +100,28 @@ function doTasteDirected(game, lang, cell, engramDir, lastDirection, distance) {
             const dir = 1 << pos; // bitwish shift (1, 2, 4, 8)
             switch (dir) {
                 case Enums_1.DIRS.NORTH: {
-                    if (cell.isDirOpen(Enums_1.DIRS.NORTH) && cell.Location.row - 1 >= 0 && !(lastDirection === dir)) {
+                    if (cell.isDirOpen(Enums_1.DIRS.NORTH) && cell.Location.row - 1 >= 0 && lastDirection !== dir) {
                         const nextCell = game.Maze.getCell(new MazeLoc_1.default(cell.Location.row - 1, cell.Location.col));
                         doTasteDirected(game, lang, nextCell, engramDir, Enums_1.DIRS.SOUTH, distance + 1);
                     }
                     break;
                 }
                 case Enums_1.DIRS.SOUTH: {
-                    if (cell.isDirOpen(Enums_1.DIRS.SOUTH) && cell.Location.row + 1 < game.Maze.Height && !(lastDirection === dir)) {
+                    if (cell.isDirOpen(Enums_1.DIRS.SOUTH) && cell.Location.row + 1 < game.Maze.Height && lastDirection !== dir) {
                         const nextCell = game.Maze.getCell(new MazeLoc_1.default(cell.Location.row + 1, cell.Location.col));
                         doTasteDirected(game, lang, nextCell, engramDir, Enums_1.DIRS.NORTH, distance + 1);
                     }
                     break;
                 }
                 case Enums_1.DIRS.EAST: {
-                    if (cell.isDirOpen(Enums_1.DIRS.EAST) && cell.Location.col + 1 < game.Maze.Width && !(lastDirection === dir)) {
+                    if (cell.isDirOpen(Enums_1.DIRS.EAST) && cell.Location.col + 1 < game.Maze.Width && lastDirection !== dir) {
                         const nextCell = game.Maze.getCell(new MazeLoc_1.default(cell.Location.row, cell.Location.col + 1));
                         doTasteDirected(game, lang, nextCell, engramDir, Enums_1.DIRS.WEST, distance + 1);
                     }
                     break;
                 }
                 case Enums_1.DIRS.WEST: {
-                    if (cell.isDirOpen(Enums_1.DIRS.WEST) && cell.Location.col - 1 >= 0 && !(lastDirection === dir)) {
+                    if (cell.isDirOpen(Enums_1.DIRS.WEST) && cell.Location.col - 1 >= 0 && lastDirection !== dir) {
                         const nextCell = game.Maze.getCell(new MazeLoc_1.default(cell.Location.row, cell.Location.col - 1));
                         doTasteDirected(game, lang, nextCell, engramDir, Enums_1.DIRS.EAST, distance + 1);
                     }

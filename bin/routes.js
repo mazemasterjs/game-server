@@ -187,7 +187,6 @@ exports.abandonGame = (req, res) => __awaiter(this, void 0, void 0, function* ()
  */
 exports.listGames = (req, res) => {
     logRequest('listGames', req);
-    res.status(200).json(fns.getGameStubs());
     try {
         return res.status(200).json(fns.getGameStubs());
     }
@@ -266,7 +265,7 @@ exports.processAction = (req, res) => __awaiter(this, void 0, void 0, function* 
     }
     switch (action.command) {
         case Enums_1.COMMANDS.LOOK: {
-            const lookResult = yield actLook_1.doLook(game, langCode);
+            const lookResult = actLook_1.doLook(game, langCode);
             return res
                 .status(200)
                 .json({ action: lookResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });

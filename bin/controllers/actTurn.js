@@ -26,17 +26,17 @@ function doTurn(game, langCode) {
             // Turns left or right
             switch (direction) {
                 case Enums_1.DIRS.RIGHT: {
-                    action.outcomes.push('You turn to the right.');
+                    action.outcomes.push(data.outcomes.turnRight);
                     game.Player.Facing = Helpers_1.getNextDir(game.Player.Facing);
                     break;
                 } // end case DIRS.RIGHT
                 case Enums_1.DIRS.LEFT: {
-                    action.outcomes.push('You turn to the left.');
+                    action.outcomes.push(data.outcomes.turnLeft);
                     game.Player.Facing = Helpers_1.getNextDir(game.Player.Facing, true);
                     break;
                 } // end case DIRS.LEFT
                 default: {
-                    action.outcomes.push('You turn 360 degrees and moonwalk in place');
+                    action.outcomes.push(data.outcomes.turnWrong);
                 }
             }
         }
