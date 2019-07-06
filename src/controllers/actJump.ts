@@ -46,7 +46,7 @@ export function jumpNext(game: Game, lang: string, distance: number, maxDistance
     if (cell.isDirOpen(dir)) {
       // Check to see if the player jumped into the entrance or exit...
       if (!!(cell.Tags & CELL_TAGS.START) && dir === DIRS.NORTH) {
-        game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jumpingIntoLava);
+        game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jump.lava);
         finishGame(game, GAME_RESULTS.DEATH_LAVA);
         return;
       } else if (!!(cell.Tags & CELL_TAGS.FINISH) && dir === DIRS.SOUTH) {
@@ -63,7 +63,7 @@ export function jumpNext(game: Game, lang: string, distance: number, maxDistance
         return;
       }
       // if not, the player moves and it checks the next cell
-      fns.movePlayer(game);
+      fns.movePlayer(game, lang, false);
       // If the player tried to jump over a flamethrower trap, it triggers anyways
       const pCell = game.Maze.getCell(game.Player.Location);
       if (!!(pCell.Traps & CELL_TRAPS.FLAMETHROWER)) {
@@ -72,7 +72,7 @@ export function jumpNext(game: Game, lang: string, distance: number, maxDistance
       jumpNext(game, lang, distance + 1);
     } else {
       logDebug(__filename, method, 'Player crashed into a wall while jumping');
-      game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jumpingIntoWall);
+      game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jump.wall);
       game.Player.addState(PLAYER_STATES.SITTING);
       game.Player.addState(PLAYER_STATES.STUNNED);
     }

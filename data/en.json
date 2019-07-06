@@ -116,18 +116,18 @@
     "PIT": {
       "sight": {
         "adjective": "pit",
-        "intensity": 3
+        "intensity": 2
       },
       "sound": {
-        "adjective": "pind",
-        "intensity": 1
+        "adjective": "wind",
+        "intensity": -1
       },
       "smell": {
         "adjective": "dirt",
         "intensity": -1
       },
       "touch": {
-        "adjective": "wind",
+        "adjective": "breeze",
         "intensity": 2
       },
       "taste": {
@@ -160,11 +160,11 @@
     "TARPIT": {
       "sight": {
         "adjective": "tar",
-        "intensity": 3
+        "intensity": -1
       },
       "sound": {
         "adjective": "bubbling",
-        "intensity": 3
+        "intensity": -1
       },
       "smell": {
         "adjective": "tar",
@@ -172,7 +172,7 @@
       },
       "touch": {
         "adjective": "sticky",
-        "intensity": 0
+        "intensity": 2
       },
       "taste": {
         "adjective": "tar",
@@ -182,7 +182,7 @@
     "FLAMETHROWER": {
       "sight": {
         "adjective": "puddle",
-        "intensity": 2
+        "intensity": -1
       },
       "sound": {
         "adjective": "hissing",
@@ -208,7 +208,7 @@
       },
       "sound": {
         "adjective": "clicking",
-        "intensity": 1
+        "intensity": -1
       },
       "smell": {
         "adjective": "none",
@@ -226,7 +226,7 @@
     "TELEPORTER": {
       "sight": {
         "adjective": "glow",
-        "intensity": 2
+        "intensity": -1
       },
       "sound": {
         "adjective": "hum",
@@ -260,7 +260,7 @@
       },
       "touch": {
         "adjective": "unstable",
-        "intensity": 2
+        "intensity": -1
       },
       "taste": {
         "adjective": "none",
@@ -340,6 +340,9 @@
       "poisoned": "POISONED!!",
       "cheese": "You see a chunk of cheese, you can't help but take a bite!"
     },
+    "turnLeft": "You turn left",
+    "turnRight": "You turn right",
+    "turnWrong": "You turn 360 degrees",
     "deathPoison": "You succumb to the poison and die..."
 
   }

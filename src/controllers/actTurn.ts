@@ -17,17 +17,17 @@ export function doTurn(game: Game, langCode: string): Promise<IAction> {
       // Turns left or right
       switch (direction) {
         case DIRS.RIGHT: {
-          action.outcomes.push('You turn to the right.');
+          action.outcomes.push(data.outcomes.turnRight);
           game.Player.Facing = getNextDir(game.Player.Facing);
           break;
         } // end case DIRS.RIGHT
         case DIRS.LEFT: {
-          action.outcomes.push('You turn to the left.');
+          action.outcomes.push(data.outcomes.turnLeft);
           game.Player.Facing = getNextDir(game.Player.Facing, true);
           break;
         } // end case DIRS.LEFT
         default: {
-          action.outcomes.push('You turn 360 degrees and moonwalk in place');
+          action.outcomes.push(data.outcomes.turnWrong);
         }
       }
     }

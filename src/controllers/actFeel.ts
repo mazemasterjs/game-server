@@ -1,16 +1,10 @@
-import { Game } from '@mazemasterjs/shared-library/Game';
-
-import { logDebug } from '../funcs';
-
-import { DIRS, CELL_TAGS, CELL_TRAPS } from '@mazemasterjs/shared-library/Enums';
-
-import MazeLoc from '@mazemasterjs/shared-library/MazeLoc';
-
 import CellBase from '@mazemasterjs/shared-library/CellBase';
-
-import { IFeeling } from '@mazemasterjs/shared-library/Interfaces/ISenses';
-
 import GameLang from '../GameLang';
+import MazeLoc from '@mazemasterjs/shared-library/MazeLoc';
+import { CELL_TAGS, CELL_TRAPS, DIRS } from '@mazemasterjs/shared-library/Enums';
+import { Game } from '@mazemasterjs/shared-library/Game';
+import { IFeeling } from '@mazemasterjs/shared-library/Interfaces/ISenses';
+import { logDebug } from '../funcs';
 
 export function doFeelLocal(game: Game, lang: string) {
   const method = `dofeelLocal(${game.Id}, ${lang})`;
@@ -77,10 +71,10 @@ export function doFeelDirected(game: Game, lang: string, cell: CellBase, engramD
   logDebug(__filename, method, 'Entering');
   const MAX_DISTANCE = 3;
   if (!!(cell.Tags & CELL_TAGS.START)) {
-    setFeel(engramDir, { feeling: data.entities.lava.touch.adjective, intensity: data.entities.lava.touch.intensity });
+    setFeel(engramDir, { feeling: data.entities.lava.touch.adjective, intensity: data.entities.lava.touch.intensity / distance });
   }
   if (!!(cell.Tags & CELL_TAGS.FINISH)) {
-    setFeel(engramDir, { feeling: data.entities.exit.touch.adjective, intensity: data.entities.exit.touch.intensity });
+    setFeel(engramDir, { feeling: data.entities.exit.touch.adjective, intensity: data.entities.exit.touch.intensity / distance });
   }
 
   if (cell.Traps !== CELL_TRAPS.NONE) {

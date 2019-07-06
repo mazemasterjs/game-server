@@ -38,6 +38,11 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 
 ## Change Notes
 
+### v0.9.7
+
+- all engrams and outcomes now use the language file
+- fixes for engram sense intensity calculation in feeling
+
 ### v0.9.6
 
 - /cache/dump no longer aborts if log level is below debug

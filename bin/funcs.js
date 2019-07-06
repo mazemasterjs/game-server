@@ -261,35 +261,36 @@ exports.getCmdByName = getCmdByName;
  * @param game: Game - the current game
  * @param action: IAction - the pre-validated IAction behind this move
  */
-function movePlayer(game, printOutcome = false) {
+function movePlayer(game, lang, printOutcome = true) {
     const act = game.Actions[game.Actions.length - 1];
+    const data = GameLang_1.default.getInstance(lang);
     // reposition the player - all move validation is preformed prior to this call
     switch (act.direction) {
         case Enums_1.DIRS.NORTH: {
             game.Player.Location.row--;
             if (printOutcome) {
-                act.outcomes.push('You move to the North.');
+                act.outcomes.push(data.outcomes.move.north);
             }
             break;
         }
         case Enums_1.DIRS.SOUTH: {
             game.Player.Location.row++;
             if (printOutcome) {
-                act.outcomes.push('You move to the South.');
+                act.outcomes.push(data.outcomes.move.south);
             }
             break;
         }
         case Enums_1.DIRS.EAST: {
             game.Player.Location.col++;
             if (printOutcome) {
-                act.outcomes.push('You move to the East.');
+                act.outcomes.push(data.outcomes.move.east);
             }
             break;
         }
         case Enums_1.DIRS.WEST: {
             game.Player.Location.col--;
             if (printOutcome) {
-                act.outcomes.push('You move to the West.');
+                act.outcomes.push(data.outcomes.move.west);
             }
             break;
         }

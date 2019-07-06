@@ -71,10 +71,10 @@ function doFeelDirected(game, lang, cell, engramDir, lastDirection, distance) {
     funcs_1.logDebug(__filename, method, 'Entering');
     const MAX_DISTANCE = 3;
     if (!!(cell.Tags & Enums_1.CELL_TAGS.START)) {
-        setFeel(engramDir, { feeling: data.entities.lava.touch.adjective, intensity: data.entities.lava.touch.intensity });
+        setFeel(engramDir, { feeling: data.entities.lava.touch.adjective, intensity: data.entities.lava.touch.intensity / distance });
     }
     if (!!(cell.Tags & Enums_1.CELL_TAGS.FINISH)) {
-        setFeel(engramDir, { feeling: data.entities.exit.touch.adjective, intensity: data.entities.exit.touch.intensity });
+        setFeel(engramDir, { feeling: data.entities.exit.touch.adjective, intensity: data.entities.exit.touch.intensity / distance });
     }
     if (cell.Traps !== Enums_1.CELL_TRAPS.NONE) {
         for (let pos = 0; pos < 9; pos++) {
