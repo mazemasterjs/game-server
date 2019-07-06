@@ -255,11 +255,6 @@ export class Cache {
    * @param cacheType
    */
   public dumpCache(cacheType: CACHE_TYPES) {
-    // don't do this if the log level isn't high enough!
-    if (log.LogLevel < LOG_LEVELS.DEBUG) {
-      return;
-    }
-
     const method = `dumpCache(${CACHE_TYPES[cacheType]})`;
     const cache: Array<CacheEntry> = this.getCache(cacheType);
     for (const ci of cache) {
@@ -305,6 +300,7 @@ export class Cache {
 
     // offer the new cacheEntry as a return
     fns.logDebug(__filename, method, 'Item cached.');
+    this.logCacheStatus();
     return cacheEntry;
   }
 
