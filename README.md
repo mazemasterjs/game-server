@@ -38,6 +38,11 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 
 ## Change Notes
 
+### v0.9.6
+
+- /cache/dump no longer aborts if log level is below debug
+- fixed bug in game/get preventing return of game stubs list
+
 ### v0.9.5
 
 - Fixed 32 weird conditions that looked like if (someVal === true && !(someValue === false))

@@ -191,7 +191,6 @@ export const abandonGame = async (req: Request, res: Response) => {
  */
 export const listGames = (req: Request, res: Response) => {
   logRequest('listGames', req);
-  res.status(200).json(fns.getGameStubs());
 
   try {
     return res.status(200).json(fns.getGameStubs());
