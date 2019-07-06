@@ -1,16 +1,10 @@
-import { Game } from '@mazemasterjs/shared-library/Game';
-
-import { logDebug } from '../funcs';
-
-import { CELL_TAGS, CELL_TRAPS, DIRS } from '@mazemasterjs/shared-library/Enums';
-
-import MazeLoc from '@mazemasterjs/shared-library/MazeLoc';
-
 import CellBase from '@mazemasterjs/shared-library/CellBase';
-
-import { IFeeling } from '@mazemasterjs/shared-library/Interfaces/ISenses';
-
 import GameLang from '../GameLang';
+import MazeLoc from '@mazemasterjs/shared-library/MazeLoc';
+import { CELL_TAGS, CELL_TRAPS, DIRS } from '@mazemasterjs/shared-library/Enums';
+import { Game } from '@mazemasterjs/shared-library/Game';
+import { IFeeling } from '@mazemasterjs/shared-library/Interfaces/ISenses';
+import { logDebug } from '../funcs';
 
 export function doFeelLocal(game: Game, lang: string) {
   const method = `dofeelLocal(${game.Id}, ${lang})`;
