@@ -133,9 +133,15 @@ async function authUser(userName: string, password: string, callback: any) {
 
   const userCreds: IUser | null = security.getUserCreds(userName);
   if (userCreds !== null) {
-    log.debug(__filename, method, `User credentials cached. User role is: ${USER_ROLES[userCreds.role]}`);
-    callback(null, true);
-    return;
+    if (userCreds.pwHash !== hash(password)) {
+      log.debug(__filename, method, 'Authentication Failed: Invalid password: ' + userCreds.userName);
+      callback(null, false);
+      return;
+    } else {
+      log.debug(__filename, method, `User credentials cached. User role is: ${USER_ROLES[userCreds.role]}`);
+      callback(null, true);
+      return;
+    }
   }
 
   // credentials not cached - call the team->user service
