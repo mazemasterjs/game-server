@@ -38,6 +38,10 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 
 ## Change Notes
 
+### v0.9.8
+
+- fixed issue with userAuth - cached credentials are now validated on every request
+
 ### v0.9.7
 
 - all engrams and outcomes now use the language file
