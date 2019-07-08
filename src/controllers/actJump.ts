@@ -17,7 +17,7 @@ export function doJump(game: Game, lang: string) {
     game.Player.removeState(PLAYER_STATES.STUNNED);
   } else {
     if (!!(game.Player.State & PLAYER_STATES.SITTING)) {
-      game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jumpWhileSitting);
+      game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jump.sitting);
       game.Player.addState(PLAYER_STATES.STANDING);
     } else {
       fns.trapCheck(game, lang, true);

@@ -66,7 +66,9 @@ function doMove(game, langCode, sneaking = false) {
         else {
             // now check for start/finish cell win & lose conditions
             if (!sneaking) {
+                funcs_1.logDebug(__filename, method, `Players location 1st pre-trap check ${game.Player.Location}`);
                 fns.trapCheck(game, langCode, true);
+                funcs_1.logDebug(__filename, method, `Players location 1st pre-trap check ${game.Player.Location}`);
             }
             if (game.Maze.getCell(pLoc).isDirOpen(dir)) {
                 if (dir === Enums_1.DIRS.NORTH && pLoc.equals(game.Maze.StartCell)) {
@@ -99,7 +101,9 @@ function doMove(game, langCode, sneaking = false) {
                 game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.stunned);
             }
         }
+        funcs_1.logDebug(__filename, method, `Players location 2nd pre-trap check ${game.Player.Location}`);
         fns.trapCheck(game, langCode);
+        funcs_1.logDebug(__filename, method, `Players location 2nd post-trap check ${game.Player.Location}`);
         // game continues - return the action (with outcomes and engram)
         return Promise.resolve(fns.finalizeAction(game, moveCost, startScore, langCode));
     });

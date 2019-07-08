@@ -4,7 +4,8 @@ import MazeLoc from '@mazemasterjs/shared-library/MazeLoc';
 import { CELL_TAGS, CELL_TRAPS, DIRS } from '@mazemasterjs/shared-library/Enums';
 import { Game } from '@mazemasterjs/shared-library/Game';
 import { IFeeling } from '@mazemasterjs/shared-library/Interfaces/ISenses';
-import { logDebug } from '../funcs';
+import { logDebug, calculateIntensity } from '../funcs';
+import { fsync } from 'fs';
 
 export function doFeelLocal(game: Game, lang: string) {
   const method = `dofeelLocal(${game.Id}, ${lang})`;
@@ -14,10 +15,10 @@ export function doFeelLocal(game: Game, lang: string) {
   const data = GameLang.getInstance(lang);
   // get the local sounds
   if (!!(cell.Tags & CELL_TAGS.START)) {
-    setFeel(engram.north.feel, { feeling: data.entities.lava.touch.adjective, intensity: data.entities.lava.touch.intensity });
+    setFeel(engram.north.feel, { feeling: data.entities.lava.touch.adjective, intensity: calculateIntensity(data.entities.lava.touch.intensity, 1) });
   }
   if (!!(cell.Tags & CELL_TAGS.FINISH)) {
-    setFeel(engram.south.feel, { feeling: data.entities.exit.touch.adjective, intensity: data.entities.exit.touch.intensity });
+    setFeel(engram.south.feel, { feeling: data.entities.exit.touch.adjective, intensity: calculateIntensity(data.entities.exit.touch.intensity, 1) });
   }
 
   //  loop through the cardinal directions in DIRS
@@ -70,11 +71,11 @@ export function doFeelDirected(game: Game, lang: string, cell: CellBase, engramD
   const method = `dofeelDirected(${game.Id}, ${lang}, ${cell.Location}, [emgramDir], ${lastDirection}, ${distance})`;
   logDebug(__filename, method, 'Entering');
   const MAX_DISTANCE = 3;
-  if (!!(cell.Tags & CELL_TAGS.START)) {
-    setFeel(engramDir, { feeling: data.entities.lava.touch.adjective, intensity: data.entities.lava.touch.intensity / distance });
+  if (!!(cell.Tags & CELL_TAGS.START) && data.entities.lava.touch.intensity <= distance) {
+    setFeel(engramDir, { feeling: data.entities.lava.touch.adjective, intensity: calculateIntensity(data.entities.lava.touch.intensity, distance + 1) * 10 });
   }
-  if (!!(cell.Tags & CELL_TAGS.FINISH)) {
-    setFeel(engramDir, { feeling: data.entities.exit.touch.adjective, intensity: data.entities.exit.touch.intensity / distance });
+  if (!!(cell.Tags & CELL_TAGS.FINISH) && data.entities.exit.touch.intensity <= distance) {
+    setFeel(engramDir, { feeling: data.entities.exit.touch.adjective, intensity: calculateIntensity(data.entities.exit.touch.intensity, distance + 1) * 10 });
   }
 
   if (cell.Traps !== CELL_TRAPS.NONE) {
@@ -83,13 +84,13 @@ export function doFeelDirected(game: Game, lang: string, cell: CellBase, engramD
       const trapType = CELL_TRAPS[trapEnum];
       if (!!(cell.Traps & trapEnum)) {
         try {
-          const int = data.entities[trapType.toUpperCase()].touch.intensity;
-          const adjective = data.entities[trapType.toUpperCase()].touch.adjective;
-          if (distance < int) {
-            setFeel(engramDir, { feeling: adjective, intensity: int / distance });
+          const int = data.traps[trapType.toUpperCase()].touch.intensity;
+          const adjective = data.traps[trapType.toUpperCase()].touch.adjective;
+          if (distance <= int) {
+            setFeel(engramDir, { feeling: adjective, intensity: calculateIntensity(int, distance) * 10 });
           }
         } catch (err) {
-          logDebug(__filename, method, err);
+          logDebug(__filename, method, `For ${trapType}: ` + err);
         }
       } // end (!!(cell.Traps & trapEnum))
     } // end for(pos<9)}
@@ -133,7 +134,7 @@ export function doFeelDirected(game: Game, lang: string, cell: CellBase, engramD
 } // end dofeelDirected
 
 function setFeel(feelings: Array<IFeeling>, feel: IFeeling) {
-  if (feelings[0].feeling === '') {
+  if (feelings[0].feeling === 'nothing') {
     feelings[0] = feel;
   } else {
     feelings.push(feel);

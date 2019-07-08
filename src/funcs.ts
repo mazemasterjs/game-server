@@ -20,6 +20,8 @@ import { Score } from '@mazemasterjs/shared-library/Score';
 import { Team } from '@mazemasterjs/shared-library/Team';
 import { Trophy } from '@mazemasterjs/shared-library/Trophy';
 import { finishGame } from './controllers/actMove';
+import { format } from 'util';
+import { cloneDeep } from 'lodash';
 
 const log = Logger.getInstance();
 const config = Config.getInstance();
@@ -586,12 +588,18 @@ export function trapCheck(game: Game, lang: string, delayTrigger: boolean = fals
           }
           case CELL_TRAPS.FLAMETHROWER: {
             if (!delayTrigger) {
-              outcomes.push(data.outcomes.trapOutcomes.trigger);
+              outcomes.push(format(data.outcomes.trapOutcomes.flamethrowerTrigger, data.directions[DIRS[game.Actions[game.Actions.length - 1].direction]]));
             }
             if (delayTrigger) {
-              outcomes.push(data.outcomes.trapOutcomes.flamethrower);
-              game.Player.addState(PLAYER_STATES.DEAD);
-              finishGame(game, GAME_RESULTS.DEATH_TRAP);
+              if (
+                !!(game.Actions[game.Actions.length - 1].direction & game.Actions[game.Actions.length - 2].direction) ||
+                game.Actions[game.Actions.length - 1].command === 9
+              ) {
+                logDebug(__filename, 'trapCheck()', `Players location within check ${game.Player.Location}`);
+                outcomes.push(data.outcomes.trapOutcomes.flamethrower);
+                game.Player.addState(PLAYER_STATES.DEAD);
+                finishGame(game, GAME_RESULTS.DEATH_TRAP);
+              }
             }
             break;
           }
@@ -609,8 +617,10 @@ export function trapCheck(game: Game, lang: string, delayTrigger: boolean = fals
           case CELL_TRAPS.CHEESE: {
             outcomes.push(data.outcomes.trapOutcomes.cheese);
             outcomes.push(data.outcomes.trapOutcomes.poisoned);
+            game.Maze = cloneDeep(game.Maze);
             game.Player.addState(PLAYER_STATES.POISONED);
             pCell.removeTrap(CELL_TRAPS.CHEESE);
+            game.Actions[game.Actions.length - 1].changedCells.push(pCell);
             break;
           }
           case CELL_TRAPS.FRAGILE_FLOOR: {
@@ -637,6 +647,7 @@ export function trapCheck(game: Game, lang: string, delayTrigger: boolean = fals
               // outcomes.push(data.outcomes.trapOutcomes.trigger);
             }
             if (delayTrigger) {
+              game.Maze = cloneDeep(game.Maze);
               switch (game.Player.Facing) {
                 case DIRS.NORTH: {
                   game.Maze.removeExit(pCell, DIRS.SOUTH);
@@ -656,6 +667,7 @@ export function trapCheck(game: Game, lang: string, delayTrigger: boolean = fals
                 }
               }
               pCell.removeTrap(CELL_TRAPS.DEADFALL);
+              game.Actions[game.Actions.length - 1].changedCells.push(pCell);
               outcomes.push(data.outcomes.trapOutcomes.deadfall);
             }
             break;
@@ -683,4 +695,8 @@ export function lifeCheck(game: Game, lang: string) {
     outcomes.push(data.outcomes.deathPoison);
     finishGame(game, GAME_RESULTS.DEATH_POISON);
   }
+}
+
+export function calculateIntensity(intensity: number, distance: number) {
+  return (intensity - (distance - 1)) / intensity;
 }

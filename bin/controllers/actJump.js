@@ -28,7 +28,7 @@ function doJump(game, lang) {
     }
     else {
         if (!!(game.Player.State & Enums_1.PLAYER_STATES.SITTING)) {
-            game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jumpWhileSitting);
+            game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jump.sitting);
             game.Player.addState(Enums_1.PLAYER_STATES.STANDING);
         }
         else {

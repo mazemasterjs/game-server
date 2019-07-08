@@ -31,7 +31,6 @@ const logger_1 = require("@mazemasterjs/logger");
 const actTurn_1 = require("./controllers/actTurn");
 const actJump_1 = require("./controllers/actJump");
 const GameLang_1 = __importDefault(require("./GameLang"));
-const lodash_1 = require("lodash");
 const Security_1 = __importDefault(require("./Security"));
 // set constant utility references
 const log = logger_1.Logger.getInstance();
@@ -90,7 +89,7 @@ exports.createGame = (req, res) => __awaiter(this, void 0, void 0, function* () 
                 }
                 else {
                     // break this down into two steps so we can better tell where any errors come from
-                    const game = new Game_1.Game(lodash_1.cloneDeep(maze), teamId, botId);
+                    const game = new Game_1.Game(maze, teamId, botId);
                     // add a visit to the start cell of the maze since the player just walked in
                     game.Maze.Cells[game.Maze.StartCell.row][game.Maze.StartCell.col].addVisit(0);
                     // force-set the gameId if the query parameter was set

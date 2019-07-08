@@ -4,7 +4,7 @@
     "exit": {
       "sight": {
         "adjective": "light",
-        "intensity": 10
+        "intensity": 5
       },
       "sound": {
         "adjective": "none",
@@ -113,6 +113,28 @@
     }
   },
   "traps": {
+    "CHEESE": {
+      "sight": {
+        "adjective": "cheese",
+        "intensity": 3
+      },
+      "sound": {
+        "adjective": "cheesesound",
+        "intensity": -1
+      },
+      "smell": {
+        "adjective": "cheese",
+        "intensity": 10
+      },
+      "touch": {
+        "adjective": "soft",
+        "intensity": -1
+      },
+      "taste": {
+        "adjective": "cheese",
+        "intensity": -1
+      }
+    },
     "PIT": {
       "sight": {
         "adjective": "pit",
@@ -329,8 +351,9 @@
     "trapOutcomes": {
       "pit": "You fall into a bottomless hole. You will have a lot of time to consider your mistakes...",
       "mouse": "The last thing you hear is a snapping sound.",
-      "tar": "You trudge through the pit of tar, slowing you down",
-      "flamethrower": "You hear a hiss and a click before you burst into flames",
+      "tar": "You trudge through a pit of tar, slowing you down",
+      "flamethrower": "You break a tripwire, a gout of flame erupts!",
+      "flamethrowerTrigger": "Tripwire [%s]",
       "fragileFloor": "The floor crumbles.",
       "fragileFloorCollapse": "The floor collapses beneath you!",
       "deadfall": "The passage way collapses behind you!",

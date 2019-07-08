@@ -24,6 +24,8 @@ const axios_1 = __importDefault(require("axios"));
 const logger_1 = require("@mazemasterjs/logger");
 const MazeLoc_1 = require("@mazemasterjs/shared-library/MazeLoc");
 const actMove_1 = require("./controllers/actMove");
+const util_1 = require("util");
+const lodash_1 = require("lodash");
 const log = logger_1.Logger.getInstance();
 const config = Config_1.Config.getInstance();
 // tslint:disable-next-line: no-string-literal
@@ -572,12 +574,16 @@ function trapCheck(game, lang, delayTrigger = false) {
                     }
                     case Enums_1.CELL_TRAPS.FLAMETHROWER: {
                         if (!delayTrigger) {
-                            outcomes.push(data.outcomes.trapOutcomes.trigger);
+                            outcomes.push(util_1.format(data.outcomes.trapOutcomes.flamethrowerTrigger, data.directions[Enums_1.DIRS[game.Actions[game.Actions.length - 1].direction]]));
                         }
                         if (delayTrigger) {
-                            outcomes.push(data.outcomes.trapOutcomes.flamethrower);
-                            game.Player.addState(Enums_1.PLAYER_STATES.DEAD);
-                            actMove_1.finishGame(game, Enums_1.GAME_RESULTS.DEATH_TRAP);
+                            if (!!(game.Actions[game.Actions.length - 1].direction & game.Actions[game.Actions.length - 2].direction) ||
+                                game.Actions[game.Actions.length - 1].command === 9) {
+                                logDebug(__filename, 'trapCheck()', `Players location within check ${game.Player.Location}`);
+                                outcomes.push(data.outcomes.trapOutcomes.flamethrower);
+                                game.Player.addState(Enums_1.PLAYER_STATES.DEAD);
+                                actMove_1.finishGame(game, Enums_1.GAME_RESULTS.DEATH_TRAP);
+                            }
                         }
                         break;
                     }
@@ -595,6 +601,7 @@ function trapCheck(game, lang, delayTrigger = false) {
                     case Enums_1.CELL_TRAPS.CHEESE: {
                         outcomes.push(data.outcomes.trapOutcomes.cheese);
                         outcomes.push(data.outcomes.trapOutcomes.poisoned);
+                        game.Maze = lodash_1.cloneDeep(game.Maze);
                         game.Player.addState(Enums_1.PLAYER_STATES.POISONED);
                         pCell.removeTrap(Enums_1.CELL_TRAPS.CHEESE);
                         break;
@@ -622,6 +629,7 @@ function trapCheck(game, lang, delayTrigger = false) {
                             // outcomes.push(data.outcomes.trapOutcomes.trigger);
                         }
                         if (delayTrigger) {
+                            game.Maze = lodash_1.cloneDeep(game.Maze);
                             switch (game.Player.Facing) {
                                 case Enums_1.DIRS.NORTH: {
                                     game.Maze.removeExit(pCell, Enums_1.DIRS.SOUTH);
@@ -668,4 +676,8 @@ function lifeCheck(game, lang) {
     }
 }
 exports.lifeCheck = lifeCheck;
+function calculateIntensity(intensity, distance) {
+    return (intensity - (distance - 1)) / intensity;
+}
+exports.calculateIntensity = calculateIntensity;
 //# sourceMappingURL=funcs.js.map

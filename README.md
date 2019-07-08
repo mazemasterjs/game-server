@@ -28,15 +28,22 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 ## TODO
 
 - [ ] All language files are loaded on GameLang instantiation - This should be changed to load language files on demand
-- [ ] Adjust values for the various engrams, current they are all based on distance
-- [ ] Prevent changes to the maze are permanent until the cache is refreshed or server is restarted
+- [x] Adjust values for the various engrams, current they are all based on distance
+- [x] Prevent changes to the maze are permanent until the cache is refreshed or server is restarted
 - [ ] Deadfall traps block every exit, instead of only 1
 - [x] Fix Action scores / trophies not being returned with the actual action response
 - [x] Add logic to automatically end games after a certain period of inactivity (set GAMES_STATES.ABANDONED)
 - [x] When a character turns walls are detected where there should not be
 - [x] Peripheral vision is seeing more cells further than it should be
+- [ ] Fragile Floor traps are persistent between mazes
 
 ## Change Notes
+
+### v0.9.10
+
+- flamethrower tripwires now trigger if you attempt to jump over them or move forward without sneaking
+- non-sight engrams are a number from 1 to 10. 1 is farthest distance to sense, 10 is cell next to the source.
+- traps that change the maze are pushed to changedCells when changed
 
 ### v0.9.9
 
