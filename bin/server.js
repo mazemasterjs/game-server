@@ -135,9 +135,16 @@ function authUser(userName, password, callback) {
         log.debug(__filename, method, `Authenticating credentials...`);
         const userCreds = security.getUserCreds(userName);
         if (userCreds !== null) {
-            log.debug(__filename, method, `User credentials cached. User role is: ${Enums_1.USER_ROLES[userCreds.role]}`);
-            callback(null, true);
-            return;
+            if (userCreds.pwHash !== object_hash_1.MD5(password)) {
+                log.debug(__filename, method, 'Authentication Failed: Invalid password: ' + userCreds.userName);
+                callback(null, false);
+                return;
+            }
+            else {
+                log.debug(__filename, method, `User credentials cached. User role is: ${Enums_1.USER_ROLES[userCreds.role]}`);
+                callback(null, true);
+                return;
+            }
         }
         // credentials not cached - call the team->user service
         log.debug(__filename, method, `Credentials not cached, fetching from ${fns.getSvcUrl(Cache_1.CACHE_TYPES.TEAM)}/get/user?userName=${userName}`);

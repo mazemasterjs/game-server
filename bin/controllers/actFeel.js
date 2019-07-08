@@ -3,10 +3,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const funcs_1 = require("../funcs");
-const Enums_1 = require("@mazemasterjs/shared-library/Enums");
-const MazeLoc_1 = __importDefault(require("@mazemasterjs/shared-library/MazeLoc"));
 const GameLang_1 = __importDefault(require("../GameLang"));
+const MazeLoc_1 = __importDefault(require("@mazemasterjs/shared-library/MazeLoc"));
+const Enums_1 = require("@mazemasterjs/shared-library/Enums");
+const funcs_1 = require("../funcs");
 function doFeelLocal(game, lang) {
     const method = `dofeelLocal(${game.Id}, ${lang})`;
     funcs_1.logDebug(__filename, method, 'Entering');
