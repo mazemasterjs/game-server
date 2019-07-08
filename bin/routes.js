@@ -32,9 +32,11 @@ const actTurn_1 = require("./controllers/actTurn");
 const actJump_1 = require("./controllers/actJump");
 const GameLang_1 = __importDefault(require("./GameLang"));
 const lodash_1 = require("lodash");
+const Security_1 = __importDefault(require("./Security"));
 // set constant utility references
 const log = logger_1.Logger.getInstance();
 const config = Config_1.Config.getInstance();
+const security = Security_1.default.getInstance();
 /**
  * Creates a new, single-player game.
  *
@@ -43,6 +45,11 @@ const config = Config_1.Config.getInstance();
  * @return {void}
  */
 exports.createGame = (req, res) => __awaiter(this, void 0, void 0, function* () {
+    const minRole = Enums_1.USER_ROLES.USER;
+    if (!security.userHasRole(req.header('Authorization'), minRole)) {
+        log.debug(__filename, req.path, 'User is not authorized.');
+        return res.status(401).send(`Unauthorized Access - You must have at least the ${Enums_1.USER_ROLES[minRole]} role to ride this ride.`);
+    }
     logRequest('createGame', req);
     // make sure that the request body has the minimum parameters defined
     if (!req.params.mazeId || !req.params.teamId) {
@@ -126,6 +133,11 @@ exports.createGame = (req, res) => __awaiter(this, void 0, void 0, function* () 
  * Returns game data for the requested Game.Id
  */
 exports.getGame = (req, res) => {
+    const minRole = Enums_1.USER_ROLES.USER;
+    if (!security.userHasRole(req.header('Authorization'), minRole)) {
+        log.debug(__filename, req.path, 'User is not authorized.');
+        return res.status(401).send(`Unauthorized Access - You must have at least the ${Enums_1.USER_ROLES[minRole]} role to ride this ride.`);
+    }
     logRequest('getGames', req);
     const langCode = fns.getLanguage(req);
     return Cache_1.Cache.use()
@@ -156,6 +168,11 @@ exports.getGame = (req, res) => {
  * Returns abandons a game currently in memory
  */
 exports.abandonGame = (req, res) => __awaiter(this, void 0, void 0, function* () {
+    const minRole = Enums_1.USER_ROLES.USER;
+    if (!security.userHasRole(req.header('Authorization'), minRole)) {
+        log.debug(__filename, req.path, 'User is not authorized.');
+        return res.status(401).send(`Unauthorized Access - You must have at least the ${Enums_1.USER_ROLES[minRole]} role to ride this ride.`);
+    }
     logRequest('abandonGame', req);
     const gameId = req.params.gameId + '';
     const method = `abandonGame/${gameId}`;
@@ -186,6 +203,11 @@ exports.abandonGame = (req, res) => __awaiter(this, void 0, void 0, function* ()
  * held in memory.
  */
 exports.listGames = (req, res) => {
+    const minRole = Enums_1.USER_ROLES.USER;
+    if (!security.userHasRole(req.header('Authorization'), minRole)) {
+        log.debug(__filename, req.path, 'User is not authorized.');
+        return res.status(401).send(`Unauthorized Access - You must have at least the ${Enums_1.USER_ROLES[minRole]} role to ride this ride.`);
+    }
     logRequest('listGames', req);
     try {
         return res.status(200).json(fns.getGameStubs());
@@ -201,6 +223,11 @@ exports.listGames = (req, res) => {
  * @param res
  */
 exports.countGames = (req, res) => {
+    const minRole = Enums_1.USER_ROLES.USER;
+    if (!security.userHasRole(req.header('Authorization'), minRole)) {
+        log.debug(__filename, req.path, 'User is not authorized.');
+        return res.status(401).send(`Unauthorized Access - You must have at least the ${Enums_1.USER_ROLES[minRole]} role to ride this ride.`);
+    }
     logRequest('countGames', req);
     return res.status(200).json({ count: Cache_1.Cache.use().countItems(Cache_1.CACHE_TYPES.GAME) });
 };
@@ -211,6 +238,11 @@ exports.countGames = (req, res) => {
  * @param res
  */
 exports.processAction = (req, res) => __awaiter(this, void 0, void 0, function* () {
+    const minRole = Enums_1.USER_ROLES.USER;
+    if (!security.userHasRole(req.header('Authorization'), minRole)) {
+        log.debug(__filename, req.path, 'User is not authorized.');
+        return res.status(401).send(`Unauthorized Access - You must have at least the ${Enums_1.USER_ROLES[minRole]} role to ride this ride.`);
+    }
     logRequest('processAction', req);
     let game;
     // make sure that the request body has the minimum parameters defined
@@ -319,6 +351,11 @@ exports.processAction = (req, res) => __awaiter(this, void 0, void 0, function* 
     }
 });
 exports.dumpCache = (req, res) => {
+    const minRole = Enums_1.USER_ROLES.ADMIN;
+    if (!security.userHasRole(req.header('Authorization'), minRole)) {
+        log.debug(__filename, req.path, 'User is not authorized.');
+        return res.status(401).send(`Unauthorized Access - You must have at least the ${Enums_1.USER_ROLES[minRole]} role to ride this ride.`);
+    }
     logRequest('dumpCache - MAZE', req);
     Cache_1.Cache.use().dumpCache(Cache_1.CACHE_TYPES.MAZE);
     logRequest('dumpCache - GAME', req);

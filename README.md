@@ -27,16 +27,20 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 
 ## TODO
 
-- [x] Fix Action scores / trophies not being returned with the actual action response
 - [ ] All language files are loaded on GameLang instantiation - This should be changed to load language files on demand
-- [x] Add logic to automatically end games after a certain period of inactivity (set GAMES_STATES.ABANDONED)
-- [x] When a character turns walls are detected where there should not be
-- [x] Peripheral vision is seeing more cells further than it should be
 - [ ] Adjust values for the various engrams, current they are all based on distance
 - [ ] Prevent changes to the maze are permanent until the cache is refreshed or server is restarted
 - [ ] Deadfall traps block every exit, instead of only 1
+- [x] Fix Action scores / trophies not being returned with the actual action response
+- [x] Add logic to automatically end games after a certain period of inactivity (set GAMES_STATES.ABANDONED)
+- [x] When a character turns walls are detected where there should not be
+- [x] Peripheral vision is seeing more cells further than it should be
 
 ## Change Notes
+
+### v0.9.9
+
+- Added RBAC to routes
 
 ### v0.9.8
 
