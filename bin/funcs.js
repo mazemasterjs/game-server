@@ -25,7 +25,6 @@ const logger_1 = require("@mazemasterjs/logger");
 const MazeLoc_1 = require("@mazemasterjs/shared-library/MazeLoc");
 const actMove_1 = require("./controllers/actMove");
 const util_1 = require("util");
-const lodash_1 = require("lodash");
 const log = logger_1.Logger.getInstance();
 const config = Config_1.Config.getInstance();
 // tslint:disable-next-line: no-string-literal
@@ -601,9 +600,9 @@ function trapCheck(game, lang, delayTrigger = false) {
                     case Enums_1.CELL_TRAPS.CHEESE: {
                         outcomes.push(data.outcomes.trapOutcomes.cheese);
                         outcomes.push(data.outcomes.trapOutcomes.poisoned);
-                        game.Maze = lodash_1.cloneDeep(game.Maze);
                         game.Player.addState(Enums_1.PLAYER_STATES.POISONED);
                         pCell.removeTrap(Enums_1.CELL_TRAPS.CHEESE);
+                        game.Actions[game.Actions.length - 1].changedCells.push(pCell);
                         break;
                     }
                     case Enums_1.CELL_TRAPS.FRAGILE_FLOOR: {
@@ -629,7 +628,6 @@ function trapCheck(game, lang, delayTrigger = false) {
                             // outcomes.push(data.outcomes.trapOutcomes.trigger);
                         }
                         if (delayTrigger) {
-                            game.Maze = lodash_1.cloneDeep(game.Maze);
                             switch (game.Player.Facing) {
                                 case Enums_1.DIRS.NORTH: {
                                     game.Maze.removeExit(pCell, Enums_1.DIRS.SOUTH);
@@ -649,6 +647,7 @@ function trapCheck(game, lang, delayTrigger = false) {
                                 }
                             }
                             pCell.removeTrap(Enums_1.CELL_TRAPS.DEADFALL);
+                            game.Actions[game.Actions.length - 1].changedCells.push(pCell);
                             outcomes.push(data.outcomes.trapOutcomes.deadfall);
                         }
                         break;
@@ -676,8 +675,9 @@ function lifeCheck(game, lang) {
     }
 }
 exports.lifeCheck = lifeCheck;
-function calculateIntensity(intensity, distance) {
-    return (intensity - (distance - 1)) / intensity;
+function calculateIntensity(intensity, distance, maxDistance) {
+    const test = ((intensity - (distance - 1)) / intensity) * ((maxDistance - (distance - 1)) / maxDistance);
+    return ((intensity - (distance - 1)) / intensity) * ((maxDistance - (distance - 1)) / maxDistance);
 }
 exports.calculateIntensity = calculateIntensity;
 //# sourceMappingURL=funcs.js.map

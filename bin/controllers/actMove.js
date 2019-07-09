@@ -22,6 +22,7 @@ const util_1 = require("util");
 const GameLang_1 = require("../GameLang");
 const funcs_1 = require("../funcs");
 const MazeLoc_1 = require("@mazemasterjs/shared-library/MazeLoc");
+const routes_1 = require("../routes");
 // need a config object for some of this
 const config = Config_1.Config.getInstance();
 /**
@@ -149,6 +150,7 @@ function finishGame(game, gameResult) {
         // update the basic game state & result fields
         game.State = Enums_1.GAME_STATES.FINISHED;
         game.Score.GameResult = gameResult;
+        routes_1.resetMaze(game);
         switch (gameResult) {
             case Enums_1.GAME_RESULTS.WIN_FLAWLESS: {
                 // add bonus WIN_FLAWLESS if the game was perfect

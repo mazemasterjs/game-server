@@ -22,10 +22,16 @@ function doSmellLocal(game, lang) {
     const data = GameLang_1.default.getInstance(lang);
     // get the local sounds
     if (!!(cell.Tags & Enums_1.CELL_TAGS.START)) {
-        setSmell(engram.north.smell, { scent: data.entities.lava.smell.adjective, strength: fns.calculateIntensity(data.entities.lava.smell.intensity, 1) * 10 });
+        setSmell(engram.north.smell, {
+            scent: data.entities.lava.smell.adjective,
+            strength: fns.calculateIntensity(data.entities.lava.smell.intensity, 1, 6) * 10,
+        });
     }
     if (!!(cell.Tags & Enums_1.CELL_TAGS.FINISH)) {
-        setSmell(engram.south.smell, { scent: data.entities.exit.smell.adjective, strength: fns.calculateIntensity(data.entities.exit.smell.intensity, 1) * 10 });
+        setSmell(engram.south.smell, {
+            scent: data.entities.exit.smell.adjective,
+            strength: fns.calculateIntensity(data.entities.exit.smell.intensity, 1, 6) * 10,
+        });
     }
     //  loop through the cardinal directions in DIRS
     for (let pos = 0; pos < 4; pos++) {
@@ -79,11 +85,11 @@ function doSmellDirected(game, lang, cell, engramDir, lastDirection, distance) {
     const MAX_DISTANCE = 6;
     if (!!(cell.Tags & Enums_1.CELL_TAGS.START) && distance <= data.entities.lava.smell.intensity) {
         const intensity = data.entities.lava.smell.intensity;
-        setSmell(engramDir, { scent: data.entities.lava.smell.adjective, strength: fns.calculateIntensity(intensity, distance + 1) * 10 });
+        setSmell(engramDir, { scent: data.entities.lava.smell.adjective, strength: fns.calculateIntensity(intensity, distance + 1, MAX_DISTANCE) * 10 });
     }
     if (!!(cell.Tags & Enums_1.CELL_TAGS.FINISH) && distance <= data.entities.exit.smell.intensity) {
         const intensity = data.entities.exit.smell.intensity;
-        setSmell(engramDir, { scent: data.entities.exit.smell.adjective, strength: fns.calculateIntensity(intensity, distance + 1) * 10 });
+        setSmell(engramDir, { scent: data.entities.exit.smell.adjective, strength: fns.calculateIntensity(intensity, distance + 1, MAX_DISTANCE) * 10 });
     }
     if (cell.Traps !== Enums_1.CELL_TRAPS.NONE) {
         for (let pos = 0; pos < 9; pos++) {
@@ -97,7 +103,7 @@ function doSmellDirected(game, lang, cell, engramDir, lastDirection, distance) {
                         if (!engramDir.find(smell => {
                             if (smell.scent === adjective) {
                                 if (smell.strength > distance) {
-                                    smell.strength = fns.calculateIntensity(intensity, distance) * 10;
+                                    smell.strength = fns.calculateIntensity(intensity, distance, MAX_DISTANCE) * 10;
                                 }
                                 return true;
                             }
@@ -105,7 +111,7 @@ function doSmellDirected(game, lang, cell, engramDir, lastDirection, distance) {
                                 return false;
                             }
                         })) {
-                            setSmell(engramDir, { scent: adjective, strength: fns.calculateIntensity(intensity, distance) * 10 });
+                            setSmell(engramDir, { scent: adjective, strength: fns.calculateIntensity(intensity, distance, MAX_DISTANCE) * 10 });
                         }
                     }
                 }

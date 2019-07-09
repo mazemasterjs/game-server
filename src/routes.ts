@@ -14,6 +14,8 @@ import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
 import { doJump } from './controllers/actJump';
 import GameLang from './GameLang';
 import Security from './Security';
+import MazeBase from '@mazemasterjs/shared-library/MazeBase';
+import { cloneDeep } from 'lodash';
 
 // set constant utility references
 const log = Logger.getInstance();
@@ -76,7 +78,7 @@ export const createGame = async (req: Request, res: Response) => {
                 .json({ status: 400, message: 'Invalid Request - An active ' + gameType + ' game already exists.', gameId: activeGameId, teamId, botId });
             } else {
               // break this down into two steps so we can better tell where any errors come from
-              const game: Game = new Game(maze, teamId, botId);
+              const game: Game = new Game(cloneDeep(maze), teamId, botId);
 
               // add a visit to the start cell of the maze since the player just walked in
               game.Maze.Cells[game.Maze.StartCell.row][game.Maze.StartCell.col].addVisit(0);
@@ -236,6 +238,18 @@ export const countGames = (req: Request, res: Response) => {
   return res.status(200).json({ count: Cache.use().countItems(CACHE_TYPES.GAME) });
 };
 
+export function resetMaze(game: Game) {
+  Cache.use()
+    .fetchOrGetItem(CACHE_TYPES.MAZE, game.Maze.Id)
+    .then(fetchedMaze => {
+      game.Maze = fetchedMaze;
+      return;
+    })
+    .catch(fetchError => {
+      log.warn(__filename, 'resetMaze()', `Invalid maze Id (${game.Maze.Id}) -> ${fetchError.message}`);
+      return;
+    });
+}
 /**
  * Process an incoming game action request
  *

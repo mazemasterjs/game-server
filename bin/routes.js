@@ -32,6 +32,7 @@ const actTurn_1 = require("./controllers/actTurn");
 const actJump_1 = require("./controllers/actJump");
 const GameLang_1 = __importDefault(require("./GameLang"));
 const Security_1 = __importDefault(require("./Security"));
+const lodash_1 = require("lodash");
 // set constant utility references
 const log = logger_1.Logger.getInstance();
 const config = Config_1.Config.getInstance();
@@ -89,7 +90,7 @@ exports.createGame = (req, res) => __awaiter(this, void 0, void 0, function* () 
                 }
                 else {
                     // break this down into two steps so we can better tell where any errors come from
-                    const game = new Game_1.Game(maze, teamId, botId);
+                    const game = new Game_1.Game(lodash_1.cloneDeep(maze), teamId, botId);
                     // add a visit to the start cell of the maze since the player just walked in
                     game.Maze.Cells[game.Maze.StartCell.row][game.Maze.StartCell.col].addVisit(0);
                     // force-set the gameId if the query parameter was set
@@ -230,6 +231,19 @@ exports.countGames = (req, res) => {
     logRequest('countGames', req);
     return res.status(200).json({ count: Cache_1.Cache.use().countItems(Cache_1.CACHE_TYPES.GAME) });
 };
+function resetMaze(game) {
+    Cache_1.Cache.use()
+        .fetchOrGetItem(Cache_1.CACHE_TYPES.MAZE, game.Maze.Id)
+        .then(fetchedMaze => {
+        game.Maze = fetchedMaze;
+        return;
+    })
+        .catch(fetchError => {
+        log.warn(__filename, 'resetMaze()', `Invalid maze Id (${game.Maze.Id}) -> ${fetchError.message}`);
+        return;
+    });
+}
+exports.resetMaze = resetMaze;
 /**
  * Process an incoming game action request
  *

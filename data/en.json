@@ -26,7 +26,7 @@
     "lava": {
       "sight": {
         "adjective": "lava",
-        "intensity": 10
+        "intensity": 5
       },
       "sound": {
         "adjective": "bubbling",
@@ -38,7 +38,7 @@
       },
       "touch": {
         "adjective": "hot",
-        "intensity": -1
+        "intensity": 10
       },
       "taste": {
         "adjective": "nothing",
@@ -296,7 +296,7 @@
       },
       "sound": {
         "adjective": "cracking",
-        "intensity": -1
+        "intensity": 1
       },
       "smell": {
         "adjective": "none",
@@ -326,7 +326,7 @@
       "lava": "You fly through the air...straight into lava",
       "wall": "You leap directly into a wall!",
       "sitting": "You leap to your feet",
-      "jumping": "You fly through the air",
+      "jumping": "You jump [%s]",
       "land": "You land on your feet"
     },
     "gameOverOutOfMoves": "You have run out of moves. The game is over.",

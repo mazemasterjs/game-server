@@ -21,7 +21,6 @@ import { Team } from '@mazemasterjs/shared-library/Team';
 import { Trophy } from '@mazemasterjs/shared-library/Trophy';
 import { finishGame } from './controllers/actMove';
 import { format } from 'util';
-import { cloneDeep } from 'lodash';
 
 const log = Logger.getInstance();
 const config = Config.getInstance();
@@ -617,7 +616,6 @@ export function trapCheck(game: Game, lang: string, delayTrigger: boolean = fals
           case CELL_TRAPS.CHEESE: {
             outcomes.push(data.outcomes.trapOutcomes.cheese);
             outcomes.push(data.outcomes.trapOutcomes.poisoned);
-            game.Maze = cloneDeep(game.Maze);
             game.Player.addState(PLAYER_STATES.POISONED);
             pCell.removeTrap(CELL_TRAPS.CHEESE);
             game.Actions[game.Actions.length - 1].changedCells.push(pCell);
@@ -647,7 +645,6 @@ export function trapCheck(game: Game, lang: string, delayTrigger: boolean = fals
               // outcomes.push(data.outcomes.trapOutcomes.trigger);
             }
             if (delayTrigger) {
-              game.Maze = cloneDeep(game.Maze);
               switch (game.Player.Facing) {
                 case DIRS.NORTH: {
                   game.Maze.removeExit(pCell, DIRS.SOUTH);
@@ -697,6 +694,7 @@ export function lifeCheck(game: Game, lang: string) {
   }
 }
 
-export function calculateIntensity(intensity: number, distance: number) {
-  return (intensity - (distance - 1)) / intensity;
+export function calculateIntensity(intensity: number, distance: number, maxDistance: number) {
+  const test = ((intensity - (distance - 1)) / intensity) * ((maxDistance - (distance - 1)) / maxDistance);
+  return ((intensity - (distance - 1)) / intensity) * ((maxDistance - (distance - 1)) / maxDistance);
 }

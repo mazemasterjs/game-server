@@ -39,6 +39,13 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 
 ## Change Notes
 
+### v0.9.11
+
+- engram calculaton is fixed, it is now properly a ratio based on the intensity, distance, and max distance of the sense
+- engram senses range from 0-10 for feeling, smell, and taste while hearing is 0.0-1.0
+- mazes are deepcloned at the start of a game, at the end of a game the maze is changed to the cached maze
+- jumping now uses better outcomes
+
 ### v0.9.10
 
 - flamethrower tripwires now trigger if you attempt to jump over them or move forward without sneaking

@@ -71,10 +71,16 @@ export function doTasteDirected(game: Game, lang: string, cell: CellBase, engram
   const MAX_DISTANCE = 0;
   logDebug(__filename, method, 'Entering');
   if (!!(cell.Tags & CELL_TAGS.START) && distance <= data.entities.lava.taste.intensity) {
-    setTaste(engramDir, { taste: data.entities.lava.taste.adjective, strength: calculateIntensity(data.entities.lava.taste.intensity, distance + 1) * 10 });
+    setTaste(engramDir, {
+      taste: data.entities.lava.taste.adjective,
+      strength: calculateIntensity(data.entities.lava.taste.intensity, distance + 1, MAX_DISTANCE) * 10,
+    });
   }
   if (!!(cell.Tags & CELL_TAGS.FINISH) && distance <= data.entities.exit.taste.intensity) {
-    setTaste(engramDir, { taste: data.entities.exit.taste.adjective, strength: calculateIntensity(data.entities.exit.taste.intensity, distance + 1) * 10 });
+    setTaste(engramDir, {
+      taste: data.entities.exit.taste.adjective,
+      strength: calculateIntensity(data.entities.exit.taste.intensity, distance + 1, MAX_DISTANCE) * 10,
+    });
   }
 
   if (cell.Traps !== CELL_TRAPS.NONE) {
@@ -86,7 +92,7 @@ export function doTasteDirected(game: Game, lang: string, cell: CellBase, engram
           const intensity = data.traps[trapType.toUpperCase()].taste.intensity;
           const adjective = data.traps[trapType.toUpperCase()].taste.adjective;
           if (distance <= intensity) {
-            setTaste(engramDir, { taste: adjective, strength: calculateIntensity(intensity, distance) * 10 });
+            setTaste(engramDir, { taste: adjective, strength: calculateIntensity(intensity, distance, MAX_DISTANCE) * 10 });
           }
         } catch (err) {
           logDebug(__filename, method, err);

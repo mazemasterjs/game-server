@@ -15,10 +15,10 @@ function doListenLocal(game, lang) {
     const data = GameLang_1.default.getInstance(lang);
     // get the local sounds
     if (!!(cell.Tags & Enums_1.CELL_TAGS.START)) {
-        setSound(engram.north.hear, { sound: data.entities.lava.sound.adjective, volume: funcs_1.calculateIntensity(data.entities.lava.sound.intensity, 1) });
+        setSound(engram.north.hear, { sound: data.entities.lava.sound.adjective, volume: funcs_1.calculateIntensity(data.entities.lava.sound.intensity, 1, 10) });
     }
     if (!!(cell.Tags & Enums_1.CELL_TAGS.FINISH)) {
-        setSound(engram.south.hear, { sound: data.entities.exit.sound.adjective, volume: funcs_1.calculateIntensity(data.entities.cheese.sound.intensity, 1) });
+        setSound(engram.south.hear, { sound: data.entities.exit.sound.adjective, volume: funcs_1.calculateIntensity(data.entities.cheese.sound.intensity, 1, 10) });
     }
     //  loop through the cardinal directions in DIRS
     for (let pos = 0; pos < 4; pos++) {
@@ -73,13 +73,13 @@ function doListenDirected(game, lang, cell, engramDir, lastDirection, distance) 
     if (!!(cell.Tags & Enums_1.CELL_TAGS.START) && distance <= data.entities.lava.sound.intensity) {
         setSound(engramDir, {
             sound: data.entities.lava.sound.adjective,
-            volume: funcs_1.calculateIntensity(data.entities.lava.sound.intensity, distance + 1),
+            volume: funcs_1.calculateIntensity(data.entities.lava.sound.intensity, distance + 1, MAX_DISTANCE),
         });
     }
     if (!!(cell.Tags & Enums_1.CELL_TAGS.FINISH) && distance <= data.entities.exit.sound.intensity) {
         setSound(engramDir, {
             sound: data.entities.exit.sound.adjective,
-            volume: funcs_1.calculateIntensity(data.entities.exit.sound.intensity, distance + 1),
+            volume: funcs_1.calculateIntensity(data.entities.exit.sound.intensity, distance + 1, MAX_DISTANCE),
         });
     }
     if (cell.Traps !== Enums_1.CELL_TRAPS.NONE) {
@@ -95,7 +95,7 @@ function doListenDirected(game, lang, cell, engramDir, lastDirection, distance) 
                     // const intensity = eval(intensityString);  <-- very clever, but an unsafe operation that the linter opposes
                     // const adjective = eval(adjectiveString);  <-- very clever, but an unsafe operation that the linter opposes
                     if (distance <= intensity) {
-                        setSound(engramDir, { sound: adjective, volume: funcs_1.calculateIntensity(intensity, distance) });
+                        setSound(engramDir, { sound: adjective, volume: funcs_1.calculateIntensity(intensity, distance, MAX_DISTANCE) });
                     }
                 }
                 catch (err) {

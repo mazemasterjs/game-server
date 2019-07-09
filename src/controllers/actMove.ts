@@ -8,6 +8,7 @@ import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
 import { logDebug } from '../funcs';
 import { MazeLoc } from '@mazemasterjs/shared-library/MazeLoc';
 import Cell from '@mazemasterjs/shared-library/Cell';
+import { resetMaze } from '../routes';
 
 // need a config object for some of this
 const config: Config = Config.getInstance();
@@ -137,6 +138,7 @@ export async function finishGame(game: Game, gameResult: GAME_RESULTS): Promise<
   // update the basic game state & result fields
   game.State = GAME_STATES.FINISHED;
   game.Score.GameResult = gameResult;
+  resetMaze(game);
 
   switch (gameResult) {
     case GAME_RESULTS.WIN_FLAWLESS: {
