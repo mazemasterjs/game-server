@@ -35,9 +35,17 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 - [x] Add logic to automatically end games after a certain period of inactivity (set GAMES_STATES.ABANDONED)
 - [x] When a character turns walls are detected where there should not be
 - [x] Peripheral vision is seeing more cells further than it should be
-- [ ] Fragile Floor traps are persistent between mazes
+- [x] Fragile Floor traps are persistent between mazes
+- [ ] Implement the rest of the engram senses for monsters
+- [ ] Monster wanders randomly instead of following walls
 
 ## Change Notes
+
+### v0.10.0
+
+- poison dart traps now show a more descriptive outcome
+- a cat is inserted into the maze at the finish cell on the first turn
+- the cat will wander through the maze
 
 ### v0.9.11
 

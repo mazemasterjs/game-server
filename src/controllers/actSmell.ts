@@ -1,5 +1,5 @@
 import * as fns from '../funcs';
-import { CELL_TAGS, CELL_TRAPS, DIRS } from '@mazemasterjs/shared-library/Enums';
+import { CELL_TAGS, CELL_TRAPS, DIRS, MONSTER_TAGS } from '@mazemasterjs/shared-library/Enums';
 import { Game } from '@mazemasterjs/shared-library/Game';
 import { ISight, ISmell } from '@mazemasterjs/shared-library/Interfaces/ISenses';
 import MazeLoc from '@mazemasterjs/shared-library/MazeLoc';
@@ -85,6 +85,7 @@ export function doSmellDirected(game: Game, lang: string, cell: CellBase, engram
     setSmell(engramDir, { scent: data.entities.exit.smell.adjective, strength: fns.calculateIntensity(intensity, distance + 1, MAX_DISTANCE) * 10 });
   }
 
+  smellMonsters(game, lang, cell, engramDir, distance);
   if (cell.Traps !== CELL_TRAPS.NONE) {
     for (let pos = 0; pos < 9; pos++) {
       const trapEnum = 1 << pos;
@@ -153,6 +154,23 @@ export function doSmellDirected(game: Game, lang: string, cell: CellBase, engram
   }
 } // end doSmellDirected
 
+function smellMonsters(game: Game, lang: string, cell: CellBase, engramDir: ISmell[], distance: number) {
+  const data = GameLang.getInstance(lang);
+  const method = `smellMonsters(${game.Id}, ${lang}, ${cell.Location}, [emgramDir], ${distance})`;
+  fns.logDebug(__filename, method, 'Entering');
+  if (!!(cell.Tags & CELL_TAGS.MONSTER)) {
+    game.Monsters.forEach(monster => {
+      const monsterType = MONSTER_TAGS[monster.getTag()];
+      fns.logDebug(__filename, 'smellMonsters(): ', `${monster.getTag()}`);
+      const adj = data.monsters[monsterType.toUpperCase()].smell.adjective;
+      const int = data.monsters[monsterType.toUpperCase()].smell.intensity;
+      if (monster.Location.equals(cell.Location) && int >= distance) {
+        const str = fns.calculateIntensity(int, distance, 6) * 10;
+        setSmell(engramDir, { scent: adj, strength: str });
+      }
+    });
+  }
+}
 /**
  * Update the given smell array with given scent if smell[0].scent is empty (as is the
  * case if new Engram()), otherwise push scent onto the see array.

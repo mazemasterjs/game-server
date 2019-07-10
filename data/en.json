@@ -1,5 +1,51 @@
 {
   "language": "en",
+  "monsters": {
+    "LAVA": {
+      "sight": {
+        "adjective": "magma",
+        "intensity": 5
+      },
+      "sound": {
+        "adjective": "gurgling",
+        "intensity": 2
+      },
+      "smell": {
+        "adjective": "sulphur",
+        "intensity": 3
+      },
+      "touch": {
+        "adjective": "hot",
+        "intensity": 5
+      },
+      "taste": {
+        "adjective": "nothing",
+        "intensity": -1
+      }
+    },
+    "CAT": {
+      "sight": {
+        "adjective": "Cat",
+        "intensity": 5
+      },
+      "sound": {
+        "adjective": "nothing",
+        "intensity": -1
+      },
+      "smell": {
+        "adjective": "Doom",
+        "intensity": 6
+      },
+      "touch": {
+        "adjective": "nothing",
+        "intensity": -1
+      },
+      "taste": {
+        "adjective": "nothing",
+        "intensity": -1
+      }
+    }
+  },
   "entities": {
     "exit": {
       "sight": {
@@ -359,6 +405,7 @@
       "deadfall": "The passage way collapses behind you!",
       "teleport": "Your surroundings suddenly seem different",
       "poisonDart": "A dart flies out from the darkness and hits you!",
+      "poisonDartTrigger": "You see a pressure plate [%s]",
       "trigger": "CLICK",
       "poisoned": "POISONED!!",
       "cheese": "You see a chunk of cheese, you can't help but take a bite!"
@@ -366,7 +413,8 @@
     "turnLeft": "You turn left",
     "turnRight": "You turn right",
     "turnWrong": "You turn 360 degrees",
-    "deathPoison": "You succumb to the poison and die..."
+    "deathPoison": "You succumb to the poison and die...",
+    "monsterHere": "There is a [%s] here!"
 
   }
 }
