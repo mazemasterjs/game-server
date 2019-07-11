@@ -24,6 +24,8 @@ const axios_1 = __importDefault(require("axios"));
 const logger_1 = require("@mazemasterjs/logger");
 const MazeLoc_1 = require("@mazemasterjs/shared-library/MazeLoc");
 const actMove_1 = require("./controllers/actMove");
+const util_1 = require("util");
+const Monster_1 = __importDefault(require("@mazemasterjs/shared-library/Monster"));
 const log = logger_1.Logger.getInstance();
 const config = Config_1.Config.getInstance();
 // tslint:disable-next-line: no-string-literal
@@ -451,8 +453,16 @@ function finalizeAction(game, actionMoveCount, startScore, langCode) {
         }
         game.Actions[game.Actions.length - 1].outcomes.push(lang.outcomes.gameOverOutOfMoves);
     }
+    if (game.Score.MoveCount >= 1 && !(game.Monsters.length > 0)) {
+        game.addMonster(new Monster_1.default(game.Maze.FinishCell, Enums_1.MONSTER_STATES.STANDING, Enums_1.MONSTER_TAGS.CAT, Enums_1.DIRS.NORTH));
+    }
+    game.Monsters.forEach(monster => {
+        game.Maze.getCell(monster.Location).addTag(Enums_1.CELL_TAGS.MONSTER);
+        takeTurn(game, monster);
+    });
     // track the score change from this one move
     game.Actions[game.Actions.length - 1].score = game.Score.getTotalScore() - startScore;
+    getLocalMonster(game, langCode);
     // TODO: Move the minimap to it's own element instead of using outcomes
     try {
         const textRender = game.Maze.generateTextRender(true, game.Player.Location);
@@ -520,6 +530,23 @@ function getLocal(game, lang) {
     }
 }
 exports.getLocal = getLocal;
+function getLocalMonster(game, lang) {
+    const data = GameLang_1.default.getInstance(lang);
+    const cell = game.Maze.getCell(game.Player.Location);
+    const outcomes = game.Actions[game.Actions.length - 1].outcomes;
+    const method = `getLocalMonsters(${game.Id}, ${lang})`;
+    logDebug(__filename, method, 'Entering');
+    if (!!(cell.Tags & Enums_1.CELL_TAGS.MONSTER)) {
+        game.Monsters.forEach(monster => {
+            const monsterType = Enums_1.MONSTER_TAGS[monster.getTag()];
+            logDebug(__filename, method, `${cell.Location}, ${monster.getTag()}`);
+            if (monster.Location.row === cell.Location.row && monster.Location.col === monster.Location.col) {
+                outcomes.push(util_1.format(data.outcomes.monsterHere, monsterType));
+            }
+        });
+    }
+}
+exports.getLocalMonster = getLocalMonster;
 function doWrite(game, lang, message) {
     const method = `doWrite(${game.Id}, ${lang},${message})`;
     const cell = game.Maze.getCell(new MazeLoc_1.MazeLoc(game.Player.Location.row, game.Player.Location.col));
@@ -571,24 +598,35 @@ function trapCheck(game, lang, delayTrigger = false) {
                         break;
                     }
                     case Enums_1.CELL_TRAPS.FLAMETHROWER: {
+                        // When the player enters the cell as a result from the previous action, tell them there is a tripwire in the direction they face
                         if (!delayTrigger) {
-                            outcomes.push(data.outcomes.trapOutcomes.trigger);
+                            outcomes.push(util_1.format(data.outcomes.trapOutcomes.flamethrowerTrigger, data.directions[Enums_1.DIRS[game.Actions[game.Actions.length - 1].direction]]));
                         }
                         if (delayTrigger) {
-                            outcomes.push(data.outcomes.trapOutcomes.flamethrower);
-                            game.Player.addState(Enums_1.PLAYER_STATES.DEAD);
-                            actMove_1.finishGame(game, Enums_1.GAME_RESULTS.DEATH_TRAP);
+                            // If the player moves or jumps in the direction the tripwire is facing, they trigger the trap
+                            if (!!(game.Actions[game.Actions.length - 1].direction & game.Actions[game.Actions.length - 2].direction) ||
+                                game.Actions[game.Actions.length - 1].command === 9) {
+                                logDebug(__filename, 'trapCheck()', `Players location within check ${game.Player.Location}`);
+                                outcomes.push(data.outcomes.trapOutcomes.flamethrower);
+                                game.Player.addState(Enums_1.PLAYER_STATES.DEAD);
+                                actMove_1.finishGame(game, Enums_1.GAME_RESULTS.DEATH_TRAP);
+                            }
                         }
                         break;
                     }
                     case Enums_1.CELL_TRAPS.POISON_DART: {
+                        // If the player has only entered the cell, warn them there is a pressure plate in the direciton they are facing
                         if (!delayTrigger) {
-                            outcomes.push(data.outcomes.trapOutcomes.trigger);
+                            outcomes.push(util_1.format(data.outcomes.trapOutcomes.poisonDartTrigger, data.directions[Enums_1.DIRS[game.Actions[game.Actions.length - 1].direction]]));
                         }
                         if (delayTrigger) {
-                            outcomes.push(data.outcomes.trapOutcomes.poisonDart);
-                            outcomes.push(data.outcomes.trapOutcomes.poisoned);
-                            game.Player.addState(Enums_1.PLAYER_STATES.POISONED);
+                            // if the player does the moves action in the direction of the pressure plate they saw previously, they trigger the trap
+                            if (!!(game.Actions[game.Actions.length - 1].direction & game.Actions[game.Actions.length - 2].direction) &&
+                                game.Actions[game.Actions.length - 1].command === 8) {
+                                outcomes.push(data.outcomes.trapOutcomes.poisonDart);
+                                outcomes.push(data.outcomes.trapOutcomes.poisoned);
+                                game.Player.addState(Enums_1.PLAYER_STATES.POISONED);
+                            }
                         }
                         break;
                     }
@@ -597,6 +635,7 @@ function trapCheck(game, lang, delayTrigger = false) {
                         outcomes.push(data.outcomes.trapOutcomes.poisoned);
                         game.Player.addState(Enums_1.PLAYER_STATES.POISONED);
                         pCell.removeTrap(Enums_1.CELL_TRAPS.CHEESE);
+                        game.Actions[game.Actions.length - 1].changedCells.push(pCell);
                         break;
                     }
                     case Enums_1.CELL_TRAPS.FRAGILE_FLOOR: {
@@ -641,6 +680,7 @@ function trapCheck(game, lang, delayTrigger = false) {
                                 }
                             }
                             pCell.removeTrap(Enums_1.CELL_TRAPS.DEADFALL);
+                            game.Actions[game.Actions.length - 1].changedCells.push(pCell);
                             outcomes.push(data.outcomes.trapOutcomes.deadfall);
                         }
                         break;
@@ -659,7 +699,7 @@ function lifeCheck(game, lang) {
     const outcomes = game.Actions[game.Actions.length - 1].outcomes;
     const data = GameLang_1.default.getInstance(lang);
     if (!!(status & Enums_1.PLAYER_STATES.POISONED)) {
-        game.Player.Life -= 3;
+        game.Player.Life -= 1;
     }
     if (game.Player.Life <= 0) {
         game.Player.addState(Enums_1.PLAYER_STATES.DEAD);
@@ -668,4 +708,205 @@ function lifeCheck(game, lang) {
     }
 }
 exports.lifeCheck = lifeCheck;
+function calculateIntensity(intensity, distance, maxDistance) {
+    const test = ((intensity - (distance - 1)) / intensity) * ((maxDistance - (distance - 1)) / maxDistance);
+    return ((intensity - (distance - 1)) / intensity) * ((maxDistance - (distance - 1)) / maxDistance);
+}
+exports.calculateIntensity = calculateIntensity;
+function takeTurn(game, monster) {
+    if (monster.Life <= 0) {
+        monster.addState(Enums_1.MONSTER_STATES.DEAD);
+    }
+    const flip = Math.random() * 10;
+    const mLoc = game.Maze.getCell(monster.Location);
+    // if the monster is not dead, it tries to move forward
+    if (!(Enums_1.MONSTER_STATES.DEAD & monster.State)) {
+        // Monster will try to move randomly left, right, or forward. Otherwise it only turns.
+        if (mLoc.isDirOpen(getLeft(monster.Facing))) {
+            monsterMove(game, monster, getLeft(monster.Facing));
+        }
+        else if (mLoc.isDirOpen(monster.Facing)) {
+            monsterMove(game, monster, monster.Facing);
+        }
+        else if (mLoc.isDirOpen(getRight(monster.Facing))) {
+            monsterMove(game, monster, getRight(monster.Facing));
+        }
+        else {
+            turnMonster(monster, Enums_1.DIRS.LEFT);
+        }
+    }
+}
+//     if (flip <= 3 && mLoc.isDirOpen(monster.Facing)) {
+//       monsterMove(game, monster, monster.Facing);
+//     } else if (flip >= 7 && mLoc.isDirOpen(getRight(monster.Facing))) {
+//       monsterMove(game, monster, getRight(monster.Facing));
+//     } else if (flip > 5 && mLoc.isDirOpen(getLeft(monster.Facing))) {
+//       monsterMove(game, monster, getLeft(monster.Facing));
+//     } else {
+//       if (flip < 5) {
+//         monster.Facing = getRight(monster.Facing);
+//       } else {
+//         monster.Facing = getLeft(monster.Facing);
+//       }
+//     }
+//   }
+// }
+function monsterMove(game, monster, dir) {
+    const method = `monsterMove([game], ${Enums_1.MONSTER_TAGS[monster.getTag()]}, ${Enums_1.DIRS[dir]}) :`;
+    const oldCell = game.Maze.getCell(monster.Location);
+    let newCell = game.Maze.getCell(monster.Location);
+    switch (dir) {
+        case Enums_1.DIRS.NORTH: {
+            if (monster.Location.row - 1 >= 0) {
+                monster.Location = new MazeLoc_1.MazeLoc(monster.Location.row - 1, monster.Location.col);
+                newCell = game.Maze.getCell(monster.Location);
+                monster.Facing = Enums_1.DIRS.NORTH;
+            }
+            else {
+                monster.Facing = Enums_1.DIRS.SOUTH;
+            }
+            break;
+        }
+        case Enums_1.DIRS.SOUTH: {
+            if (monster.Location.row + 1 < game.Maze.Height) {
+                monster.Location = new MazeLoc_1.MazeLoc(monster.Location.row + 1, monster.Location.col);
+                newCell = game.Maze.getCell(monster.Location);
+                monster.Facing = Enums_1.DIRS.SOUTH;
+            }
+            else {
+                monster.Facing = Enums_1.DIRS.NORTH;
+            }
+            break;
+        }
+        case Enums_1.DIRS.EAST: {
+            if (monster.Location.col + 1 < game.Maze.Width) {
+                monster.Location = new MazeLoc_1.MazeLoc(monster.Location.row, monster.Location.col + 1);
+                newCell = game.Maze.getCell(monster.Location);
+                monster.Facing = Enums_1.DIRS.EAST;
+            }
+            else {
+                monster.Facing = Enums_1.DIRS.WEST;
+            }
+            break;
+        }
+        case Enums_1.DIRS.WEST: {
+            if (monster.Location.col - 1 >= 0) {
+                monster.Location = new MazeLoc_1.MazeLoc(monster.Location.row, monster.Location.col - 1);
+                newCell = game.Maze.getCell(monster.Location);
+                monster.Facing = Enums_1.DIRS.WEST;
+            }
+            else {
+                monster.Facing = Enums_1.DIRS.EAST;
+            }
+            break;
+        }
+        default: {
+            monster.Facing = getRight(monster.Facing);
+            break;
+        }
+    } // end switch dir
+    oldCell.removeTag(Enums_1.CELL_TAGS.MONSTER);
+    newCell.addTag(Enums_1.CELL_TAGS.MONSTER);
+    logDebug(__filename, method, 'The monster has moved successfully!');
+}
+function getRight(dir) {
+    switch (dir) {
+        case Enums_1.DIRS.NORTH: {
+            return Enums_1.DIRS.EAST;
+        }
+        case Enums_1.DIRS.SOUTH: {
+            return Enums_1.DIRS.WEST;
+        }
+        case Enums_1.DIRS.EAST: {
+            return Enums_1.DIRS.SOUTH;
+        }
+        case Enums_1.DIRS.WEST: {
+            return Enums_1.DIRS.NORTH;
+        }
+        default: {
+            return dir;
+        }
+    }
+}
+function getLeft(dir) {
+    switch (dir) {
+        case Enums_1.DIRS.NORTH: {
+            return Enums_1.DIRS.WEST;
+        }
+        case Enums_1.DIRS.SOUTH: {
+            return Enums_1.DIRS.EAST;
+        }
+        case Enums_1.DIRS.EAST: {
+            return Enums_1.DIRS.NORTH;
+        }
+        case Enums_1.DIRS.WEST: {
+            return Enums_1.DIRS.SOUTH;
+        }
+        default: {
+            return dir;
+        }
+    }
+}
+function turnMonster(monster, dir) {
+    switch (dir) {
+        case Enums_1.DIRS.NORTH: {
+            monster.Facing = Enums_1.DIRS.NORTH;
+            break;
+        }
+        case Enums_1.DIRS.SOUTH: {
+            monster.Facing = Enums_1.DIRS.SOUTH;
+            break;
+        }
+        case Enums_1.DIRS.EAST: {
+            monster.Facing = Enums_1.DIRS.EAST;
+            break;
+        }
+        case Enums_1.DIRS.WEST: {
+            monster.Facing = Enums_1.DIRS.WEST;
+            break;
+        }
+        case Enums_1.DIRS.LEFT: {
+            switch (monster.Facing) {
+                case Enums_1.DIRS.NORTH: {
+                    monster.Facing = Enums_1.DIRS.WEST;
+                    break;
+                }
+                case Enums_1.DIRS.SOUTH: {
+                    monster.Facing = Enums_1.DIRS.EAST;
+                    break;
+                }
+                case Enums_1.DIRS.EAST: {
+                    monster.Facing = Enums_1.DIRS.NORTH;
+                    break;
+                }
+                case Enums_1.DIRS.WEST: {
+                    monster.Facing = Enums_1.DIRS.SOUTH;
+                    break;
+                }
+            }
+            break;
+        } // end case DIRS.LEFT
+        case Enums_1.DIRS.RIGHT: {
+            switch (monster.Facing) {
+                case Enums_1.DIRS.NORTH: {
+                    monster.Facing = Enums_1.DIRS.EAST;
+                    break;
+                }
+                case Enums_1.DIRS.SOUTH: {
+                    monster.Facing = Enums_1.DIRS.WEST;
+                    break;
+                }
+                case Enums_1.DIRS.EAST: {
+                    monster.Facing = Enums_1.DIRS.SOUTH;
+                    break;
+                }
+                case Enums_1.DIRS.WEST: {
+                    monster.Facing = Enums_1.DIRS.NORTH;
+                    break;
+                }
+            }
+            break;
+        } // end case DIRS.LEFT
+    } // end switch DIR
+}
 //# sourceMappingURL=funcs.js.map

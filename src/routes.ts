@@ -13,8 +13,9 @@ import { doTurn } from './controllers/actTurn';
 import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
 import { doJump } from './controllers/actJump';
 import GameLang from './GameLang';
-import { cloneDeep } from 'lodash';
 import Security from './Security';
+import MazeBase from '@mazemasterjs/shared-library/MazeBase';
+import { cloneDeep } from 'lodash';
 
 // set constant utility references
 const log = Logger.getInstance();
@@ -237,6 +238,18 @@ export const countGames = (req: Request, res: Response) => {
   return res.status(200).json({ count: Cache.use().countItems(CACHE_TYPES.GAME) });
 };
 
+export function resetMaze(game: Game) {
+  Cache.use()
+    .fetchOrGetItem(CACHE_TYPES.MAZE, game.Maze.Id)
+    .then(fetchedMaze => {
+      game.Maze = fetchedMaze;
+      return;
+    })
+    .catch(fetchError => {
+      log.warn(__filename, 'resetMaze()', `Invalid maze Id (${game.Maze.Id}) -> ${fetchError.message}`);
+      return;
+    });
+}
 /**
  * Process an incoming game action request
  *

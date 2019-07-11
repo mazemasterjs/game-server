@@ -5,6 +5,7 @@ import { logDebug } from '../funcs';
 import GameLang from '../GameLang';
 import * as fns from '../funcs';
 import { finishGame } from './actMove';
+import { format } from 'util';
 
 export function doJump(game: Game, lang: string) {
   const data = GameLang.getInstance(lang);
@@ -17,7 +18,7 @@ export function doJump(game: Game, lang: string) {
     game.Player.removeState(PLAYER_STATES.STUNNED);
   } else {
     if (!!(game.Player.State & PLAYER_STATES.SITTING)) {
-      game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jumpWhileSitting);
+      game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jump.sitting);
       game.Player.addState(PLAYER_STATES.STANDING);
     } else {
       fns.trapCheck(game, lang, true);
@@ -40,19 +41,23 @@ export function jumpNext(game: Game, lang: string, distance: number, maxDistance
   const method = `jumpNext(${game.Id},${lang},${distance})`;
   const cell = game.Maze.getCell(new MazeLoc(game.Player.Location.row, game.Player.Location.col));
   const dir: DIRS = game.Actions[game.Actions.length - 1].direction;
+  const outcomes = game.Actions[game.Actions.length - 1].outcomes;
   game.Player.Facing = dir;
   const data = GameLang.getInstance(lang);
   if (distance <= maxDistance) {
     if (cell.isDirOpen(dir)) {
       // Check to see if the player jumped into the entrance or exit...
       if (!!(cell.Tags & CELL_TAGS.START) && dir === DIRS.NORTH) {
-        game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jump.lava);
+        outcomes.push(format(data.outcomes.jump.jumping, data.directions[DIRS[dir]]));
+        outcomes.push(data.outcomes.jump.lava);
         finishGame(game, GAME_RESULTS.DEATH_LAVA);
         return;
       } else if (!!(cell.Tags & CELL_TAGS.FINISH) && dir === DIRS.SOUTH) {
         fns.logDebug(__filename, method, 'Player leaped south into the exit (cheese).');
 
-        game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.win);
+        outcomes.push(format(data.outcomes.jump.jumping, data.directions[DIRS[dir]]));
+        outcomes.push(data.outcomes.jump.land);
+        outcomes.push(data.outcomes.win);
 
         // game over: WINNER or WIN_FLAWLESS
         if (game.Score.MoveCount <= game.Maze.ShortestPathLength) {
@@ -72,12 +77,14 @@ export function jumpNext(game: Game, lang: string, distance: number, maxDistance
       jumpNext(game, lang, distance + 1);
     } else {
       logDebug(__filename, method, 'Player crashed into a wall while jumping');
-      game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jump.wall);
+      outcomes.push(format(data.outcomes.jump.jumping, data.directions[DIRS[dir]]));
+      outcomes.push(data.outcomes.jump.wall);
       game.Player.addState(PLAYER_STATES.SITTING);
       game.Player.addState(PLAYER_STATES.STUNNED);
     }
   } else {
-    game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jump.jumping);
+    outcomes.push(format(data.outcomes.jump.jumping, data.directions[DIRS[dir]]));
+    outcomes.push(data.outcomes.jump.land);
     fns.trapCheck(game, lang);
   }
 }

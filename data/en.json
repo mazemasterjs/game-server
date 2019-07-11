@@ -1,10 +1,56 @@
 {
   "language": "en",
+  "monsters": {
+    "LAVA": {
+      "sight": {
+        "adjective": "magma",
+        "intensity": 5
+      },
+      "sound": {
+        "adjective": "gurgling",
+        "intensity": 2
+      },
+      "smell": {
+        "adjective": "sulphur",
+        "intensity": 3
+      },
+      "touch": {
+        "adjective": "hot",
+        "intensity": 5
+      },
+      "taste": {
+        "adjective": "nothing",
+        "intensity": -1
+      }
+    },
+    "CAT": {
+      "sight": {
+        "adjective": "Cat",
+        "intensity": 5
+      },
+      "sound": {
+        "adjective": "nothing",
+        "intensity": -1
+      },
+      "smell": {
+        "adjective": "Doom",
+        "intensity": 6
+      },
+      "touch": {
+        "adjective": "nothing",
+        "intensity": -1
+      },
+      "taste": {
+        "adjective": "nothing",
+        "intensity": -1
+      }
+    }
+  },
   "entities": {
     "exit": {
       "sight": {
         "adjective": "light",
-        "intensity": 10
+        "intensity": 5
       },
       "sound": {
         "adjective": "none",
@@ -26,7 +72,7 @@
     "lava": {
       "sight": {
         "adjective": "lava",
-        "intensity": 10
+        "intensity": 5
       },
       "sound": {
         "adjective": "bubbling",
@@ -38,7 +84,7 @@
       },
       "touch": {
         "adjective": "hot",
-        "intensity": -1
+        "intensity": 10
       },
       "taste": {
         "adjective": "nothing",
@@ -113,6 +159,28 @@
     }
   },
   "traps": {
+    "CHEESE": {
+      "sight": {
+        "adjective": "cheese",
+        "intensity": 3
+      },
+      "sound": {
+        "adjective": "cheesesound",
+        "intensity": -1
+      },
+      "smell": {
+        "adjective": "cheese",
+        "intensity": 10
+      },
+      "touch": {
+        "adjective": "soft",
+        "intensity": -1
+      },
+      "taste": {
+        "adjective": "cheese",
+        "intensity": -1
+      }
+    },
     "PIT": {
       "sight": {
         "adjective": "pit",
@@ -274,7 +342,7 @@
       },
       "sound": {
         "adjective": "cracking",
-        "intensity": -1
+        "intensity": 1
       },
       "smell": {
         "adjective": "none",
@@ -304,7 +372,7 @@
       "lava": "You fly through the air...straight into lava",
       "wall": "You leap directly into a wall!",
       "sitting": "You leap to your feet",
-      "jumping": "You fly through the air",
+      "jumping": "You jump [%s]",
       "land": "You land on your feet"
     },
     "gameOverOutOfMoves": "You have run out of moves. The game is over.",
@@ -329,13 +397,15 @@
     "trapOutcomes": {
       "pit": "You fall into a bottomless hole. You will have a lot of time to consider your mistakes...",
       "mouse": "The last thing you hear is a snapping sound.",
-      "tar": "You trudge through the pit of tar, slowing you down",
-      "flamethrower": "You hear a hiss and a click before you burst into flames",
+      "tar": "You trudge through a pit of tar, slowing you down",
+      "flamethrower": "You break a tripwire, a gout of flame erupts!",
+      "flamethrowerTrigger": "Tripwire [%s]",
       "fragileFloor": "The floor crumbles.",
       "fragileFloorCollapse": "The floor collapses beneath you!",
       "deadfall": "The passage way collapses behind you!",
       "teleport": "Your surroundings suddenly seem different",
       "poisonDart": "A dart flies out from the darkness and hits you!",
+      "poisonDartTrigger": "You see a pressure plate [%s]",
       "trigger": "CLICK",
       "poisoned": "POISONED!!",
       "cheese": "You see a chunk of cheese, you can't help but take a bite!"
@@ -343,7 +413,8 @@
     "turnLeft": "You turn left",
     "turnRight": "You turn right",
     "turnWrong": "You turn 360 degrees",
-    "deathPoison": "You succumb to the poison and die..."
+    "deathPoison": "You succumb to the poison and die...",
+    "monsterHere": "There is a [%s] here!"
 
   }
 }

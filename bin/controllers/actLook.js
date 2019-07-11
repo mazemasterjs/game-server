@@ -135,7 +135,7 @@ exports.doLookLocal = doLookLocal;
  * @param sight
  */
 function setSee(see, sight) {
-    if (see[0].sight === '') {
+    if (see[0].sight === 'nothing') {
         see[0] = sight;
     }
     else {
@@ -153,7 +153,7 @@ function seeTraps(game, lang, cell, engram, dist) {
                 try {
                     const intensity = data.traps[trapType.toUpperCase()].sight.intensity;
                     const adjective = data.traps[trapType.toUpperCase()].sight.adjective;
-                    if (dist < intensity) {
+                    if (dist <= intensity) {
                         setSee(engram, { sight: adjective, distance: dist });
                     }
                 }

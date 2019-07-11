@@ -8,6 +8,7 @@ import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
 import { logDebug } from '../funcs';
 import { MazeLoc } from '@mazemasterjs/shared-library/MazeLoc';
 import Cell from '@mazemasterjs/shared-library/Cell';
+import { resetMaze } from '../routes';
 
 // need a config object for some of this
 const config: Config = Config.getInstance();
@@ -56,7 +57,9 @@ export async function doMove(game: Game, langCode: string, sneaking: boolean = f
   } else {
     // now check for start/finish cell win & lose conditions
     if (!sneaking) {
+      logDebug(__filename, method, `Players location 1st pre-trap check ${game.Player.Location}`);
       fns.trapCheck(game, langCode, true);
+      logDebug(__filename, method, `Players location 1st pre-trap check ${game.Player.Location}`);
     }
     if (game.Maze.getCell(pLoc).isDirOpen(dir)) {
       if (dir === DIRS.NORTH && pLoc.equals(game.Maze.StartCell)) {
@@ -89,7 +92,9 @@ export async function doMove(game: Game, langCode: string, sneaking: boolean = f
       game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.stunned);
     }
   }
+  logDebug(__filename, method, `Players location 2nd pre-trap check ${game.Player.Location}`);
   fns.trapCheck(game, langCode);
+  logDebug(__filename, method, `Players location 2nd post-trap check ${game.Player.Location}`);
   // game continues - return the action (with outcomes and engram)
   return Promise.resolve(fns.finalizeAction(game, moveCost, startScore, langCode));
 }
@@ -133,6 +138,7 @@ export async function finishGame(game: Game, gameResult: GAME_RESULTS): Promise<
   // update the basic game state & result fields
   game.State = GAME_STATES.FINISHED;
   game.Score.GameResult = gameResult;
+  resetMaze(game);
 
   switch (gameResult) {
     case GAME_RESULTS.WIN_FLAWLESS: {
