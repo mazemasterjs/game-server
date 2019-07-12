@@ -36,10 +36,18 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 - [x] When a character turns walls are detected where there should not be
 - [x] Peripheral vision is seeing more cells further than it should be
 - [x] Fragile Floor traps are persistent between mazes
-- [ ] Implement the rest of the engram senses for monsters
+- [x] Implement the rest of the engram senses for monsters
 - [ ] Monster wanders randomly instead of following walls
+- [ ] Monster deaths needs to use the apropriate GAME_RESULT
 
 ## Change Notes
+
+### v0.11.0
+
+- Monster now emits all engram senses
+- Flamethrowers no longer trigger even if you jumps away from the tripwire
+- The cat must be avoided by sneaking past, jumping over, or waiting for it to move on
+- Wait command added
 
 ### v0.10.0
 

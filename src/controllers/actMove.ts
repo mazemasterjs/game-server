@@ -60,6 +60,11 @@ export async function doMove(game: Game, langCode: string, sneaking: boolean = f
       logDebug(__filename, method, `Players location 1st pre-trap check ${game.Player.Location}`);
       fns.trapCheck(game, langCode, true);
       logDebug(__filename, method, `Players location 1st pre-trap check ${game.Player.Location}`);
+      if (fns.monsterInCell(game, langCode)) {
+        game.Player.addState(PLAYER_STATES.DEAD);
+        game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.monster.deathCat);
+        finishGame(game, GAME_RESULTS.DEATH_TRAP);
+      }
     }
     if (game.Maze.getCell(pLoc).isDirOpen(dir)) {
       if (dir === DIRS.NORTH && pLoc.equals(game.Maze.StartCell)) {

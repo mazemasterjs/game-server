@@ -6,6 +6,8 @@ import CellBase from '@mazemasterjs/shared-library/CellBase';
 import { ITaste } from '@mazemasterjs/shared-library/Interfaces/ISenses';
 import GameLang from '../GameLang';
 
+const MAX_TASTE_DISTANCE = 0;
+
 export function doTasteLocal(game: Game, lang: string) {
   const method = `doTasteLocal(${game.Id}, ${lang})`;
   logDebug(__filename, method, 'Entering');
@@ -68,18 +70,17 @@ export function doTasteLocal(game: Game, lang: string) {
 export function doTasteDirected(game: Game, lang: string, cell: CellBase, engramDir: ITaste[], lastDirection: DIRS, distance: number) {
   const data = GameLang.getInstance(lang);
   const method = `dotasteDirected(${game.Id}, ${lang}, ${cell.Location}, [emgramDir], ${lastDirection}, ${distance})`;
-  const MAX_DISTANCE = 0;
   logDebug(__filename, method, 'Entering');
   if (!!(cell.Tags & CELL_TAGS.START) && distance <= data.entities.lava.taste.intensity) {
     setTaste(engramDir, {
       taste: data.entities.lava.taste.adjective,
-      strength: calculateIntensity(data.entities.lava.taste.intensity, distance + 1, MAX_DISTANCE) * 10,
+      strength: calculateIntensity(data.entities.lava.taste.intensity, distance + 1, MAX_TASTE_DISTANCE) * 10,
     });
   }
   if (!!(cell.Tags & CELL_TAGS.FINISH) && distance <= data.entities.exit.taste.intensity) {
     setTaste(engramDir, {
       taste: data.entities.exit.taste.adjective,
-      strength: calculateIntensity(data.entities.exit.taste.intensity, distance + 1, MAX_DISTANCE) * 10,
+      strength: calculateIntensity(data.entities.exit.taste.intensity, distance + 1, MAX_TASTE_DISTANCE) * 10,
     });
   }
 
@@ -92,7 +93,7 @@ export function doTasteDirected(game: Game, lang: string, cell: CellBase, engram
           const intensity = data.traps[trapType.toUpperCase()].taste.intensity;
           const adjective = data.traps[trapType.toUpperCase()].taste.adjective;
           if (distance <= intensity) {
-            setTaste(engramDir, { taste: adjective, strength: calculateIntensity(intensity, distance, MAX_DISTANCE) * 10 });
+            setTaste(engramDir, { taste: adjective, strength: calculateIntensity(intensity, distance, MAX_TASTE_DISTANCE) * 10 });
           }
         } catch (err) {
           logDebug(__filename, method, err);
@@ -101,7 +102,7 @@ export function doTasteDirected(game: Game, lang: string, cell: CellBase, engram
     } // end for(pos<9)}
   } // if (!!(cell.Traps & CELL_TRAPS.NONE))
   //  loop through the cardinal directions in DIRS
-  if (distance < MAX_DISTANCE) {
+  if (distance < MAX_TASTE_DISTANCE) {
     for (let pos = 0; pos < 4; pos++) {
       const dir = 1 << pos; // bitwish shift (1, 2, 4, 8)
       switch (dir) {

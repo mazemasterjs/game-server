@@ -29,15 +29,15 @@
         "intensity": 5
       },
       "sound": {
-        "adjective": "nothing",
-        "intensity": -1
+        "adjective": "Movement",
+        "intensity": 6
       },
       "smell": {
-        "adjective": "Doom",
+        "adjective": "Cat",
         "intensity": 6
       },
       "touch": {
-        "adjective": "nothing",
+        "adjective": "Fuzzy",
         "intensity": -1
       },
       "taste": {
@@ -392,7 +392,10 @@
     "stand": "You stand up.",
     "standWhileStanding": "You are already standing!",
     "stunned": "You are stunned!",
+    "stunnedWait": "You wait for the stars in your eyes to fade...",
     "walkIntoWall": "You crash into the wall to the [%s]",
+    "wait": "You take a moment to contemplate life",
+    "monsterWait": "You stick closely to the wall and wait for the [%s] to pass",
     "win": "Winner, winner, CHEDDAR DINNER!",
     "trapOutcomes": {
       "pit": "You fall into a bottomless hole. You will have a lot of time to consider your mistakes...",
@@ -414,7 +417,11 @@
     "turnRight": "You turn right",
     "turnWrong": "You turn 360 degrees",
     "deathPoison": "You succumb to the poison and die...",
-    "monsterHere": "There is a [%s] here!"
+    "monsterHere": "There is a [%s] here!",
+    "passMonster": "You passed by a [%s]!",
+    "monster": {
+      "deathCat": "You hear a fearsome yowling as the cat pounces on you..."
+    }
 
   }
 }

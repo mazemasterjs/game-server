@@ -1,9 +1,11 @@
 import * as fns from '../funcs';
-import { CELL_TAGS, DIRS, CELL_TRAPS } from '@mazemasterjs/shared-library/Enums';
+import { CELL_TAGS, DIRS, CELL_TRAPS, MONSTER_TAGS } from '@mazemasterjs/shared-library/Enums';
 import { Game } from '@mazemasterjs/shared-library/Game';
 import { ISight } from '@mazemasterjs/shared-library/Interfaces/ISenses';
 import GameLang from '../GameLang';
 import { Cell } from '@mazemasterjs/shared-library/Cell';
+
+let MAX_SIGHT_DISTANCE = 3;
 
 export function doLook(game: Game, langCode: string) {
   fns.logDebug(__filename, 'doLook()', 'Entering');
@@ -24,7 +26,7 @@ export function doLookLocal(game: Game, langCode: string) {
   const cell = game.Maze.getCell(game.Player.Location);
   const engram = game.Actions[game.Actions.length - 1].engram;
   const data = GameLang.getInstance(langCode);
-  const MAX_DISTANCE = data.entities.darkness.sight.intensity;
+  MAX_SIGHT_DISTANCE = data.entities.darkness.sight.intensity;
 
   //  loop through the cardinal directions in DIRS
   for (let pos = 0; pos < 4; pos++) {
@@ -36,9 +38,10 @@ export function doLookLocal(game: Game, langCode: string) {
           const thisCell = game.Maze.Cells[nRow][cell.Location.col];
           const distance = Math.abs(cell.Location.row - nRow);
           seeTraps(game, langCode, thisCell, engram.north.see, distance);
+          seeMonsters(game, langCode, thisCell, engram.north.see, distance);
           // bail out if we hit max distance
-          if (distance > MAX_DISTANCE) {
-            setSee(engram.north.see, { sight: data.entities.darkness.sight.adjective, distance: MAX_DISTANCE });
+          if (distance >= MAX_SIGHT_DISTANCE) {
+            setSee(engram.north.see, { sight: data.entities.darkness.sight.adjective, distance: MAX_SIGHT_DISTANCE });
             break;
           }
 
@@ -64,9 +67,10 @@ export function doLookLocal(game: Game, langCode: string) {
           const thisCell = game.Maze.Cells[sRow][cell.Location.col];
           const distance = Math.abs(sRow - cell.Location.row);
           seeTraps(game, langCode, thisCell, engram.south.see, distance);
+          seeMonsters(game, langCode, thisCell, engram.south.see, distance);
           // bail out if we hit max distance
-          if (distance > MAX_DISTANCE) {
-            setSee(engram.south.see, { sight: data.entities.darkness.sight.adjective, distance: MAX_DISTANCE });
+          if (distance >= MAX_SIGHT_DISTANCE) {
+            setSee(engram.south.see, { sight: data.entities.darkness.sight.adjective, distance: MAX_SIGHT_DISTANCE });
             break;
           }
 
@@ -91,8 +95,9 @@ export function doLookLocal(game: Game, langCode: string) {
           const thisCell = game.Maze.Cells[cell.Location.row][eCol];
           const distance = Math.abs(eCol - cell.Location.col);
           seeTraps(game, langCode, thisCell, engram.east.see, distance);
+          seeMonsters(game, langCode, thisCell, engram.east.see, distance);
           // bail out if we hit max distance
-          if (distance > MAX_DISTANCE) {
+          if (distance >= MAX_SIGHT_DISTANCE) {
             setSee(engram.east.see, { sight: data.entities.darkness.sight.adjective, distance: data.entities.darkness.sight.intensity });
             break;
           }
@@ -112,9 +117,10 @@ export function doLookLocal(game: Game, langCode: string) {
           const thisCell = game.Maze.Cells[cell.Location.row][wCol];
           const distance = Math.abs(wCol - cell.Location.col);
           seeTraps(game, langCode, thisCell, engram.west.see, distance);
+          seeMonsters(game, langCode, thisCell, engram.west.see, distance);
           // bail out if we hit max distance
-          if (distance > MAX_DISTANCE) {
-            setSee(engram.west.see, { sight: data.entities.darkness.sight.adjective, distance: MAX_DISTANCE });
+          if (distance >= MAX_SIGHT_DISTANCE) {
+            setSee(engram.west.see, { sight: data.entities.darkness.sight.adjective, distance: MAX_SIGHT_DISTANCE });
             break;
           }
 
@@ -143,6 +149,23 @@ function setSee(see: Array<ISight>, sight: ISight) {
     see[0] = sight;
   } else {
     see.push(sight);
+  }
+}
+
+function seeMonsters(game: Game, lang: string, cell: Cell, engramDir: ISight[], dist: number) {
+  const data = GameLang.getInstance(lang);
+  const method = `seeMonsters(${game.Id}, ${lang}, ${cell.Location}, [emgramDir], ${dist})`;
+  fns.logDebug(__filename, method, 'Entering');
+  if (!!(cell.Tags & CELL_TAGS.MONSTER)) {
+    game.Monsters.forEach(monster => {
+      const monsterType = MONSTER_TAGS[monster.getTag()];
+      fns.logDebug(__filename, 'seeMonsters(): ', `${monster.getTag()}`);
+      const adj = data.monsters[monsterType.toUpperCase()].sight.adjective;
+      const int = data.monsters[monsterType.toUpperCase()].sight.intensity;
+      if (monster.Location.equals(cell.Location) && int >= dist) {
+        setSee(engramDir, { sight: adj, distance: dist });
+      }
+    });
   }
 }
 

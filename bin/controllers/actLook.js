@@ -13,6 +13,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const fns = __importStar(require("../funcs"));
 const Enums_1 = require("@mazemasterjs/shared-library/Enums");
 const GameLang_1 = __importDefault(require("../GameLang"));
+let MAX_SIGHT_DISTANCE = 3;
 function doLook(game, langCode) {
     fns.logDebug(__filename, 'doLook()', 'Entering');
     const data = GameLang_1.default.getInstance(langCode);
@@ -32,7 +33,7 @@ function doLookLocal(game, langCode) {
     const cell = game.Maze.getCell(game.Player.Location);
     const engram = game.Actions[game.Actions.length - 1].engram;
     const data = GameLang_1.default.getInstance(langCode);
-    const MAX_DISTANCE = data.entities.darkness.sight.intensity;
+    MAX_SIGHT_DISTANCE = data.entities.darkness.sight.intensity;
     //  loop through the cardinal directions in DIRS
     for (let pos = 0; pos < 4; pos++) {
         const dir = 1 << pos; // bitwish shift (1, 2, 4, 8)
@@ -43,9 +44,10 @@ function doLookLocal(game, langCode) {
                     const thisCell = game.Maze.Cells[nRow][cell.Location.col];
                     const distance = Math.abs(cell.Location.row - nRow);
                     seeTraps(game, langCode, thisCell, engram.north.see, distance);
+                    seeMonsters(game, langCode, thisCell, engram.north.see, distance);
                     // bail out if we hit max distance
-                    if (distance > MAX_DISTANCE) {
-                        setSee(engram.north.see, { sight: data.entities.darkness.sight.adjective, distance: MAX_DISTANCE });
+                    if (distance >= MAX_SIGHT_DISTANCE) {
+                        setSee(engram.north.see, { sight: data.entities.darkness.sight.adjective, distance: MAX_SIGHT_DISTANCE });
                         break;
                     }
                     // no exit north, report wall and stop travelling
@@ -67,9 +69,10 @@ function doLookLocal(game, langCode) {
                     const thisCell = game.Maze.Cells[sRow][cell.Location.col];
                     const distance = Math.abs(sRow - cell.Location.row);
                     seeTraps(game, langCode, thisCell, engram.south.see, distance);
+                    seeMonsters(game, langCode, thisCell, engram.south.see, distance);
                     // bail out if we hit max distance
-                    if (distance > MAX_DISTANCE) {
-                        setSee(engram.south.see, { sight: data.entities.darkness.sight.adjective, distance: MAX_DISTANCE });
+                    if (distance >= MAX_SIGHT_DISTANCE) {
+                        setSee(engram.south.see, { sight: data.entities.darkness.sight.adjective, distance: MAX_SIGHT_DISTANCE });
                         break;
                     }
                     // no exit south, report wall and stop travelling
@@ -91,8 +94,9 @@ function doLookLocal(game, langCode) {
                     const thisCell = game.Maze.Cells[cell.Location.row][eCol];
                     const distance = Math.abs(eCol - cell.Location.col);
                     seeTraps(game, langCode, thisCell, engram.east.see, distance);
+                    seeMonsters(game, langCode, thisCell, engram.east.see, distance);
                     // bail out if we hit max distance
-                    if (distance > MAX_DISTANCE) {
+                    if (distance >= MAX_SIGHT_DISTANCE) {
                         setSee(engram.east.see, { sight: data.entities.darkness.sight.adjective, distance: data.entities.darkness.sight.intensity });
                         break;
                     }
@@ -110,9 +114,10 @@ function doLookLocal(game, langCode) {
                     const thisCell = game.Maze.Cells[cell.Location.row][wCol];
                     const distance = Math.abs(wCol - cell.Location.col);
                     seeTraps(game, langCode, thisCell, engram.west.see, distance);
+                    seeMonsters(game, langCode, thisCell, engram.west.see, distance);
                     // bail out if we hit max distance
-                    if (distance > MAX_DISTANCE) {
-                        setSee(engram.west.see, { sight: data.entities.darkness.sight.adjective, distance: MAX_DISTANCE });
+                    if (distance >= MAX_SIGHT_DISTANCE) {
+                        setSee(engram.west.see, { sight: data.entities.darkness.sight.adjective, distance: MAX_SIGHT_DISTANCE });
                         break;
                     }
                     // no exit west, report wall and stop travelling
@@ -140,6 +145,22 @@ function setSee(see, sight) {
     }
     else {
         see.push(sight);
+    }
+}
+function seeMonsters(game, lang, cell, engramDir, dist) {
+    const data = GameLang_1.default.getInstance(lang);
+    const method = `seeMonsters(${game.Id}, ${lang}, ${cell.Location}, [emgramDir], ${dist})`;
+    fns.logDebug(__filename, method, 'Entering');
+    if (!!(cell.Tags & Enums_1.CELL_TAGS.MONSTER)) {
+        game.Monsters.forEach(monster => {
+            const monsterType = Enums_1.MONSTER_TAGS[monster.getTag()];
+            fns.logDebug(__filename, 'seeMonsters(): ', `${monster.getTag()}`);
+            const adj = data.monsters[monsterType.toUpperCase()].sight.adjective;
+            const int = data.monsters[monsterType.toUpperCase()].sight.intensity;
+            if (monster.Location.equals(cell.Location) && int >= dist) {
+                setSee(engramDir, { sight: adj, distance: dist });
+            }
+        });
     }
 }
 function seeTraps(game, lang, cell, engram, dist) {

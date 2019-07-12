@@ -22,6 +22,11 @@ export function doJump(game: Game, lang: string) {
       game.Player.addState(PLAYER_STATES.STANDING);
     } else {
       fns.trapCheck(game, lang, true);
+      if (fns.monsterInCell(game, lang)) {
+        game.Player.addState(PLAYER_STATES.DEAD);
+        game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.monster.deathCat);
+        finishGame(game, GAME_RESULTS.DEATH_TRAP);
+      }
       jumpNext(game, lang, 0);
     }
   }
@@ -86,5 +91,10 @@ export function jumpNext(game: Game, lang: string, distance: number, maxDistance
     outcomes.push(format(data.outcomes.jump.jumping, data.directions[DIRS[dir]]));
     outcomes.push(data.outcomes.jump.land);
     fns.trapCheck(game, lang);
+    if (fns.monsterInCell(game, lang)) {
+      game.Player.addState(PLAYER_STATES.DEAD);
+      game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.monster.deathCat);
+      finishGame(game, GAME_RESULTS.DEATH_TRAP);
+    }
   }
 }

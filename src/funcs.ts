@@ -479,11 +479,12 @@ export function finalizeAction(game: Game, actionMoveCount: number, startScore: 
   if (game.Score.MoveCount >= 1 && !(game.Monsters.length > 0)) {
     game.addMonster(new Monster(game.Maze.FinishCell, MONSTER_STATES.STANDING, MONSTER_TAGS.CAT, DIRS.NORTH));
   }
-
+  // Each monster takes a turn
   game.Monsters.forEach(monster => {
     game.Maze.getCell(monster.Location).addTag(CELL_TAGS.MONSTER);
-    takeTurn(game, monster);
+    takeTurn(game, langCode, monster);
   });
+
   // track the score change from this one move
   game.Actions[game.Actions.length - 1].score = game.Score.getTotalScore() - startScore;
   getLocalMonster(game, langCode);
@@ -508,6 +509,7 @@ export function finalizeAction(game: Game, actionMoveCount: number, startScore: 
     logWarn(__filename, 'finalizeAction(...)', `Player state is ${PLAYER_STATES[game.Player.State]} (${game.Player.State}) - no engram data collected.`);
   }
   lifeCheck(game, langCode);
+
   return game.Actions[game.Actions.length - 1];
 }
 
@@ -565,11 +567,27 @@ export function getLocalMonster(game: Game, lang: string) {
     game.Monsters.forEach(monster => {
       const monsterType = MONSTER_TAGS[monster.getTag()];
       logDebug(__filename, method, `${cell.Location}, ${monster.getTag()}`);
-      if (monster.Location.row === cell.Location.row && monster.Location.col === monster.Location.col) {
+      if (monster.Location.row === cell.Location.row && monster.Location.col === cell.Location.col) {
         outcomes.push(format(data.outcomes.monsterHere, monsterType));
       }
     });
   }
+}
+
+export function monsterInCell(game: Game, lang: string) {
+  const cell = game.Maze.getCell(game.Player.Location);
+  const method = `monsterInCell(${game.Id}, ${lang})`;
+  let isMonster = false;
+  logDebug(__filename, method, 'Entering');
+  if (!!(cell.Tags & CELL_TAGS.MONSTER)) {
+    game.Monsters.forEach(monster => {
+      logDebug(__filename, method, `${cell.Location}, ${monster.getTag()}`);
+      if (monster.Location.row === cell.Location.row && monster.Location.col === cell.Location.col) {
+        isMonster = true;
+      }
+    });
+  }
+  return isMonster;
 }
 
 export function doWrite(game: Game, lang: string, message: string) {
@@ -630,8 +648,8 @@ export function trapCheck(game: Game, lang: string, delayTrigger: boolean = fals
             if (delayTrigger) {
               // If the player moves or jumps in the direction the tripwire is facing, they trigger the trap
               if (
-                !!(game.Actions[game.Actions.length - 1].direction & game.Actions[game.Actions.length - 2].direction) ||
-                game.Actions[game.Actions.length - 1].command === 9
+                !!(game.Actions[game.Actions.length - 1].direction & game.Actions[game.Actions.length - 2].direction)
+                // || (game.Actions[game.Actions.length - 1].command === 9 && !!()
               ) {
                 logDebug(__filename, 'trapCheck()', `Players location within check ${game.Player.Location}`);
                 outcomes.push(data.outcomes.trapOutcomes.flamethrower);
@@ -745,14 +763,21 @@ export function calculateIntensity(intensity: number, distance: number, maxDista
   return ((intensity - (distance - 1)) / intensity) * ((maxDistance - (distance - 1)) / maxDistance);
 }
 
-function takeTurn(game: Game, monster: Monster) {
+export function takeTurn(game: Game, lang: string, monster: Monster) {
+  const data = GameLang.getInstance(lang);
+  const pLoc = game.Player.Location;
+  const outcomes = game.Actions[game.Actions.length - 1].outcomes;
+  const pCommand = game.Actions[game.Actions.length - 1].command;
   if (monster.Life <= 0) {
     monster.addState(MONSTER_STATES.DEAD);
   }
   const flip = Math.random() * 10;
   const mLoc = game.Maze.getCell(monster.Location);
   // if the monster is not dead, it tries to move forward
-  if (!(MONSTER_STATES.DEAD & monster.State)) {
+  if (
+    !(MONSTER_STATES.DEAD & monster.State) &&
+    (!(game.Player.Location.col === monster.Location.col && game.Player.Location.row === monster.Location.row) || (pCommand === 10 || pCommand === 13))
+  ) {
     // Monster will try to move randomly left, right, or forward. Otherwise it only turns.
     if (mLoc.isDirOpen(getLeft(monster.Facing))) {
       monsterMove(game, monster, getLeft(monster.Facing));
@@ -765,6 +790,7 @@ function takeTurn(game: Game, monster: Monster) {
     }
   }
 }
+
 //     if (flip <= 3 && mLoc.isDirOpen(monster.Facing)) {
 //       monsterMove(game, monster, monster.Facing);
 //     } else if (flip >= 7 && mLoc.isDirOpen(getRight(monster.Facing))) {

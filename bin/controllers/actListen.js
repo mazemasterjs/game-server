@@ -2,11 +2,20 @@
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const funcs_1 = require("../funcs");
 const Enums_1 = require("@mazemasterjs/shared-library/Enums");
 const MazeLoc_1 = __importDefault(require("@mazemasterjs/shared-library/MazeLoc"));
 const GameLang_1 = __importDefault(require("../GameLang"));
+const fns = __importStar(require("../funcs"));
+const MAX_HEARING_DISTANCE = 10;
 function doListenLocal(game, lang) {
     const method = `doListenLocal(${game.Id}, ${lang})`;
     funcs_1.logDebug(__filename, method, 'Entering');
@@ -15,10 +24,16 @@ function doListenLocal(game, lang) {
     const data = GameLang_1.default.getInstance(lang);
     // get the local sounds
     if (!!(cell.Tags & Enums_1.CELL_TAGS.START)) {
-        setSound(engram.north.hear, { sound: data.entities.lava.sound.adjective, volume: funcs_1.calculateIntensity(data.entities.lava.sound.intensity, 1, 10) });
+        setSound(engram.north.hear, {
+            sound: data.entities.lava.sound.adjective,
+            volume: funcs_1.calculateIntensity(data.entities.lava.sound.intensity, 1, MAX_HEARING_DISTANCE),
+        });
     }
     if (!!(cell.Tags & Enums_1.CELL_TAGS.FINISH)) {
-        setSound(engram.south.hear, { sound: data.entities.exit.sound.adjective, volume: funcs_1.calculateIntensity(data.entities.cheese.sound.intensity, 1, 10) });
+        setSound(engram.south.hear, {
+            sound: data.entities.exit.sound.adjective,
+            volume: funcs_1.calculateIntensity(data.entities.cheese.sound.intensity, 1, MAX_HEARING_DISTANCE),
+        });
     }
     //  loop through the cardinal directions in DIRS
     for (let pos = 0; pos < 4; pos++) {
@@ -68,20 +83,20 @@ exports.doListenLocal = doListenLocal;
 function doListenDirected(game, lang, cell, engramDir, lastDirection, distance) {
     const data = GameLang_1.default.getInstance(lang);
     const method = `doListenDirected(${game.Id}, ${lang}, ${cell.Location}, [emgramDir], ${lastDirection}, ${distance})`;
-    const MAX_DISTANCE = 10;
     funcs_1.logDebug(__filename, method, 'Entering');
     if (!!(cell.Tags & Enums_1.CELL_TAGS.START) && distance <= data.entities.lava.sound.intensity) {
         setSound(engramDir, {
             sound: data.entities.lava.sound.adjective,
-            volume: funcs_1.calculateIntensity(data.entities.lava.sound.intensity, distance + 1, MAX_DISTANCE),
+            volume: funcs_1.calculateIntensity(data.entities.lava.sound.intensity, distance + 1, MAX_HEARING_DISTANCE),
         });
     }
     if (!!(cell.Tags & Enums_1.CELL_TAGS.FINISH) && distance <= data.entities.exit.sound.intensity) {
         setSound(engramDir, {
             sound: data.entities.exit.sound.adjective,
-            volume: funcs_1.calculateIntensity(data.entities.exit.sound.intensity, distance + 1, MAX_DISTANCE),
+            volume: funcs_1.calculateIntensity(data.entities.exit.sound.intensity, distance + 1, MAX_HEARING_DISTANCE),
         });
     }
+    hearMonsters(game, lang, cell, engramDir, distance);
     if (cell.Traps !== Enums_1.CELL_TRAPS.NONE) {
         for (let pos = 0; pos < 9; pos++) {
             const trapEnum = 1 << pos;
@@ -95,7 +110,7 @@ function doListenDirected(game, lang, cell, engramDir, lastDirection, distance) 
                     // const intensity = eval(intensityString);  <-- very clever, but an unsafe operation that the linter opposes
                     // const adjective = eval(adjectiveString);  <-- very clever, but an unsafe operation that the linter opposes
                     if (distance <= intensity) {
-                        setSound(engramDir, { sound: adjective, volume: funcs_1.calculateIntensity(intensity, distance, MAX_DISTANCE) });
+                        setSound(engramDir, { sound: adjective, volume: funcs_1.calculateIntensity(intensity, distance, MAX_HEARING_DISTANCE) });
                     }
                 }
                 catch (err) {
@@ -105,7 +120,7 @@ function doListenDirected(game, lang, cell, engramDir, lastDirection, distance) 
         } // end for(pos<9)}
     } // if (!!(cell.Traps & CELL_TRAPS.NONE))
     //  loop through the cardinal directions in DIRS
-    if (distance < MAX_DISTANCE) {
+    if (distance < MAX_HEARING_DISTANCE) {
         for (let pos = 0; pos < 4; pos++) {
             const dir = 1 << pos; // bitwish shift (1, 2, 4, 8)
             switch (dir) {
@@ -142,6 +157,23 @@ function doListenDirected(game, lang, cell, engramDir, lastDirection, distance) 
     }
 } // end doListenDirected
 exports.doListenDirected = doListenDirected;
+function hearMonsters(game, lang, cell, engramDir, distance) {
+    const data = GameLang_1.default.getInstance(lang);
+    const method = `hearMonsters(${game.Id}, ${lang}, ${cell.Location}, [emgramDir], ${distance})`;
+    fns.logDebug(__filename, method, 'Entering');
+    if (!!(cell.Tags & Enums_1.CELL_TAGS.MONSTER)) {
+        game.Monsters.forEach(monster => {
+            const monsterType = Enums_1.MONSTER_TAGS[monster.getTag()];
+            fns.logDebug(__filename, 'smellMonsters(): ', `${monster.getTag()}`);
+            const adj = data.monsters[monsterType.toUpperCase()].sound.adjective;
+            const int = data.monsters[monsterType.toUpperCase()].sound.intensity;
+            if (monster.Location.equals(cell.Location) && int >= distance) {
+                const str = fns.calculateIntensity(int, distance, MAX_HEARING_DISTANCE);
+                setSound(engramDir, { sound: adj, volume: str });
+            }
+        });
+    }
+}
 function setSound(sounds, sound) {
     if (sounds[0].sound === 'nothing') {
         sounds[0] = sound;

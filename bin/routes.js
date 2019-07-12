@@ -33,6 +33,7 @@ const actJump_1 = require("./controllers/actJump");
 const GameLang_1 = __importDefault(require("./GameLang"));
 const Security_1 = __importDefault(require("./Security"));
 const lodash_1 = require("lodash");
+const actWait_1 = require("./controllers/actWait");
 // set constant utility references
 const log = logger_1.Logger.getInstance();
 const config = Config_1.Config.getInstance();
@@ -343,7 +344,12 @@ exports.processAction = (req, res) => __awaiter(this, void 0, void 0, function* 
                 .json({ action: jumpResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
         case Enums_1.COMMANDS.QUIT:
         case Enums_1.COMMANDS.SIT:
-        case Enums_1.COMMANDS.WAIT:
+        case Enums_1.COMMANDS.WAIT: {
+            const waitResult = yield actWait_1.doWait(game, langCode);
+            return res
+                .status(200)
+                .json({ action: waitResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
+        }
         case Enums_1.COMMANDS.WRITE: {
             const writeResult = yield fns.doWrite(game, langCode, msg);
             return res
