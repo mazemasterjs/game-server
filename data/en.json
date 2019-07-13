@@ -401,8 +401,8 @@
       "pit": "You fall into a bottomless hole. You will have a lot of time to consider your mistakes...",
       "mouse": "The last thing you hear is a snapping sound.",
       "tar": "You trudge through a pit of tar, slowing you down",
-      "flamethrower": "You break a tripwire, a gout of flame erupts!",
-      "flamethrowerTrigger": "Tripwire [%s]",
+      "flamethrower": "You cross the laser grid and a gout of flame erupts! Maybe try a sneakier approach next time?",
+      "flamethrowerTrigger": "Laser grid [%s]",
       "fragileFloor": "The floor crumbles.",
       "fragileFloorCollapse": "The floor collapses beneath you!",
       "deadfall": "The passage way collapses behind you!",
@@ -422,6 +422,5 @@
     "monster": {
       "deathCat": "You hear a fearsome yowling as the cat pounces on you..."
     }
-
   }
 }

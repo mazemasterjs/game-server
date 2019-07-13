@@ -104,7 +104,11 @@ function doSmellDirected(game, lang, cell, engramDir, lastDirection, distance) {
                         if (!engramDir.find(smell => {
                             if (smell.scent === adjective) {
                                 if (smell.strength > distance) {
-                                    smell.strength = fns.calculateIntensity(intensity, distance, MAX_SMELL_DISTANCE) * 10;
+                                    // only update the smell strength if the next instance of the same scent is more smelly (should never happen?)
+                                    const newStrength = fns.calculateIntensity(intensity, distance, MAX_SMELL_DISTANCE) * 10;
+                                    if (newStrength > smell.strength) {
+                                        smell.strength = newStrength;
+                                    }
                                 }
                                 return true;
                             }

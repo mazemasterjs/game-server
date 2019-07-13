@@ -42,6 +42,11 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 
 ## Change Notes
 
+### v0.11.2
+
+- actSmell.doSmellDirected will now only update the smell strength if the next instance of the same scent is more smelly (which should never happen?)
+- Replaced tripwire messages with laser grid messages ('tripwire' made people think jumping should work)
+
 ### v0.11.1
 
 - Cleaned up some smells SonarQube identified
