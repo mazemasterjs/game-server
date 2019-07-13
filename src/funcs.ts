@@ -1,26 +1,17 @@
-import { doTasteLocal } from './controllers/actTaste';
-import { doSmellLocal } from './controllers/actSmell';
+import axios from 'axios';
+import GameLang from './GameLang';
+import Monster from '@mazemasterjs/shared-library/Monster';
 import { AxiosResponse } from 'axios';
 import { Cache, CACHE_TYPES } from './Cache';
 import { Cell } from '@mazemasterjs/shared-library/Cell';
-import {
-  CELL_TRAPS,
-  COMMANDS,
-  DIRS,
-  GAME_RESULTS,
-  GAME_STATES,
-  PLAYER_STATES,
-  TROPHY_IDS,
-  MONSTER_STATES,
-  MONSTER_TAGS,
-  CELL_TAGS,
-} from '@mazemasterjs/shared-library/Enums';
 import { Config } from './Config';
 import { doFeelLocal } from './controllers/actFeel';
 import { doListenLocal } from './controllers/actListen';
 import { doLookLocal } from './controllers/actLook';
-import GameLang from './GameLang';
-import axios from 'axios';
+import { doSmellLocal } from './controllers/actSmell';
+import { doTasteLocal } from './controllers/actTaste';
+import { finishGame } from './controllers/actMove';
+import { format } from 'util';
 import { Game } from '@mazemasterjs/shared-library/Game';
 import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
 import { IGameStub } from '@mazemasterjs/shared-library/Interfaces/IGameStub';
@@ -30,10 +21,19 @@ import { Request } from 'express';
 import { Score } from '@mazemasterjs/shared-library/Score';
 import { Team } from '@mazemasterjs/shared-library/Team';
 import { Trophy } from '@mazemasterjs/shared-library/Trophy';
-import { finishGame } from './controllers/actMove';
-import { format } from 'util';
-import Monster from '@mazemasterjs/shared-library/Monster';
 import { fsync } from 'fs';
+import {
+  CELL_TAGS,
+  CELL_TRAPS,
+  COMMANDS,
+  DIRS,
+  GAME_RESULTS,
+  GAME_STATES,
+  MONSTER_STATES,
+  MONSTER_TAGS,
+  PLAYER_STATES,
+  TROPHY_IDS,
+} from '@mazemasterjs/shared-library/Enums';
 
 const log = Logger.getInstance();
 const config = Config.getInstance();
@@ -523,7 +523,6 @@ export function getLocal(game: Game, lang: string) {
   logDebug(__filename, method, 'Entering');
   const cell = game.Maze.getCell(game.Player.Location);
   const engram = game.Actions[game.Actions.length - 1].engram.here;
-  const data = GameLang.getInstance(lang);
 
   for (let pos = 0; pos < 4; pos++) {
     const dir = 1 << pos; // bitwish shift (1, 2, 4, 8)
@@ -774,19 +773,18 @@ export function lifeCheck(game: Game, lang: string) {
 }
 
 export function calculateIntensity(intensity: number, distance: number, maxDistance: number) {
-  const test = ((intensity - (distance - 1)) / intensity) * ((maxDistance - (distance - 1)) / maxDistance);
   return ((intensity - (distance - 1)) / intensity) * ((maxDistance - (distance - 1)) / maxDistance);
 }
 
 export function takeTurn(game: Game, lang: string, monster: Monster) {
-  const data = GameLang.getInstance(lang);
-  const pLoc = game.Player.Location;
-  const outcomes = game.Actions[game.Actions.length - 1].outcomes;
+  // const data = GameLang.getInstance(lang);
+  // const pLoc = game.Player.Location;
+  // const outcomes = game.Actions[game.Actions.length - 1].outcomes;
   const pCommand = game.Actions[game.Actions.length - 1].command;
   if (monster.Life <= 0) {
     monster.addState(MONSTER_STATES.DEAD);
   }
-  const flip = Math.random() * 10;
+  // const flip = Math.random() * 10;
   const mLoc = game.Maze.getCell(monster.Location);
   // if the monster is not dead, it tries to move forward
   if (

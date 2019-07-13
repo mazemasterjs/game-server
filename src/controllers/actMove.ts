@@ -197,7 +197,9 @@ export async function finishGame(game: Game, gameResult: GAME_RESULTS): Promise<
         });
       break;
     }
-    case GAME_RESULTS.DEATH_TRAP:
+    case GAME_RESULTS.DEATH_TRAP: {
+      break;
+    }
     case GAME_RESULTS.OUT_OF_TIME:
     case GAME_RESULTS.DEATH_MONSTER: {
       await fns

@@ -11,21 +11,21 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const actTaste_1 = require("./controllers/actTaste");
-const actSmell_1 = require("./controllers/actSmell");
+const axios_1 = __importDefault(require("axios"));
+const GameLang_1 = __importDefault(require("./GameLang"));
+const Monster_1 = __importDefault(require("@mazemasterjs/shared-library/Monster"));
 const Cache_1 = require("./Cache");
-const Enums_1 = require("@mazemasterjs/shared-library/Enums");
 const Config_1 = require("./Config");
 const actFeel_1 = require("./controllers/actFeel");
 const actListen_1 = require("./controllers/actListen");
 const actLook_1 = require("./controllers/actLook");
-const GameLang_1 = __importDefault(require("./GameLang"));
-const axios_1 = __importDefault(require("axios"));
-const logger_1 = require("@mazemasterjs/logger");
-const MazeLoc_1 = require("@mazemasterjs/shared-library/MazeLoc");
+const actSmell_1 = require("./controllers/actSmell");
+const actTaste_1 = require("./controllers/actTaste");
 const actMove_1 = require("./controllers/actMove");
 const util_1 = require("util");
-const Monster_1 = __importDefault(require("@mazemasterjs/shared-library/Monster"));
+const logger_1 = require("@mazemasterjs/logger");
+const MazeLoc_1 = require("@mazemasterjs/shared-library/MazeLoc");
+const Enums_1 = require("@mazemasterjs/shared-library/Enums");
 const log = logger_1.Logger.getInstance();
 const config = Config_1.Config.getInstance();
 // tslint:disable-next-line: no-string-literal
@@ -500,7 +500,6 @@ function getLocal(game, lang) {
     logDebug(__filename, method, 'Entering');
     const cell = game.Maze.getCell(game.Player.Location);
     const engram = game.Actions[game.Actions.length - 1].engram.here;
-    const data = GameLang_1.default.getInstance(lang);
     for (let pos = 0; pos < 4; pos++) {
         const dir = 1 << pos; // bitwish shift (1, 2, 4, 8)
         switch (dir) {
@@ -746,19 +745,18 @@ function lifeCheck(game, lang) {
 }
 exports.lifeCheck = lifeCheck;
 function calculateIntensity(intensity, distance, maxDistance) {
-    const test = ((intensity - (distance - 1)) / intensity) * ((maxDistance - (distance - 1)) / maxDistance);
     return ((intensity - (distance - 1)) / intensity) * ((maxDistance - (distance - 1)) / maxDistance);
 }
 exports.calculateIntensity = calculateIntensity;
 function takeTurn(game, lang, monster) {
-    const data = GameLang_1.default.getInstance(lang);
-    const pLoc = game.Player.Location;
-    const outcomes = game.Actions[game.Actions.length - 1].outcomes;
+    // const data = GameLang.getInstance(lang);
+    // const pLoc = game.Player.Location;
+    // const outcomes = game.Actions[game.Actions.length - 1].outcomes;
     const pCommand = game.Actions[game.Actions.length - 1].command;
     if (monster.Life <= 0) {
         monster.addState(Enums_1.MONSTER_STATES.DEAD);
     }
-    const flip = Math.random() * 10;
+    // const flip = Math.random() * 10;
     const mLoc = game.Maze.getCell(monster.Location);
     // if the monster is not dead, it tries to move forward
     if (!(Enums_1.MONSTER_STATES.DEAD & monster.State) &&

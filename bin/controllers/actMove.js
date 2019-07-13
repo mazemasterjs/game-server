@@ -206,7 +206,9 @@ function finishGame(game, gameResult) {
                 });
                 break;
             }
-            case Enums_1.GAME_RESULTS.DEATH_TRAP:
+            case Enums_1.GAME_RESULTS.DEATH_TRAP: {
+                break;
+            }
             case Enums_1.GAME_RESULTS.OUT_OF_TIME:
             case Enums_1.GAME_RESULTS.DEATH_MONSTER: {
                 yield fns

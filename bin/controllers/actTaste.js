@@ -13,14 +13,14 @@ function doTasteLocal(game, lang) {
     funcs_1.logDebug(__filename, method, 'Entering');
     const cell = game.Maze.getCell(game.Player.Location);
     const engram = game.Actions[game.Actions.length - 1].engram;
-    const data = GameLang_1.default.getInstance(lang);
+    // const data = GameLang.getInstance(lang);
     // get the local tastes
-    if (!!(cell.Tags & Enums_1.CELL_TAGS.START)) {
-        // setTaste(engram.north.taste, { taste: data.entities.lava.taste.adjective, strength: data.entities.lava.taste.intensity });
-    }
-    if (!!(cell.Tags & Enums_1.CELL_TAGS.FINISH)) {
-        // setTaste(engram.south.taste, { taste: data.entities.cheese.taste.adjective, strength: data.entities.cheese.taste.intensity });
-    }
+    // if (!!(cell.Tags & CELL_TAGS.START)) {
+    //   setTaste(engram.north.taste, { taste: data.entities.lava.taste.adjective, strength: data.entities.lava.taste.intensity });
+    // }
+    // if (!!(cell.Tags & CELL_TAGS.FINISH)) {
+    //   setTaste(engram.south.taste, { taste: data.entities.cheese.taste.adjective, strength: data.entities.cheese.taste.intensity });
+    // }
     //  loop through the cardinal directions in DIRS
     for (let pos = 0; pos < 4; pos++) {
         const dir = 1 << pos; // bitwish shift (1, 2, 4, 8)

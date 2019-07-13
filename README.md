@@ -42,17 +42,26 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 
 ## Change Notes
 
-### v0.11.1
+### v0.11.3
 
 - life is now tracted in game.actions
 - added trophies to various functions
 - the cat now only spawns if the maze challenge difficulty is 6 or higher
 - deadfall traps now give a message in outcomes
 
+### v0.11.2
+
+- actSmell.doSmellDirected will now only update the smell strength if the next instance of the same scent is more smelly (which should never happen?)
+- Replaced tripwire messages with laser grid messages ('tripwire' made people think jumping should work)
+
+### v0.11.1
+
+- Cleaned up some smells SonarQube identified
+
 ### v0.11.0
 
 - Monster now emits all engram senses
-- Flamethrowers no longer trigger even if you jumps away from the tripwire
+- Flamethrowers no longer trigger even if you jump away from the tripwire
 - The cat must be avoided by sneaking past, jumping over, or waiting for it to move on
 - Wait command added
 
