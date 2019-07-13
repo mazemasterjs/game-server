@@ -1,5 +1,5 @@
 import { Game } from '@mazemasterjs/shared-library/Game';
-import { logDebug, calculateIntensity } from '../funcs';
+import { calculateIntensity, logDebug } from '../funcs';
 import { CELL_TAGS, CELL_TRAPS, DIRS } from '@mazemasterjs/shared-library/Enums';
 import MazeLoc from '@mazemasterjs/shared-library/MazeLoc';
 import CellBase from '@mazemasterjs/shared-library/CellBase';
@@ -14,14 +14,14 @@ export function doTasteLocal(game: Game, lang: string) {
   const cell = game.Maze.getCell(game.Player.Location);
   const engram = game.Actions[game.Actions.length - 1].engram;
 
-  const data = GameLang.getInstance(lang);
+  // const data = GameLang.getInstance(lang);
   // get the local tastes
-  if (!!(cell.Tags & CELL_TAGS.START)) {
-    // setTaste(engram.north.taste, { taste: data.entities.lava.taste.adjective, strength: data.entities.lava.taste.intensity });
-  }
-  if (!!(cell.Tags & CELL_TAGS.FINISH)) {
-    // setTaste(engram.south.taste, { taste: data.entities.cheese.taste.adjective, strength: data.entities.cheese.taste.intensity });
-  }
+  // if (!!(cell.Tags & CELL_TAGS.START)) {
+  //   setTaste(engram.north.taste, { taste: data.entities.lava.taste.adjective, strength: data.entities.lava.taste.intensity });
+  // }
+  // if (!!(cell.Tags & CELL_TAGS.FINISH)) {
+  //   setTaste(engram.south.taste, { taste: data.entities.cheese.taste.adjective, strength: data.entities.cheese.taste.intensity });
+  // }
 
   //  loop through the cardinal directions in DIRS
   for (let pos = 0; pos < 4; pos++) {

@@ -42,10 +42,14 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 
 ## Change Notes
 
+### v0.11.1
+
+- Cleaned up some smells SonarQube identified
+
 ### v0.11.0
 
 - Monster now emits all engram senses
-- Flamethrowers no longer trigger even if you jumps away from the tripwire
+- Flamethrowers no longer trigger even if you jump away from the tripwire
 - The cat must be avoided by sneaking past, jumping over, or waiting for it to move on
 - Wait command added
 
