@@ -11,21 +11,21 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const actTaste_1 = require("./controllers/actTaste");
-const actSmell_1 = require("./controllers/actSmell");
+const axios_1 = __importDefault(require("axios"));
+const GameLang_1 = __importDefault(require("./GameLang"));
+const Monster_1 = __importDefault(require("@mazemasterjs/shared-library/Monster"));
 const Cache_1 = require("./Cache");
-const Enums_1 = require("@mazemasterjs/shared-library/Enums");
 const Config_1 = require("./Config");
 const actFeel_1 = require("./controllers/actFeel");
 const actListen_1 = require("./controllers/actListen");
 const actLook_1 = require("./controllers/actLook");
-const GameLang_1 = __importDefault(require("./GameLang"));
-const axios_1 = __importDefault(require("axios"));
-const logger_1 = require("@mazemasterjs/logger");
-const MazeLoc_1 = require("@mazemasterjs/shared-library/MazeLoc");
+const actSmell_1 = require("./controllers/actSmell");
+const actTaste_1 = require("./controllers/actTaste");
 const actMove_1 = require("./controllers/actMove");
 const util_1 = require("util");
-const Monster_1 = __importDefault(require("@mazemasterjs/shared-library/Monster"));
+const logger_1 = require("@mazemasterjs/logger");
+const MazeLoc_1 = require("@mazemasterjs/shared-library/MazeLoc");
+const Enums_1 = require("@mazemasterjs/shared-library/Enums");
 const log = logger_1.Logger.getInstance();
 const config = Config_1.Config.getInstance();
 // tslint:disable-next-line: no-string-literal
@@ -456,9 +456,10 @@ function finalizeAction(game, actionMoveCount, startScore, langCode) {
     if (game.Score.MoveCount >= 1 && !(game.Monsters.length > 0)) {
         game.addMonster(new Monster_1.default(game.Maze.FinishCell, Enums_1.MONSTER_STATES.STANDING, Enums_1.MONSTER_TAGS.CAT, Enums_1.DIRS.NORTH));
     }
+    // Each monster takes a turn
     game.Monsters.forEach(monster => {
         game.Maze.getCell(monster.Location).addTag(Enums_1.CELL_TAGS.MONSTER);
-        takeTurn(game, monster);
+        takeTurn(game, langCode, monster);
     });
     // track the score change from this one move
     game.Actions[game.Actions.length - 1].score = game.Score.getTotalScore() - startScore;
@@ -493,7 +494,6 @@ function getLocal(game, lang) {
     logDebug(__filename, method, 'Entering');
     const cell = game.Maze.getCell(game.Player.Location);
     const engram = game.Actions[game.Actions.length - 1].engram.here;
-    const data = GameLang_1.default.getInstance(lang);
     for (let pos = 0; pos < 4; pos++) {
         const dir = 1 << pos; // bitwish shift (1, 2, 4, 8)
         switch (dir) {
@@ -540,13 +540,29 @@ function getLocalMonster(game, lang) {
         game.Monsters.forEach(monster => {
             const monsterType = Enums_1.MONSTER_TAGS[monster.getTag()];
             logDebug(__filename, method, `${cell.Location}, ${monster.getTag()}`);
-            if (monster.Location.row === cell.Location.row && monster.Location.col === monster.Location.col) {
+            if (monster.Location.row === cell.Location.row && monster.Location.col === cell.Location.col) {
                 outcomes.push(util_1.format(data.outcomes.monsterHere, monsterType));
             }
         });
     }
 }
 exports.getLocalMonster = getLocalMonster;
+function monsterInCell(game, lang) {
+    const cell = game.Maze.getCell(game.Player.Location);
+    const method = `monsterInCell(${game.Id}, ${lang})`;
+    let isMonster = false;
+    logDebug(__filename, method, 'Entering');
+    if (!!(cell.Tags & Enums_1.CELL_TAGS.MONSTER)) {
+        game.Monsters.forEach(monster => {
+            logDebug(__filename, method, `${cell.Location}, ${monster.getTag()}`);
+            if (monster.Location.row === cell.Location.row && monster.Location.col === cell.Location.col) {
+                isMonster = true;
+            }
+        });
+    }
+    return isMonster;
+}
+exports.monsterInCell = monsterInCell;
 function doWrite(game, lang, message) {
     const method = `doWrite(${game.Id}, ${lang},${message})`;
     const cell = game.Maze.getCell(new MazeLoc_1.MazeLoc(game.Player.Location.row, game.Player.Location.col));
@@ -604,8 +620,9 @@ function trapCheck(game, lang, delayTrigger = false) {
                         }
                         if (delayTrigger) {
                             // If the player moves or jumps in the direction the tripwire is facing, they trigger the trap
-                            if (!!(game.Actions[game.Actions.length - 1].direction & game.Actions[game.Actions.length - 2].direction) ||
-                                game.Actions[game.Actions.length - 1].command === 9) {
+                            if (!!(game.Actions[game.Actions.length - 1].direction & game.Actions[game.Actions.length - 2].direction)
+                            // || (game.Actions[game.Actions.length - 1].command === 9 && !!()
+                            ) {
                                 logDebug(__filename, 'trapCheck()', `Players location within check ${game.Player.Location}`);
                                 outcomes.push(data.outcomes.trapOutcomes.flamethrower);
                                 game.Player.addState(Enums_1.PLAYER_STATES.DEAD);
@@ -709,18 +726,22 @@ function lifeCheck(game, lang) {
 }
 exports.lifeCheck = lifeCheck;
 function calculateIntensity(intensity, distance, maxDistance) {
-    const test = ((intensity - (distance - 1)) / intensity) * ((maxDistance - (distance - 1)) / maxDistance);
     return ((intensity - (distance - 1)) / intensity) * ((maxDistance - (distance - 1)) / maxDistance);
 }
 exports.calculateIntensity = calculateIntensity;
-function takeTurn(game, monster) {
+function takeTurn(game, lang, monster) {
+    // const data = GameLang.getInstance(lang);
+    // const pLoc = game.Player.Location;
+    // const outcomes = game.Actions[game.Actions.length - 1].outcomes;
+    const pCommand = game.Actions[game.Actions.length - 1].command;
     if (monster.Life <= 0) {
         monster.addState(Enums_1.MONSTER_STATES.DEAD);
     }
-    const flip = Math.random() * 10;
+    // const flip = Math.random() * 10;
     const mLoc = game.Maze.getCell(monster.Location);
     // if the monster is not dead, it tries to move forward
-    if (!(Enums_1.MONSTER_STATES.DEAD & monster.State)) {
+    if (!(Enums_1.MONSTER_STATES.DEAD & monster.State) &&
+        (!(game.Player.Location.col === monster.Location.col && game.Player.Location.row === monster.Location.row) || (pCommand === 10 || pCommand === 13))) {
         // Monster will try to move randomly left, right, or forward. Otherwise it only turns.
         if (mLoc.isDirOpen(getLeft(monster.Facing))) {
             monsterMove(game, monster, getLeft(monster.Facing));
@@ -736,6 +757,7 @@ function takeTurn(game, monster) {
         }
     }
 }
+exports.takeTurn = takeTurn;
 //     if (flip <= 3 && mLoc.isDirOpen(monster.Facing)) {
 //       monsterMove(game, monster, monster.Facing);
 //     } else if (flip >= 7 && mLoc.isDirOpen(getRight(monster.Facing))) {

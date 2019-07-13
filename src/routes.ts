@@ -1,7 +1,7 @@
 import { Action } from '@mazemasterjs/shared-library/Action';
 import { doMove } from './controllers/actMove';
 import { Cache, CACHE_TYPES } from './Cache';
-import { COMMANDS, DIRS, GAME_RESULTS, GAME_STATES, PLAYER_STATES, USER_ROLES } from '@mazemasterjs/shared-library/Enums';
+import { COMMANDS, DIRS, GAME_RESULTS, GAME_STATES, PLAYER_STATES, USER_ROLES, CELL_TAGS } from '@mazemasterjs/shared-library/Enums';
 import { Config } from './Config';
 import { doLook } from './controllers/actLook';
 import * as fns from './funcs';
@@ -16,6 +16,7 @@ import GameLang from './GameLang';
 import Security from './Security';
 import MazeBase from '@mazemasterjs/shared-library/MazeBase';
 import { cloneDeep } from 'lodash';
+import { doWait } from './controllers/actWait';
 
 // set constant utility references
 const log = Logger.getInstance();
@@ -358,7 +359,12 @@ export const processAction = async (req: Request, res: Response) => {
         .json({ action: jumpResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
     case COMMANDS.QUIT:
     case COMMANDS.SIT:
-    case COMMANDS.WAIT:
+    case COMMANDS.WAIT: {
+      const waitResult = await doWait(game, langCode);
+      return res
+        .status(200)
+        .json({ action: waitResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
+    }
     case COMMANDS.WRITE: {
       const writeResult = await fns.doWrite(game, langCode, msg);
       return res

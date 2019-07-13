@@ -7,6 +7,7 @@ const funcs_1 = require("../funcs");
 const Enums_1 = require("@mazemasterjs/shared-library/Enums");
 const MazeLoc_1 = __importDefault(require("@mazemasterjs/shared-library/MazeLoc"));
 const GameLang_1 = __importDefault(require("../GameLang"));
+const MAX_TASTE_DISTANCE = 0;
 function doTasteLocal(game, lang) {
     const method = `doTasteLocal(${game.Id}, ${lang})`;
     funcs_1.logDebug(__filename, method, 'Entering');
@@ -68,18 +69,17 @@ exports.doTasteLocal = doTasteLocal;
 function doTasteDirected(game, lang, cell, engramDir, lastDirection, distance) {
     const data = GameLang_1.default.getInstance(lang);
     const method = `dotasteDirected(${game.Id}, ${lang}, ${cell.Location}, [emgramDir], ${lastDirection}, ${distance})`;
-    const MAX_DISTANCE = 0;
     funcs_1.logDebug(__filename, method, 'Entering');
     if (!!(cell.Tags & Enums_1.CELL_TAGS.START) && distance <= data.entities.lava.taste.intensity) {
         setTaste(engramDir, {
             taste: data.entities.lava.taste.adjective,
-            strength: funcs_1.calculateIntensity(data.entities.lava.taste.intensity, distance + 1, MAX_DISTANCE) * 10,
+            strength: funcs_1.calculateIntensity(data.entities.lava.taste.intensity, distance + 1, MAX_TASTE_DISTANCE) * 10,
         });
     }
     if (!!(cell.Tags & Enums_1.CELL_TAGS.FINISH) && distance <= data.entities.exit.taste.intensity) {
         setTaste(engramDir, {
             taste: data.entities.exit.taste.adjective,
-            strength: funcs_1.calculateIntensity(data.entities.exit.taste.intensity, distance + 1, MAX_DISTANCE) * 10,
+            strength: funcs_1.calculateIntensity(data.entities.exit.taste.intensity, distance + 1, MAX_TASTE_DISTANCE) * 10,
         });
     }
     if (cell.Traps !== Enums_1.CELL_TRAPS.NONE) {
@@ -91,7 +91,7 @@ function doTasteDirected(game, lang, cell, engramDir, lastDirection, distance) {
                     const intensity = data.traps[trapType.toUpperCase()].taste.intensity;
                     const adjective = data.traps[trapType.toUpperCase()].taste.adjective;
                     if (distance <= intensity) {
-                        setTaste(engramDir, { taste: adjective, strength: funcs_1.calculateIntensity(intensity, distance, MAX_DISTANCE) * 10 });
+                        setTaste(engramDir, { taste: adjective, strength: funcs_1.calculateIntensity(intensity, distance, MAX_TASTE_DISTANCE) * 10 });
                     }
                 }
                 catch (err) {
@@ -101,7 +101,7 @@ function doTasteDirected(game, lang, cell, engramDir, lastDirection, distance) {
         } // end for(pos<9)}
     } // if (!!(cell.Traps & CELL_TRAPS.NONE))
     //  loop through the cardinal directions in DIRS
-    if (distance < MAX_DISTANCE) {
+    if (distance < MAX_TASTE_DISTANCE) {
         for (let pos = 0; pos < 4; pos++) {
             const dir = 1 << pos; // bitwish shift (1, 2, 4, 8)
             switch (dir) {

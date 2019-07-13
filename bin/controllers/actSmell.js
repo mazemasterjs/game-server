@@ -14,6 +14,7 @@ const fns = __importStar(require("../funcs"));
 const Enums_1 = require("@mazemasterjs/shared-library/Enums");
 const MazeLoc_1 = __importDefault(require("@mazemasterjs/shared-library/MazeLoc"));
 const GameLang_1 = __importDefault(require("../GameLang"));
+const MAX_SMELL_DISTANCE = 6;
 function doSmellLocal(game, lang) {
     const method = `doSmellLocal(${game.Id}, ${lang})`;
     fns.logDebug(__filename, method, 'Entering');
@@ -24,13 +25,13 @@ function doSmellLocal(game, lang) {
     if (!!(cell.Tags & Enums_1.CELL_TAGS.START)) {
         setSmell(engram.north.smell, {
             scent: data.entities.lava.smell.adjective,
-            strength: fns.calculateIntensity(data.entities.lava.smell.intensity, 1, 6) * 10,
+            strength: fns.calculateIntensity(data.entities.lava.smell.intensity, 1, MAX_SMELL_DISTANCE) * 10,
         });
     }
     if (!!(cell.Tags & Enums_1.CELL_TAGS.FINISH)) {
         setSmell(engram.south.smell, {
             scent: data.entities.exit.smell.adjective,
-            strength: fns.calculateIntensity(data.entities.exit.smell.intensity, 1, 6) * 10,
+            strength: fns.calculateIntensity(data.entities.exit.smell.intensity, 1, MAX_SMELL_DISTANCE) * 10,
         });
     }
     //  loop through the cardinal directions in DIRS
@@ -82,14 +83,13 @@ function doSmellDirected(game, lang, cell, engramDir, lastDirection, distance) {
     const data = GameLang_1.default.getInstance(lang);
     const method = `doSmellDirected(${game.Id}, ${lang}, ${cell.Location}, [emgramDir], ${lastDirection}, ${distance})`;
     fns.logDebug(__filename, method, 'Entering');
-    const MAX_DISTANCE = 6;
     if (!!(cell.Tags & Enums_1.CELL_TAGS.START) && distance <= data.entities.lava.smell.intensity) {
         const intensity = data.entities.lava.smell.intensity;
-        setSmell(engramDir, { scent: data.entities.lava.smell.adjective, strength: fns.calculateIntensity(intensity, distance + 1, MAX_DISTANCE) * 10 });
+        setSmell(engramDir, { scent: data.entities.lava.smell.adjective, strength: fns.calculateIntensity(intensity, distance + 1, MAX_SMELL_DISTANCE) * 10 });
     }
     if (!!(cell.Tags & Enums_1.CELL_TAGS.FINISH) && distance <= data.entities.exit.smell.intensity) {
         const intensity = data.entities.exit.smell.intensity;
-        setSmell(engramDir, { scent: data.entities.exit.smell.adjective, strength: fns.calculateIntensity(intensity, distance + 1, MAX_DISTANCE) * 10 });
+        setSmell(engramDir, { scent: data.entities.exit.smell.adjective, strength: fns.calculateIntensity(intensity, distance + 1, MAX_SMELL_DISTANCE) * 10 });
     }
     smellMonsters(game, lang, cell, engramDir, distance);
     if (cell.Traps !== Enums_1.CELL_TRAPS.NONE) {
@@ -104,7 +104,7 @@ function doSmellDirected(game, lang, cell, engramDir, lastDirection, distance) {
                         if (!engramDir.find(smell => {
                             if (smell.scent === adjective) {
                                 if (smell.strength > distance) {
-                                    smell.strength = fns.calculateIntensity(intensity, distance, MAX_DISTANCE) * 10;
+                                    smell.strength = fns.calculateIntensity(intensity, distance, MAX_SMELL_DISTANCE) * 10;
                                 }
                                 return true;
                             }
@@ -112,7 +112,7 @@ function doSmellDirected(game, lang, cell, engramDir, lastDirection, distance) {
                                 return false;
                             }
                         })) {
-                            setSmell(engramDir, { scent: adjective, strength: fns.calculateIntensity(intensity, distance, MAX_DISTANCE) * 10 });
+                            setSmell(engramDir, { scent: adjective, strength: fns.calculateIntensity(intensity, distance, MAX_SMELL_DISTANCE) * 10 });
                         }
                     }
                 }
@@ -123,7 +123,7 @@ function doSmellDirected(game, lang, cell, engramDir, lastDirection, distance) {
         } // end for(pos<9)}
     } // if (!!(cell.Traps & CELL_TRAPS.NONE))
     //  loop through the cardinal directions in
-    if (distance < MAX_DISTANCE) {
+    if (distance < MAX_SMELL_DISTANCE) {
         for (let pos = 0; pos < 4; pos++) {
             const dir = 1 << pos; // bitwish shift (1, 2, 4, 8)
             switch (dir) {
@@ -171,7 +171,7 @@ function smellMonsters(game, lang, cell, engramDir, distance) {
             const adj = data.monsters[monsterType.toUpperCase()].smell.adjective;
             const int = data.monsters[monsterType.toUpperCase()].smell.intensity;
             if (monster.Location.equals(cell.Location) && int >= distance) {
-                const str = fns.calculateIntensity(int, distance, 6) * 10;
+                const str = fns.calculateIntensity(int, distance, MAX_SMELL_DISTANCE) * 10;
                 setSmell(engramDir, { scent: adj, strength: str });
             }
         });

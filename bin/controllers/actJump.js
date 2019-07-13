@@ -34,6 +34,11 @@ function doJump(game, lang) {
         }
         else {
             fns.trapCheck(game, lang, true);
+            if (fns.monsterInCell(game, lang)) {
+                game.Player.addState(Enums_1.PLAYER_STATES.DEAD);
+                game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.monster.deathCat);
+                actMove_1.finishGame(game, Enums_1.GAME_RESULTS.DEATH_TRAP);
+            }
             jumpNext(game, lang, 0);
         }
     }
@@ -101,6 +106,11 @@ function jumpNext(game, lang, distance, maxDistance = 1) {
         outcomes.push(util_1.format(data.outcomes.jump.jumping, data.directions[Enums_1.DIRS[dir]]));
         outcomes.push(data.outcomes.jump.land);
         fns.trapCheck(game, lang);
+        if (fns.monsterInCell(game, lang)) {
+            game.Player.addState(Enums_1.PLAYER_STATES.DEAD);
+            game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.monster.deathCat);
+            actMove_1.finishGame(game, Enums_1.GAME_RESULTS.DEATH_TRAP);
+        }
     }
 }
 exports.jumpNext = jumpNext;

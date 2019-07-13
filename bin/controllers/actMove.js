@@ -70,6 +70,11 @@ function doMove(game, langCode, sneaking = false) {
                 funcs_1.logDebug(__filename, method, `Players location 1st pre-trap check ${game.Player.Location}`);
                 fns.trapCheck(game, langCode, true);
                 funcs_1.logDebug(__filename, method, `Players location 1st pre-trap check ${game.Player.Location}`);
+                if (fns.monsterInCell(game, langCode)) {
+                    game.Player.addState(Enums_1.PLAYER_STATES.DEAD);
+                    game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.monster.deathCat);
+                    finishGame(game, Enums_1.GAME_RESULTS.DEATH_TRAP);
+                }
             }
             if (game.Maze.getCell(pLoc).isDirOpen(dir)) {
                 if (dir === Enums_1.DIRS.NORTH && pLoc.equals(game.Maze.StartCell)) {
