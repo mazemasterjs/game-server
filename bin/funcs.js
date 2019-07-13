@@ -453,7 +453,13 @@ function finalizeAction(game, actionMoveCount, startScore, langCode) {
         }
         game.Actions[game.Actions.length - 1].outcomes.push(lang.outcomes.gameOverOutOfMoves);
     }
-    if (game.Score.MoveCount >= 1 && !(game.Monsters.length > 0)) {
+    else if (game.Score.MoveCount >= game.Maze.CellCount * 0.9) {
+        game.Score.addTrophy(Enums_1.TROPHY_IDS.THE_LONGER_WAY_HOME);
+    }
+    else if (game.Score.MoveCount >= game.Maze.CellCount * 0.75) {
+        game.Score.addTrophy(Enums_1.TROPHY_IDS.THE_LONG_WAY_HOME);
+    }
+    if (game.Score.MoveCount >= 1 && !(game.Monsters.length > 0) && game.Maze.ChallengeLevel >= 6) {
         game.addMonster(new Monster_1.default(game.Maze.FinishCell, Enums_1.MONSTER_STATES.STANDING, Enums_1.MONSTER_TAGS.CAT, Enums_1.DIRS.NORTH));
     }
     // Each monster takes a turn
@@ -565,21 +571,25 @@ function monsterInCell(game, lang) {
 }
 exports.monsterInCell = monsterInCell;
 function doWrite(game, lang, message) {
-    const method = `doWrite(${game.Id}, ${lang},${message})`;
-    const cell = game.Maze.getCell(new MazeLoc_1.MazeLoc(game.Player.Location.row, game.Player.Location.col));
-    const startScore = game.Score.getTotalScore();
-    const engram = game.Actions[game.Actions.length - 1].engram.here;
-    const data = GameLang_1.default.getInstance(lang);
-    engram.messages.pop();
-    if (cell.Notes[0] === '') {
-        cell.Notes[0] = message.substr(0, 8);
-    }
-    else {
-        cell.Notes.push(message.substr(0, 8));
-    }
-    logDebug(__filename, method, 'executed the write command');
-    game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.message);
-    return Promise.resolve(finalizeAction(game, 1, startScore, lang));
+    return __awaiter(this, void 0, void 0, function* () {
+        const method = `doWrite(${game.Id}, ${lang},${message})`;
+        const cell = game.Maze.getCell(new MazeLoc_1.MazeLoc(game.Player.Location.row, game.Player.Location.col));
+        const startScore = game.Score.getTotalScore();
+        const engram = game.Actions[game.Actions.length - 1].engram.here;
+        const data = GameLang_1.default.getInstance(lang);
+        engram.messages.pop();
+        if (cell.Notes[0] === '') {
+            cell.Notes[0] = message.substr(0, 8);
+            game = yield grantTrophy(game, Enums_1.TROPHY_IDS.SCRIBBLER);
+        }
+        else {
+            cell.Notes.push(message.substr(0, 8));
+            game = yield grantTrophy(game, Enums_1.TROPHY_IDS.PAPERBACK_WRITER);
+        }
+        logDebug(__filename, method, 'executed the write command');
+        game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.message);
+        return Promise.resolve(finalizeAction(game, 1, startScore, lang));
+    });
 }
 exports.doWrite = doWrite;
 /**
@@ -589,127 +599,135 @@ exports.doWrite = doWrite;
  * @param delayTrigger flag to determine if a trap does not trigger as soon as the player enters a cell
  */
 function trapCheck(game, lang, delayTrigger = false) {
-    const pCell = game.Maze.getCell(game.Player.Location);
-    const outcomes = game.Actions[game.Actions.length - 1].outcomes;
-    const data = GameLang_1.default.getInstance(lang);
-    if (!(pCell.Traps & Enums_1.CELL_TRAPS.NONE)) {
-        for (let pos = 0; pos < 9; pos++) {
-            const trapEnum = 1 << pos;
-            if (!!(pCell.Traps & trapEnum)) {
-                switch (trapEnum) {
-                    case Enums_1.CELL_TRAPS.PIT: {
-                        outcomes.push(data.outcomes.trapOutcomes.pit);
-                        game.Player.addState(Enums_1.PLAYER_STATES.DEAD);
-                        actMove_1.finishGame(game, Enums_1.GAME_RESULTS.DEATH_TRAP);
-                        break;
-                    }
-                    case Enums_1.CELL_TRAPS.MOUSETRAP: {
-                        outcomes.push(data.outcomes.trapOutcomes.mouse);
-                        game.Player.addState(Enums_1.PLAYER_STATES.DEAD);
-                        actMove_1.finishGame(game, Enums_1.GAME_RESULTS.DEATH_TRAP);
-                        break;
-                    }
-                    case Enums_1.CELL_TRAPS.TARPIT: {
-                        outcomes.push(data.outcomes.trapOutcomes.tar);
-                        game.Player.addState(Enums_1.PLAYER_STATES.SLOWED);
-                        break;
-                    }
-                    case Enums_1.CELL_TRAPS.FLAMETHROWER: {
-                        // When the player enters the cell as a result from the previous action, tell them there is a tripwire in the direction they face
-                        if (!delayTrigger) {
-                            outcomes.push(util_1.format(data.outcomes.trapOutcomes.flamethrowerTrigger, data.directions[Enums_1.DIRS[game.Actions[game.Actions.length - 1].direction]]));
+    return __awaiter(this, void 0, void 0, function* () {
+        const pCell = game.Maze.getCell(game.Player.Location);
+        const outcomes = game.Actions[game.Actions.length - 1].outcomes;
+        const data = GameLang_1.default.getInstance(lang);
+        if (!(pCell.Traps & Enums_1.CELL_TRAPS.NONE)) {
+            for (let pos = 0; pos < 9; pos++) {
+                const trapEnum = 1 << pos;
+                if (!!(pCell.Traps & trapEnum)) {
+                    switch (trapEnum) {
+                        case Enums_1.CELL_TRAPS.PIT: {
+                            outcomes.push(data.outcomes.trapOutcomes.pit);
+                            game.Player.addState(Enums_1.PLAYER_STATES.DEAD);
+                            game = yield grantTrophy(game, Enums_1.TROPHY_IDS.YOU_FELL_FOR_IT);
+                            actMove_1.finishGame(game, Enums_1.GAME_RESULTS.DEATH_TRAP);
+                            break;
                         }
-                        if (delayTrigger) {
-                            // If the player moves or jumps in the direction the tripwire is facing, they trigger the trap
-                            if (!!(game.Actions[game.Actions.length - 1].direction & game.Actions[game.Actions.length - 2].direction)
-                            // || (game.Actions[game.Actions.length - 1].command === 9 && !!()
-                            ) {
-                                logDebug(__filename, 'trapCheck()', `Players location within check ${game.Player.Location}`);
-                                outcomes.push(data.outcomes.trapOutcomes.flamethrower);
+                        case Enums_1.CELL_TRAPS.MOUSETRAP: {
+                            outcomes.push(data.outcomes.trapOutcomes.mouse);
+                            game.Player.addState(Enums_1.PLAYER_STATES.DEAD);
+                            game = yield grantTrophy(game, Enums_1.TROPHY_IDS.TOO_GOOD_TO_BE_TRUE);
+                            actMove_1.finishGame(game, Enums_1.GAME_RESULTS.DEATH_TRAP);
+                            break;
+                        }
+                        case Enums_1.CELL_TRAPS.TARPIT: {
+                            outcomes.push(data.outcomes.trapOutcomes.tar);
+                            game.Player.addState(Enums_1.PLAYER_STATES.SLOWED);
+                            game = yield grantTrophy(game, Enums_1.TROPHY_IDS.THE_PITS);
+                            break;
+                        }
+                        case Enums_1.CELL_TRAPS.FLAMETHROWER: {
+                            // When the player enters the cell as a result from the previous action, tell them there is a tripwire in the direction they face
+                            if (!delayTrigger) {
+                                outcomes.push(util_1.format(data.outcomes.trapOutcomes.flamethrowerTrigger, data.directions[Enums_1.DIRS[game.Actions[game.Actions.length - 1].direction]]));
+                            }
+                            if (delayTrigger) {
+                                // If the player moves or jumps in the direction the tripwire is facing, they trigger the trap
+                                if (!!(game.Actions[game.Actions.length - 1].direction & game.Actions[game.Actions.length - 2].direction)
+                                // || (game.Actions[game.Actions.length - 1].command === 9 && !!()
+                                ) {
+                                    logDebug(__filename, 'trapCheck()', `Players location within check ${game.Player.Location}`);
+                                    outcomes.push(data.outcomes.trapOutcomes.flamethrower);
+                                    game.Player.addState(Enums_1.PLAYER_STATES.DEAD);
+                                    game = yield grantTrophy(game, Enums_1.TROPHY_IDS.TOO_HOT_TO_HANDLE);
+                                    actMove_1.finishGame(game, Enums_1.GAME_RESULTS.DEATH_TRAP);
+                                }
+                            }
+                            break;
+                        }
+                        case Enums_1.CELL_TRAPS.POISON_DART: {
+                            // If the player has only entered the cell, warn them there is a pressure plate in the direciton they are facing
+                            if (!delayTrigger) {
+                                outcomes.push(util_1.format(data.outcomes.trapOutcomes.poisonDartTrigger, data.directions[Enums_1.DIRS[game.Actions[game.Actions.length - 1].direction]]));
+                            }
+                            if (delayTrigger) {
+                                // if the player does the moves action in the direction of the pressure plate they saw previously, they trigger the trap
+                                if (!!(game.Actions[game.Actions.length - 1].direction & game.Actions[game.Actions.length - 2].direction) &&
+                                    game.Actions[game.Actions.length - 1].command === 8) {
+                                    outcomes.push(data.outcomes.trapOutcomes.poisonDart);
+                                    outcomes.push(data.outcomes.trapOutcomes.poisoned);
+                                    game.Player.addState(Enums_1.PLAYER_STATES.POISONED);
+                                }
+                            }
+                            break;
+                        }
+                        case Enums_1.CELL_TRAPS.CHEESE: {
+                            outcomes.push(data.outcomes.trapOutcomes.cheese);
+                            outcomes.push(data.outcomes.trapOutcomes.poisoned);
+                            game.Player.addState(Enums_1.PLAYER_STATES.POISONED);
+                            pCell.removeTrap(Enums_1.CELL_TRAPS.CHEESE);
+                            game.Actions[game.Actions.length - 1].changedCells.push(pCell);
+                            game = yield grantTrophy(game, Enums_1.TROPHY_IDS.TOO_GOOD_TO_BE_TRUE);
+                            break;
+                        }
+                        case Enums_1.CELL_TRAPS.FRAGILE_FLOOR: {
+                            if (pCell.VisitCount < 2) {
+                                outcomes.push(data.outcomes.trapOutcomes.fragileFloor);
+                            }
+                            if (pCell.VisitCount >= 2) {
+                                outcomes.push(data.outcomes.trapOutcomes.fragileFloorCollapse);
                                 game.Player.addState(Enums_1.PLAYER_STATES.DEAD);
                                 actMove_1.finishGame(game, Enums_1.GAME_RESULTS.DEATH_TRAP);
                             }
+                            break;
                         }
-                        break;
-                    }
-                    case Enums_1.CELL_TRAPS.POISON_DART: {
-                        // If the player has only entered the cell, warn them there is a pressure plate in the direciton they are facing
-                        if (!delayTrigger) {
-                            outcomes.push(util_1.format(data.outcomes.trapOutcomes.poisonDartTrigger, data.directions[Enums_1.DIRS[game.Actions[game.Actions.length - 1].direction]]));
+                        case Enums_1.CELL_TRAPS.TELEPORTER: {
+                            const newX = Math.floor(Math.random() * (game.Maze.Width - 1));
+                            const newY = Math.floor(Math.random() * (game.Maze.Height - 1));
+                            movePlayerAbsolute(game, lang, newX, newY);
+                            outcomes.push(data.outcomes.trapOutcomes.teleport);
+                            game = yield grantTrophy(game, Enums_1.TROPHY_IDS.WHERE_AM_I);
+                            break;
                         }
-                        if (delayTrigger) {
-                            // if the player does the moves action in the direction of the pressure plate they saw previously, they trigger the trap
-                            if (!!(game.Actions[game.Actions.length - 1].direction & game.Actions[game.Actions.length - 2].direction) &&
-                                game.Actions[game.Actions.length - 1].command === 8) {
-                                outcomes.push(data.outcomes.trapOutcomes.poisonDart);
-                                outcomes.push(data.outcomes.trapOutcomes.poisoned);
-                                game.Player.addState(Enums_1.PLAYER_STATES.POISONED);
+                        case Enums_1.CELL_TRAPS.DEADFALL: {
+                            if (!delayTrigger) {
+                                outcomes.push(data.outcomes.trapOutcomes.deadfallTrigger);
                             }
-                        }
-                        break;
-                    }
-                    case Enums_1.CELL_TRAPS.CHEESE: {
-                        outcomes.push(data.outcomes.trapOutcomes.cheese);
-                        outcomes.push(data.outcomes.trapOutcomes.poisoned);
-                        game.Player.addState(Enums_1.PLAYER_STATES.POISONED);
-                        pCell.removeTrap(Enums_1.CELL_TRAPS.CHEESE);
-                        game.Actions[game.Actions.length - 1].changedCells.push(pCell);
-                        break;
-                    }
-                    case Enums_1.CELL_TRAPS.FRAGILE_FLOOR: {
-                        if (pCell.VisitCount < 2) {
-                            outcomes.push(data.outcomes.trapOutcomes.fragileFloor);
-                        }
-                        if (pCell.VisitCount >= 2) {
-                            outcomes.push(data.outcomes.trapOutcomes.fragileFloorCollapse);
-                            game.Player.addState(Enums_1.PLAYER_STATES.DEAD);
-                            actMove_1.finishGame(game, Enums_1.GAME_RESULTS.DEATH_TRAP);
-                        }
-                        break;
-                    }
-                    case Enums_1.CELL_TRAPS.TELEPORTER: {
-                        const newX = Math.floor(Math.random() * (game.Maze.Width - 1));
-                        const newY = Math.floor(Math.random() * (game.Maze.Height - 1));
-                        movePlayerAbsolute(game, lang, newX, newY);
-                        outcomes.push(data.outcomes.trapOutcomes.teleport);
-                        break;
-                    }
-                    case Enums_1.CELL_TRAPS.DEADFALL: {
-                        if (!delayTrigger) {
-                            // outcomes.push(data.outcomes.trapOutcomes.trigger);
-                        }
-                        if (delayTrigger) {
-                            switch (game.Player.Facing) {
-                                case Enums_1.DIRS.NORTH: {
-                                    game.Maze.removeExit(pCell, Enums_1.DIRS.SOUTH);
-                                    break;
+                            if (delayTrigger) {
+                                switch (game.Player.Facing) {
+                                    case Enums_1.DIRS.NORTH: {
+                                        game.Maze.removeExit(pCell, Enums_1.DIRS.SOUTH);
+                                        break;
+                                    }
+                                    case Enums_1.DIRS.SOUTH: {
+                                        game.Maze.removeExit(pCell, Enums_1.DIRS.NORTH);
+                                        break;
+                                    }
+                                    case Enums_1.DIRS.EAST: {
+                                        game.Maze.removeExit(pCell, Enums_1.DIRS.WEST);
+                                        break;
+                                    }
+                                    case Enums_1.DIRS.WEST: {
+                                        game.Maze.removeExit(pCell, Enums_1.DIRS.EAST);
+                                        break;
+                                    }
                                 }
-                                case Enums_1.DIRS.SOUTH: {
-                                    game.Maze.removeExit(pCell, Enums_1.DIRS.NORTH);
-                                    break;
-                                }
-                                case Enums_1.DIRS.EAST: {
-                                    game.Maze.removeExit(pCell, Enums_1.DIRS.WEST);
-                                    break;
-                                }
-                                case Enums_1.DIRS.WEST: {
-                                    game.Maze.removeExit(pCell, Enums_1.DIRS.EAST);
-                                    break;
-                                }
+                                pCell.removeTrap(Enums_1.CELL_TRAPS.DEADFALL);
+                                game.Actions[game.Actions.length - 1].changedCells.push(pCell);
+                                outcomes.push(data.outcomes.trapOutcomes.deadfall);
                             }
-                            pCell.removeTrap(Enums_1.CELL_TRAPS.DEADFALL);
-                            game.Actions[game.Actions.length - 1].changedCells.push(pCell);
-                            outcomes.push(data.outcomes.trapOutcomes.deadfall);
+                            break;
                         }
-                        break;
-                    }
-                    default: {
-                        outcomes.push('DEBUG:', Enums_1.CELL_TRAPS[trapEnum], ' currently not implemented!');
-                    }
-                } // end switch
-            } // end if (!!(pCell.Traps & trapEnum))
-        } // end for
-    } // end if CELL_TRAPS.NONE
+                        default: {
+                            outcomes.push('DEBUG:', Enums_1.CELL_TRAPS[trapEnum], ' currently not implemented!');
+                        }
+                    } // end switch
+                } // end if (!!(pCell.Traps & trapEnum))
+            } // end for
+        } // end if CELL_TRAPS.NONE
+    });
 } // end trapCheck()
 exports.trapCheck = trapCheck;
 function lifeCheck(game, lang) {
@@ -718,6 +736,7 @@ function lifeCheck(game, lang) {
     const data = GameLang_1.default.getInstance(lang);
     if (!!(status & Enums_1.PLAYER_STATES.POISONED)) {
         game.Player.Life -= 1;
+        game.Actions[game.Actions.length - 1].playerLife = game.Player.Life;
     }
     if (game.Player.Life <= 0) {
         game.Player.addState(Enums_1.PLAYER_STATES.DEAD);

@@ -73,8 +73,12 @@ function doMove(game, langCode, sneaking = false) {
                 if (fns.monsterInCell(game, langCode)) {
                     game.Player.addState(Enums_1.PLAYER_STATES.DEAD);
                     game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.monster.deathCat);
-                    finishGame(game, Enums_1.GAME_RESULTS.DEATH_TRAP);
+                    finishGame(game, Enums_1.GAME_RESULTS.DEATH_MONSTER);
                 }
+            }
+            if (sneaking && fns.monsterInCell(game, langCode)) {
+                game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.sneak.cat);
+                game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.ONE_HUNDRED_SNEAK);
             }
             if (game.Maze.getCell(pLoc).isDirOpen(dir)) {
                 if (dir === Enums_1.DIRS.NORTH && pLoc.equals(game.Maze.StartCell)) {
@@ -105,6 +109,9 @@ function doMove(game, langCode, sneaking = false) {
                 game.Player.addState(Enums_1.PLAYER_STATES.SITTING);
                 game.Actions[game.Actions.length - 1].outcomes.push(util_1.format(data.outcomes.walkIntoWall, data.directions[Enums_1.DIRS[dir]]));
                 game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.stunned);
+                if (game.Actions[game.Actions.length - 1].outcomes.includes('collapses') || game.Actions[game.Actions.length - 2].outcomes.includes('collapses')) {
+                    game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.STOP_RIGHT_THERE);
+                }
             }
         }
         funcs_1.logDebug(__filename, method, `Players location 2nd pre-trap check ${game.Player.Location}`);
@@ -163,7 +170,7 @@ function finishGame(game, gameResult) {
                 game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.FLAWLESS_VICTORY);
             }
             case Enums_1.GAME_RESULTS.WIN: {
-                fns.grantTrophy(game, Enums_1.TROPHY_IDS.CHEDDAR_DINNER);
+                game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.CHEDDAR_DINNER);
                 break;
             }
             case Enums_1.GAME_RESULTS.DEATH_LAVA: {
@@ -188,9 +195,30 @@ function finishGame(game, gameResult) {
                 });
                 break;
             }
-            case Enums_1.GAME_RESULTS.DEATH_POISON:
+            case Enums_1.GAME_RESULTS.DEATH_POISON: {
+                yield fns
+                    .grantTrophy(game, Enums_1.TROPHY_IDS.THE_INEVITABLE)
+                    .then(() => {
+                    fns.logDebug(__filename, method, 'THE_INEVITABLE awarded to score for game ' + game.Id);
+                })
+                    .catch(trophyErr => {
+                    fns.logWarn(__filename, method, 'Unable to add THE_INEVITABLE trophy to score. Error -> ' + trophyErr);
+                });
+                break;
+            }
             case Enums_1.GAME_RESULTS.DEATH_TRAP:
             case Enums_1.GAME_RESULTS.OUT_OF_TIME:
+            case Enums_1.GAME_RESULTS.DEATH_MONSTER: {
+                yield fns
+                    .grantTrophy(game, Enums_1.TROPHY_IDS.KITTY_HAS_CLAWS)
+                    .then(() => {
+                    fns.logDebug(__filename, method, 'KITTY_HAS_CLAWS awarded to score for game ' + game.Id);
+                })
+                    .catch(trophyErr => {
+                    fns.logWarn(__filename, method, 'Unable to add KITTY_HAS_CLAWS trophy to score. Error -> ' + trophyErr);
+                });
+                break;
+            }
             default: {
                 fns.logDebug(__dirname, method, `GAME_RESULT not implemented: ${Enums_1.GAME_RESULTS[gameResult]}`);
             }
