@@ -1,13 +1,13 @@
 import { Game } from '@mazemasterjs/shared-library/Game';
 import MazeLoc from '@mazemasterjs/shared-library/MazeLoc';
-import { CELL_TAGS, CELL_TRAPS, DIRS, GAME_RESULTS, PLAYER_STATES } from '@mazemasterjs/shared-library/Enums';
+import { CELL_TAGS, CELL_TRAPS, DIRS, GAME_RESULTS, PLAYER_STATES, TROPHY_IDS } from '@mazemasterjs/shared-library/Enums';
 import { logDebug } from '../funcs';
 import GameLang from '../GameLang';
 import * as fns from '../funcs';
 import { finishGame } from './actMove';
 import { format } from 'util';
 
-export function doJump(game: Game, lang: string) {
+export async function doJump(game: Game, lang: string) {
   const data = GameLang.getInstance(lang);
   let moveCost = 2;
   if (!!(game.Player.State & PLAYER_STATES.SLOWED)) {
@@ -20,6 +20,9 @@ export function doJump(game: Game, lang: string) {
     if (!!(game.Player.State & PLAYER_STATES.SITTING)) {
       game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jump.sitting);
       game.Player.addState(PLAYER_STATES.STANDING);
+    } else if (!!(game.Actions[game.Actions.length - 1].direction & DIRS.NONE)) {
+      game = await fns.grantTrophy(game, TROPHY_IDS.JUMPING_JACK_FLASH);
+      game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.jump.noDirection);
     } else {
       fns.trapCheck(game, lang, true);
       if (fns.monsterInCell(game, lang)) {
@@ -42,7 +45,7 @@ export function doJump(game: Game, lang: string) {
  * @param distance how far the player has traveled
  * @param maxDistance that maximum distance before the player lands
  */
-export function jumpNext(game: Game, lang: string, distance: number, maxDistance: number = 1) {
+export async function jumpNext(game: Game, lang: string, distance: number, maxDistance: number = 1) {
   const method = `jumpNext(${game.Id},${lang},${distance})`;
   const cell = game.Maze.getCell(new MazeLoc(game.Player.Location.row, game.Player.Location.col));
   const dir: DIRS = game.Actions[game.Actions.length - 1].direction;
@@ -76,6 +79,9 @@ export function jumpNext(game: Game, lang: string, distance: number, maxDistance
       fns.movePlayer(game, lang, false);
       // If the player tried to jump over a flamethrower trap, it triggers anyways
       const pCell = game.Maze.getCell(game.Player.Location);
+      if (pCell.Traps > 0 && !!(pCell.Traps & CELL_TRAPS.FLAMETHROWER)) {
+        game = await fns.grantTrophy(game, TROPHY_IDS.MIGHTY_MOUSE);
+      }
       if (!!(pCell.Traps & CELL_TRAPS.FLAMETHROWER)) {
         fns.trapCheck(game, lang, true);
       }

@@ -373,7 +373,8 @@
       "wall": "You leap directly into a wall!",
       "sitting": "You leap to your feet",
       "jumping": "You jump [%s]",
-      "land": "You land on your feet"
+      "land": "You land on your feet",
+      "noDirection": "You jump up and down in place"
     },
     "gameOverOutOfMoves": "You have run out of moves. The game is over.",
     "lava": "You walked into lava. YOU DIED.",
@@ -410,6 +411,7 @@
       "poisonDart": "A dart flies out from the darkness and hits you!",
       "poisonDartTrigger": "You see a pressure plate [%s]",
       "trigger": "CLICK",
+      "deadfallTrigger": "The walls are shaking!",
       "poisoned": "POISONED!!",
       "cheese": "You see a chunk of cheese, you can't help but take a bite!"
     },
@@ -421,6 +423,9 @@
     "passMonster": "You passed by a [%s]!",
     "monster": {
       "deathCat": "You hear a fearsome yowling as the cat pounces on you..."
+    },
+    "sneak": {
+      "cat": "You sneak past the cat..."
     }
   }
 }

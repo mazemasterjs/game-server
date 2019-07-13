@@ -21,6 +21,7 @@ import { Request } from 'express';
 import { Score } from '@mazemasterjs/shared-library/Score';
 import { Team } from '@mazemasterjs/shared-library/Team';
 import { Trophy } from '@mazemasterjs/shared-library/Trophy';
+import { fsync } from 'fs';
 import {
   CELL_TAGS,
   CELL_TRAPS,
@@ -343,14 +344,13 @@ export function movePlayerAbsolute(game: Game, lang: string, x: number, y: numbe
  */
 export async function grantTrophy(game: Game, trophyId: TROPHY_IDS): Promise<Game> {
   const method = `grantTrophy(${game.Id}, ${TROPHY_IDS[trophyId]})`;
+  logDebug(__filename, method, 'Entering.');
 
   await Cache.use()
     .fetchOrGetItem(CACHE_TYPES.TROPHY, TROPHY_IDS[trophyId])
     .then(item => {
       const trophy: Trophy = item;
 
-      // TODO: Add a getStub() function to Trophy
-      // add trophy stub data to the action so we can track ongoing score during playback
       game.Actions[game.Actions.length - 1].trophies.push({ id: trophy.Id, count: 1 });
       game.Actions[game.Actions.length - 1].score += trophy.BonusAward;
 
@@ -474,9 +474,13 @@ export function finalizeAction(game: Game, actionMoveCount: number, startScore: 
       game.forceSetId(`${game.Id}__${Date.now()}`);
     }
     game.Actions[game.Actions.length - 1].outcomes.push(lang.outcomes.gameOverOutOfMoves);
+  } else if (game.Score.MoveCount >= game.Maze.CellCount * 0.9) {
+    game.Score.addTrophy(TROPHY_IDS.THE_LONGER_WAY_HOME);
+  } else if (game.Score.MoveCount >= game.Maze.CellCount * 0.75) {
+    game.Score.addTrophy(TROPHY_IDS.THE_LONG_WAY_HOME);
   }
 
-  if (game.Score.MoveCount >= 1 && !(game.Monsters.length > 0)) {
+  if (game.Score.MoveCount >= 1 && !(game.Monsters.length > 0) && game.Maze.ChallengeLevel >= 6) {
     game.addMonster(new Monster(game.Maze.FinishCell, MONSTER_STATES.STANDING, MONSTER_TAGS.CAT, DIRS.NORTH));
   }
   // Each monster takes a turn
@@ -589,7 +593,7 @@ export function monsterInCell(game: Game, lang: string) {
   return isMonster;
 }
 
-export function doWrite(game: Game, lang: string, message: string) {
+export async function doWrite(game: Game, lang: string, message: string) {
   const method = `doWrite(${game.Id}, ${lang},${message})`;
   const cell = game.Maze.getCell(new MazeLoc(game.Player.Location.row, game.Player.Location.col));
   const startScore = game.Score.getTotalScore();
@@ -598,8 +602,10 @@ export function doWrite(game: Game, lang: string, message: string) {
   engram.messages.pop();
   if (cell.Notes[0] === '') {
     cell.Notes[0] = message.substr(0, 8);
+    game = await grantTrophy(game, TROPHY_IDS.SCRIBBLER);
   } else {
     cell.Notes.push(message.substr(0, 8));
+    game = await grantTrophy(game, TROPHY_IDS.PAPERBACK_WRITER);
   }
 
   logDebug(__filename, method, 'executed the write command');
@@ -613,7 +619,7 @@ export function doWrite(game: Game, lang: string, message: string) {
  * @param lang
  * @param delayTrigger flag to determine if a trap does not trigger as soon as the player enters a cell
  */
-export function trapCheck(game: Game, lang: string, delayTrigger: boolean = false) {
+export async function trapCheck(game: Game, lang: string, delayTrigger: boolean = false) {
   const pCell = game.Maze.getCell(game.Player.Location);
   const outcomes = game.Actions[game.Actions.length - 1].outcomes;
   const data = GameLang.getInstance(lang);
@@ -625,18 +631,23 @@ export function trapCheck(game: Game, lang: string, delayTrigger: boolean = fals
           case CELL_TRAPS.PIT: {
             outcomes.push(data.outcomes.trapOutcomes.pit);
             game.Player.addState(PLAYER_STATES.DEAD);
+            game = await grantTrophy(game, TROPHY_IDS.YOU_FELL_FOR_IT);
             finishGame(game, GAME_RESULTS.DEATH_TRAP);
+
             break;
           }
           case CELL_TRAPS.MOUSETRAP: {
             outcomes.push(data.outcomes.trapOutcomes.mouse);
             game.Player.addState(PLAYER_STATES.DEAD);
+            game = await grantTrophy(game, TROPHY_IDS.TOO_GOOD_TO_BE_TRUE);
             finishGame(game, GAME_RESULTS.DEATH_TRAP);
+
             break;
           }
           case CELL_TRAPS.TARPIT: {
             outcomes.push(data.outcomes.trapOutcomes.tar);
             game.Player.addState(PLAYER_STATES.SLOWED);
+            game = await grantTrophy(game, TROPHY_IDS.THE_PITS);
             break;
           }
           case CELL_TRAPS.FLAMETHROWER: {
@@ -653,6 +664,7 @@ export function trapCheck(game: Game, lang: string, delayTrigger: boolean = fals
                 logDebug(__filename, 'trapCheck()', `Players location within check ${game.Player.Location}`);
                 outcomes.push(data.outcomes.trapOutcomes.flamethrower);
                 game.Player.addState(PLAYER_STATES.DEAD);
+                game = await grantTrophy(game, TROPHY_IDS.TOO_HOT_TO_HANDLE);
                 finishGame(game, GAME_RESULTS.DEATH_TRAP);
               }
             }
@@ -682,6 +694,7 @@ export function trapCheck(game: Game, lang: string, delayTrigger: boolean = fals
             game.Player.addState(PLAYER_STATES.POISONED);
             pCell.removeTrap(CELL_TRAPS.CHEESE);
             game.Actions[game.Actions.length - 1].changedCells.push(pCell);
+            game = await grantTrophy(game, TROPHY_IDS.TOO_GOOD_TO_BE_TRUE);
             break;
           }
           case CELL_TRAPS.FRAGILE_FLOOR: {
@@ -700,12 +713,12 @@ export function trapCheck(game: Game, lang: string, delayTrigger: boolean = fals
             const newY = Math.floor(Math.random() * (game.Maze.Height - 1));
             movePlayerAbsolute(game, lang, newX, newY);
             outcomes.push(data.outcomes.trapOutcomes.teleport);
-
+            game = await grantTrophy(game, TROPHY_IDS.WHERE_AM_I);
             break;
           }
           case CELL_TRAPS.DEADFALL: {
             if (!delayTrigger) {
-              // outcomes.push(data.outcomes.trapOutcomes.trigger);
+              outcomes.push(data.outcomes.trapOutcomes.deadfallTrigger);
             }
             if (delayTrigger) {
               switch (game.Player.Facing) {
@@ -748,6 +761,7 @@ export function lifeCheck(game: Game, lang: string) {
 
   if (!!(status & PLAYER_STATES.POISONED)) {
     game.Player.Life -= 1;
+    game.Actions[game.Actions.length - 1].playerLife = game.Player.Life;
   }
 
   if (game.Player.Life <= 0) {

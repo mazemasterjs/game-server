@@ -30,7 +30,7 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 - [ ] All language files are loaded on GameLang instantiation - This should be changed to load language files on demand
 - [x] Adjust values for the various engrams, current they are all based on distance
 - [x] Prevent changes to the maze are permanent until the cache is refreshed or server is restarted
-- [ ] Deadfall traps block every exit, instead of only 1
+- [x] Deadfall traps block every exit, instead of only 1
 - [x] Fix Action scores / trophies not being returned with the actual action response
 - [x] Add logic to automatically end games after a certain period of inactivity (set GAMES_STATES.ABANDONED)
 - [x] When a character turns walls are detected where there should not be
@@ -38,9 +38,21 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 - [x] Fragile Floor traps are persistent between mazes
 - [x] Implement the rest of the engram senses for monsters
 - [ ] Monster wanders randomly instead of following walls
-- [ ] Monster deaths needs to use the apropriate GAME_RESULT
+- [x] Monster deaths needs to use the apropriate GAME_RESULT
 
 ## Change Notes
+
+### v0.11.4
+
+- Fixed game-ending bug for FLAMETHROWER trap by adding await to actMove.ts:61 -> **await** fns.trapCheck(game, langCode, true);
+- Added a couple of debug log lines
+
+### v0.11.3
+
+- life is now tracted in game.actions
+- added trophies to various functions
+- the cat now only spawns if the maze challenge difficulty is 6 or higher
+- deadfall traps now give a message in outcomes
 
 ### v0.11.2
 

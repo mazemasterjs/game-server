@@ -36,12 +36,13 @@ function doWait(game, langCode) {
             game.Player.removeState(Enums_1.PLAYER_STATES.STUNNED);
         }
         else if (!!(cell.Tags & Enums_1.CELL_TAGS.MONSTER)) {
-            game.Monsters.forEach(monster => {
+            game.Monsters.forEach((monster) => __awaiter(this, void 0, void 0, function* () {
                 const monsterType = Enums_1.MONSTER_TAGS[monster.getTag()];
                 if (monster.Location.row === cell.Location.row && monster.Location.col === cell.Location.col) {
                     outcomes.push(util_1.format(data.outcomes.monsterWait, monsterType));
+                    game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.THE_WAITING_GAME);
                 }
-            });
+            }));
         }
         else {
             outcomes.push(data.outcomes.wait);

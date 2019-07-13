@@ -1,7 +1,7 @@
 import { Action } from '@mazemasterjs/shared-library/Action';
 import { doMove } from './controllers/actMove';
 import { Cache, CACHE_TYPES } from './Cache';
-import { COMMANDS, DIRS, GAME_RESULTS, GAME_STATES, PLAYER_STATES, USER_ROLES, CELL_TAGS } from '@mazemasterjs/shared-library/Enums';
+import { COMMANDS, DIRS, GAME_RESULTS, GAME_STATES, PLAYER_STATES, USER_ROLES, CELL_TAGS, TROPHY_IDS } from '@mazemasterjs/shared-library/Enums';
 import { Config } from './Config';
 import { doLook } from './controllers/actLook';
 import * as fns from './funcs';
@@ -310,11 +310,12 @@ export const processAction = async (req: Request, res: Response) => {
 
   // add the new action to the game
   game.addAction(action);
-
+  game.Actions[game.Actions.length - 1].playerLife = game.Player.Life;
   // handle game state - out of moves or time or whatever
   if (game.Score.MoveCount >= game.Maze.CellCount * 3) {
     game.State = GAME_STATES.FINISHED;
     game.Score.GameResult = GAME_RESULTS.OUT_OF_MOVES;
+    game = await fns.grantTrophy(game, TROPHY_IDS.OUT_OF_MOVES);
 
     if (game.Id.startsWith('FORCED')) {
       game.forceSetId(`${game.Id}__${Date.now()}`);

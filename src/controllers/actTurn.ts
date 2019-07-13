@@ -1,12 +1,12 @@
 import * as fns from '../funcs';
-import { DIRS, PLAYER_STATES } from '@mazemasterjs/shared-library/Enums';
+import { DIRS, PLAYER_STATES, TROPHY_IDS } from '@mazemasterjs/shared-library/Enums';
 import { Game } from '@mazemasterjs/shared-library/Game';
 import { getNextDir } from '@mazemasterjs/shared-library/Helpers';
 import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
 import { logDebug } from '../funcs';
 import GameLang from '../GameLang';
 
-export function doTurn(game: Game, langCode: string): Promise<IAction> {
+export async function doTurn(game: Game, langCode: string): Promise<IAction> {
   logDebug(__filename, `doTurn(${game.Id}, ${langCode})`, 'Player has issued the Turn command.');
   const startScore = game.Score.getTotalScore();
   const action = game.Actions[game.Actions.length - 1];
@@ -28,12 +28,14 @@ export function doTurn(game: Game, langCode: string): Promise<IAction> {
         } // end case DIRS.LEFT
         default: {
           action.outcomes.push(data.outcomes.turnWrong);
+          game = await fns.grantTrophy(game, TROPHY_IDS.WASTED_TIME);
         }
       }
     }
   } else {
     action.outcomes.push(data.outcomes.stunned);
     game.Player.removeState(PLAYER_STATES.STUNNED);
+    game = await fns.grantTrophy(game, TROPHY_IDS.DAZED_AND_CONFUSED);
   }
 
   // finalize and return the turn action results
