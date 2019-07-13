@@ -344,14 +344,13 @@ export function movePlayerAbsolute(game: Game, lang: string, x: number, y: numbe
  */
 export async function grantTrophy(game: Game, trophyId: TROPHY_IDS): Promise<Game> {
   const method = `grantTrophy(${game.Id}, ${TROPHY_IDS[trophyId]})`;
+  logDebug(__filename, method, 'Entering.');
 
   await Cache.use()
     .fetchOrGetItem(CACHE_TYPES.TROPHY, TROPHY_IDS[trophyId])
     .then(item => {
       const trophy: Trophy = item;
 
-      // TODO: Add a getStub() function to Trophy
-      // add trophy stub data to the action so we can track ongoing score during playback
       game.Actions[game.Actions.length - 1].trophies.push({ id: trophy.Id, count: 1 });
       game.Actions[game.Actions.length - 1].score += trophy.BonusAward;
 

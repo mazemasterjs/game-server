@@ -42,6 +42,11 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 
 ## Change Notes
 
+### v0.11.4
+
+- Fixed game-ending bug for FLAMETHROWER trap by adding await to actMove.ts:61 -> **await** fns.trapCheck(game, langCode, true);
+- Added a couple of debug log lines
+
 ### v0.11.3
 
 - life is now tracted in game.actions

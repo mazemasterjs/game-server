@@ -329,12 +329,11 @@ exports.movePlayerAbsolute = movePlayerAbsolute;
 function grantTrophy(game, trophyId) {
     return __awaiter(this, void 0, void 0, function* () {
         const method = `grantTrophy(${game.Id}, ${Enums_1.TROPHY_IDS[trophyId]})`;
+        logDebug(__filename, method, 'Entering.');
         yield Cache_1.Cache.use()
             .fetchOrGetItem(Cache_1.CACHE_TYPES.TROPHY, Enums_1.TROPHY_IDS[trophyId])
             .then(item => {
             const trophy = item;
-            // TODO: Add a getStub() function to Trophy
-            // add trophy stub data to the action so we can track ongoing score during playback
             game.Actions[game.Actions.length - 1].trophies.push({ id: trophy.Id, count: 1 });
             game.Actions[game.Actions.length - 1].score += trophy.BonusAward;
             // add the trophy and points to the game's score, too (obviously)

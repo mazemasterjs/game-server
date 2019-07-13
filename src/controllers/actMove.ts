@@ -57,9 +57,13 @@ export async function doMove(game: Game, langCode: string, sneaking: boolean = f
   } else {
     // now check for start/finish cell win & lose conditions
     if (!sneaking) {
-      logDebug(__filename, method, `Players location 1st pre-trap check ${game.Player.Location}`);
-      fns.trapCheck(game, langCode, true);
-      logDebug(__filename, method, `Players location 1st pre-trap check ${game.Player.Location}`);
+      await fns.trapCheck(game, langCode, true);
+
+      // the game could be over at this point...
+      if (game.State === GAME_STATES.FINISHED) {
+        return Promise.resolve(fns.finalizeAction(game, 1, startScore, langCode));
+      }
+
       if (fns.monsterInCell(game, langCode)) {
         game.Player.addState(PLAYER_STATES.DEAD);
         game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.monster.deathCat);
@@ -107,7 +111,7 @@ export async function doMove(game: Game, langCode: string, sneaking: boolean = f
     }
   }
   logDebug(__filename, method, `Players location 2nd pre-trap check ${game.Player.Location}`);
-  fns.trapCheck(game, langCode);
+  await fns.trapCheck(game, langCode);
   logDebug(__filename, method, `Players location 2nd post-trap check ${game.Player.Location}`);
   // game continues - return the action (with outcomes and engram)
   return Promise.resolve(fns.finalizeAction(game, moveCost, startScore, langCode));
@@ -148,6 +152,7 @@ async function saveScore(game: Game): Promise<boolean> {
  */
 export async function finishGame(game: Game, gameResult: GAME_RESULTS): Promise<Game> {
   const method = `finishGame(${game.Id}, ${GAME_RESULTS[gameResult]})`;
+  logDebug(__filename, method, 'Entering.');
 
   // update the basic game state & result fields
   game.State = GAME_STATES.FINISHED;
@@ -159,6 +164,7 @@ export async function finishGame(game: Game, gameResult: GAME_RESULTS): Promise<
       // add bonus WIN_FLAWLESS if the game was perfect
       // there is no break here on purpose - flawless winner also gets a CHEDDAR_DINNER
       game = await fns.grantTrophy(game, TROPHY_IDS.FLAWLESS_VICTORY);
+      break;
     }
     case GAME_RESULTS.WIN: {
       game = await fns.grantTrophy(game, TROPHY_IDS.CHEDDAR_DINNER);

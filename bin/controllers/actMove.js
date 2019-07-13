@@ -67,9 +67,11 @@ function doMove(game, langCode, sneaking = false) {
         else {
             // now check for start/finish cell win & lose conditions
             if (!sneaking) {
-                funcs_1.logDebug(__filename, method, `Players location 1st pre-trap check ${game.Player.Location}`);
-                fns.trapCheck(game, langCode, true);
-                funcs_1.logDebug(__filename, method, `Players location 1st pre-trap check ${game.Player.Location}`);
+                yield fns.trapCheck(game, langCode, true);
+                // the game could be over at this point...
+                if (game.State === Enums_1.GAME_STATES.FINISHED) {
+                    return Promise.resolve(fns.finalizeAction(game, 1, startScore, langCode));
+                }
                 if (fns.monsterInCell(game, langCode)) {
                     game.Player.addState(Enums_1.PLAYER_STATES.DEAD);
                     game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.monster.deathCat);
@@ -115,7 +117,7 @@ function doMove(game, langCode, sneaking = false) {
             }
         }
         funcs_1.logDebug(__filename, method, `Players location 2nd pre-trap check ${game.Player.Location}`);
-        fns.trapCheck(game, langCode);
+        yield fns.trapCheck(game, langCode);
         funcs_1.logDebug(__filename, method, `Players location 2nd post-trap check ${game.Player.Location}`);
         // game continues - return the action (with outcomes and engram)
         return Promise.resolve(fns.finalizeAction(game, moveCost, startScore, langCode));
@@ -159,6 +161,7 @@ function saveScore(game) {
 function finishGame(game, gameResult) {
     return __awaiter(this, void 0, void 0, function* () {
         const method = `finishGame(${game.Id}, ${Enums_1.GAME_RESULTS[gameResult]})`;
+        funcs_1.logDebug(__filename, method, 'Entering.');
         // update the basic game state & result fields
         game.State = Enums_1.GAME_STATES.FINISHED;
         game.Score.GameResult = gameResult;
@@ -168,6 +171,7 @@ function finishGame(game, gameResult) {
                 // add bonus WIN_FLAWLESS if the game was perfect
                 // there is no break here on purpose - flawless winner also gets a CHEDDAR_DINNER
                 game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.FLAWLESS_VICTORY);
+                break;
             }
             case Enums_1.GAME_RESULTS.WIN: {
                 game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.CHEDDAR_DINNER);
