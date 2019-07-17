@@ -42,6 +42,10 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 
 ## Change Notes
 
+### v0.11.6
+
+- Failed login now evicts user credentials from cache
+
 ### v0.11.5
 
 - added facing command

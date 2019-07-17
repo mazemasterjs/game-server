@@ -100,6 +100,22 @@ export class Security {
   }
 
   /**
+   * Evict the given user from the credentials cache
+   *
+   * @param user
+   */
+  public evictCredentials(user: IUser) {
+    const evictIdx = Security.authedUsers.findIndex(eUser => {
+      return eUser.userName === user.userName;
+    });
+
+    if (evictIdx !== -1) {
+      log.debug(__filename, 'evictCredentials()', 'Evicted credentials for user:' + Security.authedUsers[evictIdx]);
+      Security.authedUsers.splice(evictIdx, 1);
+    }
+  }
+
+  /**
    * Periodically check for users with expired credentials
    * (currently set to a very generous seven days) and
    * remove them from the cache (by rebuilding it without them)
