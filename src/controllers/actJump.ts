@@ -30,7 +30,7 @@ export async function doJump(game: Game, lang: string) {
         game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.monster.deathCat);
         finishGame(game, GAME_RESULTS.DEATH_TRAP);
       }
-      jumpNext(game, lang, 0);
+      await jumpNext(game, lang, 0);
     }
   }
   const startScore = game.Score.getTotalScore();
@@ -83,7 +83,7 @@ export async function jumpNext(game: Game, lang: string, distance: number, maxDi
         game = await fns.grantTrophy(game, TROPHY_IDS.MIGHTY_MOUSE);
       }
       if (!!(pCell.Traps & CELL_TRAPS.FLAMETHROWER)) {
-        fns.trapCheck(game, lang, true);
+        await fns.trapCheck(game, lang, true);
       }
       jumpNext(game, lang, distance + 1);
     } else {
@@ -96,7 +96,7 @@ export async function jumpNext(game: Game, lang: string, distance: number, maxDi
   } else {
     outcomes.push(format(data.outcomes.jump.jumping, data.directions[DIRS[dir]]));
     outcomes.push(data.outcomes.jump.land);
-    fns.trapCheck(game, lang);
+    await fns.trapCheck(game, lang);
     if (fns.monsterInCell(game, lang)) {
       game.Player.addState(PLAYER_STATES.DEAD);
       game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.monster.deathCat);

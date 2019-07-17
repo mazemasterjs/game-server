@@ -42,6 +42,12 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 
 ## Change Notes
 
+### v1.0.1
+
+- checkTraps() on jumpNext() was not ending game properly due to being out of sync.
+- Traps offer hints on how to avoid them
+- Empty string in the engram.message constructor is replaced with the messages in a cell, if any
+
 ### v0.11.5
 
 - added facing command

@@ -1,6 +1,6 @@
 {
   "name": "game-server",
-  "version": "0.11.5",
+  "version": "1.0.1",
   "description": "MazeMasterJS Game Server",
   "main": "./bin/server.js",
   "scripts": {
