@@ -34,6 +34,7 @@ const GameLang_1 = __importDefault(require("./GameLang"));
 const Security_1 = __importDefault(require("./Security"));
 const lodash_1 = require("lodash");
 const actWait_1 = require("./controllers/actWait");
+const actFace_1 = require("./controllers/actFace");
 // set constant utility references
 const log = logger_1.Logger.getInstance();
 const config = Config_1.Config.getInstance();
@@ -302,7 +303,7 @@ exports.processAction = (req, res) => __awaiter(this, void 0, void 0, function* 
     if (game.Score.MoveCount >= game.Maze.CellCount * 3) {
         game.State = Enums_1.GAME_STATES.FINISHED;
         game.Score.GameResult = Enums_1.GAME_RESULTS.OUT_OF_MOVES;
-        game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.OUT_OF_MOVES);
+        yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.OUT_OF_MOVES);
         if (game.Id.startsWith('FORCED')) {
             game.forceSetId(`${game.Id}__${Date.now()}`);
         }
@@ -336,7 +337,12 @@ exports.processAction = (req, res) => __awaiter(this, void 0, void 0, function* 
                 .status(200)
                 .json({ action: turnResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
         }
-        case Enums_1.COMMANDS.FACE:
+        case Enums_1.COMMANDS.FACE: {
+            const faceResult = yield actFace_1.doFace(game, langCode);
+            return res
+                .status(200)
+                .json({ action: faceResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
+        }
         case Enums_1.COMMANDS.LISTEN:
         case Enums_1.COMMANDS.SNIFF:
         case Enums_1.COMMANDS.JUMP:

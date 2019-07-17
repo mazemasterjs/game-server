@@ -418,6 +418,7 @@
     "turnLeft": "You turn left",
     "turnRight": "You turn right",
     "turnWrong": "You turn 360 degrees",
+    "face": "You face [%s]",
     "deathPoison": "You succumb to the poison and die...",
     "monsterHere": "There is a [%s] here!",
     "passMonster": "You passed by a [%s]!",

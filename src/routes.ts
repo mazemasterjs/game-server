@@ -17,6 +17,7 @@ import Security from './Security';
 import MazeBase from '@mazemasterjs/shared-library/MazeBase';
 import { cloneDeep } from 'lodash';
 import { doWait } from './controllers/actWait';
+import { doFace } from './controllers/actFace';
 
 // set constant utility references
 const log = Logger.getInstance();
@@ -315,7 +316,7 @@ export const processAction = async (req: Request, res: Response) => {
   if (game.Score.MoveCount >= game.Maze.CellCount * 3) {
     game.State = GAME_STATES.FINISHED;
     game.Score.GameResult = GAME_RESULTS.OUT_OF_MOVES;
-    game = await fns.grantTrophy(game, TROPHY_IDS.OUT_OF_MOVES);
+    await fns.grantTrophy(game, TROPHY_IDS.OUT_OF_MOVES);
 
     if (game.Id.startsWith('FORCED')) {
       game.forceSetId(`${game.Id}__${Date.now()}`);
@@ -350,7 +351,12 @@ export const processAction = async (req: Request, res: Response) => {
         .status(200)
         .json({ action: turnResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
     }
-    case COMMANDS.FACE:
+    case COMMANDS.FACE: {
+      const faceResult = await doFace(game, langCode);
+      return res
+        .status(200)
+        .json({ action: faceResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
+    }
     case COMMANDS.LISTEN:
     case COMMANDS.SNIFF:
     case COMMANDS.JUMP:
