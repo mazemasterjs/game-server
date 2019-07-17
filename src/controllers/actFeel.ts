@@ -4,13 +4,13 @@ import MazeLoc from '@mazemasterjs/shared-library/MazeLoc';
 import { CELL_TAGS, CELL_TRAPS, DIRS } from '@mazemasterjs/shared-library/Enums';
 import { Game } from '@mazemasterjs/shared-library/Game';
 import { IFeeling } from '@mazemasterjs/shared-library/Interfaces/ISenses';
-import { logDebug, calculateIntensity } from '../funcs';
+import { logTrace, calculateIntensity } from '../funcs';
 import { fsync } from 'fs';
 const MAX_FEEL_DISTANCE = 3;
 
 export function doFeelLocal(game: Game, lang: string) {
   const method = `dofeelLocal(${game.Id}, ${lang})`;
-  logDebug(__filename, method, 'Entering');
+  logTrace(__filename, method, 'Entering');
   const cell = game.Maze.getCell(game.Player.Location);
   const engram = game.Actions[game.Actions.length - 1].engram;
   const data = GameLang.getInstance(lang);
@@ -77,7 +77,7 @@ export function doFeelLocal(game: Game, lang: string) {
 export function doFeelDirected(game: Game, lang: string, cell: CellBase, engramDir: IFeeling[], lastDirection: DIRS, distance: number) {
   const data = GameLang.getInstance(lang);
   const method = `dofeelDirected(${game.Id}, ${lang}, ${cell.Location}, [emgramDir], ${lastDirection}, ${distance})`;
-  logDebug(__filename, method, 'Entering');
+  logTrace(__filename, method, 'Entering');
   if (!!(cell.Tags & CELL_TAGS.START) && data.entities.lava.touch.intensity >= distance) {
     setFeel(engramDir, {
       feeling: data.entities.lava.touch.adjective,
@@ -103,7 +103,7 @@ export function doFeelDirected(game: Game, lang: string, cell: CellBase, engramD
             setFeel(engramDir, { feeling: adjective, intensity: calculateIntensity(int, distance, MAX_FEEL_DISTANCE) * 10 });
           }
         } catch (err) {
-          logDebug(__filename, method, `For ${trapType}: ` + err);
+          logTrace(__filename, method, `For ${trapType}: ` + err);
         }
       } // end (!!(cell.Traps & trapEnum))
     } // end for(pos<9)}

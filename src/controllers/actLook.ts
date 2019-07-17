@@ -8,7 +8,7 @@ import { Cell } from '@mazemasterjs/shared-library/Cell';
 let MAX_SIGHT_DISTANCE = 3;
 
 export function doLook(game: Game, langCode: string) {
-  fns.logDebug(__filename, 'doLook()', 'Entering');
+  fns.logTrace(__filename, 'doLook()', 'Entering');
   const data = GameLang.getInstance(langCode);
   const startScore = game.Score.getTotalScore();
   game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.look);
@@ -22,7 +22,7 @@ export function doLook(game: Game, langCode: string) {
  */
 export function doLookLocal(game: Game, langCode: string) {
   const method = `doLookLocal(${game.Id}, ${langCode})`;
-  fns.logDebug(__filename, method, 'Entering');
+  fns.logTrace(__filename, method, 'Entering');
   const cell = game.Maze.getCell(game.Player.Location);
   const engram = game.Actions[game.Actions.length - 1].engram;
   const data = GameLang.getInstance(langCode);
@@ -155,11 +155,11 @@ function setSee(see: Array<ISight>, sight: ISight) {
 function seeMonsters(game: Game, lang: string, cell: Cell, engramDir: ISight[], dist: number) {
   const data = GameLang.getInstance(lang);
   const method = `seeMonsters(${game.Id}, ${lang}, ${cell.Location}, [emgramDir], ${dist})`;
-  fns.logDebug(__filename, method, 'Entering');
+  fns.logTrace(__filename, method, 'Entering');
   if (!!(cell.Tags & CELL_TAGS.MONSTER)) {
     game.Monsters.forEach(monster => {
       const monsterType = MONSTER_TAGS[monster.getTag()];
-      fns.logDebug(__filename, 'seeMonsters(): ', `${monster.getTag()}`);
+      fns.logTrace(__filename, 'seeMonsters(): ', `${monster.getTag()}`);
       const adj = data.monsters[monsterType.toUpperCase()].sight.adjective;
       const int = data.monsters[monsterType.toUpperCase()].sight.intensity;
       if (monster.Location.equals(cell.Location) && int >= dist) {
@@ -184,7 +184,7 @@ function seeTraps(game: Game, lang: string, cell: Cell, engram: ISight[], dist: 
             setSee(engram, { sight: adjective, distance: dist });
           }
         } catch (err) {
-          fns.logDebug(__filename, method, err);
+          fns.logTrace(__filename, method, err);
         }
       } // end (!!(cell.Traps & trapEnum))
     } // end for(pos<9)}

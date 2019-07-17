@@ -110,9 +110,9 @@ export async function doMove(game: Game, langCode: string, sneaking: boolean = f
       }
     }
   }
-  logDebug(__filename, method, `Players location 2nd pre-trap check ${game.Player.Location}`);
+  fns.logTrace(__filename, method, `Players location 2nd pre-trap check ${game.Player.Location}`);
   await fns.trapCheck(game, langCode);
-  logDebug(__filename, method, `Players location 2nd post-trap check ${game.Player.Location}`);
+  fns.logTrace(__filename, method, `Players location 2nd post-trap check ${game.Player.Location}`);
   // game continues - return the action (with outcomes and engram)
   return Promise.resolve(fns.finalizeAction(game, moveCost, startScore, langCode));
 }
