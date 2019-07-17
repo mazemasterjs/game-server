@@ -303,7 +303,7 @@ exports.processAction = (req, res) => __awaiter(this, void 0, void 0, function* 
     if (game.Score.MoveCount >= game.Maze.CellCount * 3) {
         game.State = Enums_1.GAME_STATES.FINISHED;
         game.Score.GameResult = Enums_1.GAME_RESULTS.OUT_OF_MOVES;
-        game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.OUT_OF_MOVES);
+        yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.OUT_OF_MOVES);
         if (game.Id.startsWith('FORCED')) {
             game.forceSetId(`${game.Id}__${Date.now()}`);
         }

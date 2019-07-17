@@ -107,7 +107,7 @@ function doMove(game, langCode, sneaking = false) {
             }
             else {
                 // they tried to walk in a direction that has a wall
-                game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.YOU_FOUGHT_THE_WALL);
+                yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.YOU_FOUGHT_THE_WALL);
                 game.Player.addState(Enums_1.PLAYER_STATES.SITTING);
                 game.Actions[game.Actions.length - 1].outcomes.push(util_1.format(data.outcomes.walkIntoWall, data.directions[Enums_1.DIRS[dir]]));
                 game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.stunned);
@@ -170,11 +170,25 @@ function finishGame(game, gameResult) {
             case Enums_1.GAME_RESULTS.WIN_FLAWLESS: {
                 // add bonus WIN_FLAWLESS if the game was perfect
                 // there is no break here on purpose - flawless winner also gets a CHEDDAR_DINNER
-                game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.FLAWLESS_VICTORY);
+                yield fns
+                    .grantTrophy(game, Enums_1.TROPHY_IDS.FLAWLESS_VICTORY)
+                    .then(() => {
+                    fns.logDebug(__filename, method, 'FLAWLESS_VICTORY awarded to score for game ' + game.Id);
+                })
+                    .catch(trophyErr => {
+                    fns.logWarn(__filename, method, 'Unable to add FLAWLESS_VICTORY trophy to score. Error -> ' + trophyErr);
+                });
                 break;
             }
             case Enums_1.GAME_RESULTS.WIN: {
-                game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.CHEDDAR_DINNER);
+                yield fns
+                    .grantTrophy(game, Enums_1.TROPHY_IDS.CHEDDAR_DINNER)
+                    .then(() => {
+                    fns.logDebug(__filename, method, 'CHEDDAR_DINNER awarded to score for game ' + game.Id);
+                })
+                    .catch(trophyErr => {
+                    fns.logWarn(__filename, method, 'Unable to add CHEDDAR_DINNER trophy to score. Error -> ' + trophyErr);
+                });
                 break;
             }
             case Enums_1.GAME_RESULTS.DEATH_LAVA: {
@@ -232,8 +246,10 @@ function finishGame(game, gameResult) {
         // Summarize and log game result
         fns.summarizeGame(game.Actions[game.Actions.length - 1], game.Score);
         funcs_1.logDebug(__filename, method, `Game Over. Game Result: [${Enums_1.GAME_RESULTS[gameResult]}] Final Outcomes:\r\n + ${game.Actions[game.Actions.length - 1].outcomes.join('\r\n')}`);
-        // save the game's score
-        saveScore(game);
+        // save the game's score (only if it's a win)
+        if (game.Score.GameResult === Enums_1.GAME_RESULTS.WIN || game.Score.GameResult === Enums_1.GAME_RESULTS.WIN_FLAWLESS) {
+            saveScore(game);
+        }
         // Append a timestamp to any game.Id starting with the word 'FORCED' so the original IDs can
         // be re-used - very handy for testing and development
         if (game.Id.startsWith('FORCED')) {

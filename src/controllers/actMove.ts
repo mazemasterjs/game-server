@@ -98,7 +98,7 @@ export async function doMove(game: Game, langCode: string, sneaking: boolean = f
       }
     } else {
       // they tried to walk in a direction that has a wall
-      game = await fns.grantTrophy(game, TROPHY_IDS.YOU_FOUGHT_THE_WALL);
+      await fns.grantTrophy(game, TROPHY_IDS.YOU_FOUGHT_THE_WALL);
 
       game.Player.addState(PLAYER_STATES.SITTING);
 
@@ -163,11 +163,25 @@ export async function finishGame(game: Game, gameResult: GAME_RESULTS): Promise<
     case GAME_RESULTS.WIN_FLAWLESS: {
       // add bonus WIN_FLAWLESS if the game was perfect
       // there is no break here on purpose - flawless winner also gets a CHEDDAR_DINNER
-      game = await fns.grantTrophy(game, TROPHY_IDS.FLAWLESS_VICTORY);
+      await fns
+        .grantTrophy(game, TROPHY_IDS.FLAWLESS_VICTORY)
+        .then(() => {
+          fns.logDebug(__filename, method, 'FLAWLESS_VICTORY awarded to score for game ' + game.Id);
+        })
+        .catch(trophyErr => {
+          fns.logWarn(__filename, method, 'Unable to add FLAWLESS_VICTORY trophy to score. Error -> ' + trophyErr);
+        });
       break;
     }
     case GAME_RESULTS.WIN: {
-      game = await fns.grantTrophy(game, TROPHY_IDS.CHEDDAR_DINNER);
+      await fns
+        .grantTrophy(game, TROPHY_IDS.CHEDDAR_DINNER)
+        .then(() => {
+          fns.logDebug(__filename, method, 'CHEDDAR_DINNER awarded to score for game ' + game.Id);
+        })
+        .catch(trophyErr => {
+          fns.logWarn(__filename, method, 'Unable to add CHEDDAR_DINNER trophy to score. Error -> ' + trophyErr);
+        });
       break;
     }
     case GAME_RESULTS.DEATH_LAVA: {
@@ -231,8 +245,10 @@ export async function finishGame(game: Game, gameResult: GAME_RESULTS): Promise<
     `Game Over. Game Result: [${GAME_RESULTS[gameResult]}] Final Outcomes:\r\n + ${game.Actions[game.Actions.length - 1].outcomes.join('\r\n')}`,
   );
 
-  // save the game's score
-  saveScore(game);
+  // save the game's score (only if it's a win)
+  if (game.Score.GameResult === GAME_RESULTS.WIN || game.Score.GameResult === GAME_RESULTS.WIN_FLAWLESS) {
+    saveScore(game);
+  }
 
   // Append a timestamp to any game.Id starting with the word 'FORCED' so the original IDs can
   // be re-used - very handy for testing and development
