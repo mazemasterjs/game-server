@@ -116,9 +116,9 @@ function doMove(game, langCode, sneaking = false) {
                 }
             }
         }
-        funcs_1.logDebug(__filename, method, `Players location 2nd pre-trap check ${game.Player.Location}`);
+        fns.logTrace(__filename, method, `Players location 2nd pre-trap check ${game.Player.Location}`);
         yield fns.trapCheck(game, langCode);
-        funcs_1.logDebug(__filename, method, `Players location 2nd post-trap check ${game.Player.Location}`);
+        fns.logTrace(__filename, method, `Players location 2nd post-trap check ${game.Player.Location}`);
         // game continues - return the action (with outcomes and engram)
         return Promise.resolve(fns.finalizeAction(game, moveCost, startScore, langCode));
     });

@@ -1,9 +1,9 @@
 import * as fns from '../funcs';
-import { CELL_TAGS, DIRS, CELL_TRAPS, MONSTER_TAGS } from '@mazemasterjs/shared-library/Enums';
-import { Game } from '@mazemasterjs/shared-library/Game';
-import { ISight } from '@mazemasterjs/shared-library/Interfaces/ISenses';
 import GameLang from '../GameLang';
 import { Cell } from '@mazemasterjs/shared-library/Cell';
+import { CELL_TAGS, CELL_TRAPS, DIRS, MONSTER_TAGS } from '@mazemasterjs/shared-library/Enums';
+import { Game } from '@mazemasterjs/shared-library/Game';
+import { ISight } from '@mazemasterjs/shared-library/Interfaces/ISenses';
 
 let MAX_SIGHT_DISTANCE = 3;
 

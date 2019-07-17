@@ -18,7 +18,7 @@ const fns = __importStar(require("../funcs"));
 const MAX_HEARING_DISTANCE = 10;
 function doListenLocal(game, lang) {
     const method = `doListenLocal(${game.Id}, ${lang})`;
-    funcs_1.logDebug(__filename, method, 'Entering');
+    funcs_1.logTrace(__filename, method, 'Entering');
     const cell = game.Maze.getCell(game.Player.Location);
     const engram = game.Actions[game.Actions.length - 1].engram;
     const data = GameLang_1.default.getInstance(lang);
@@ -83,7 +83,7 @@ exports.doListenLocal = doListenLocal;
 function doListenDirected(game, lang, cell, engramDir, lastDirection, distance) {
     const data = GameLang_1.default.getInstance(lang);
     const method = `doListenDirected(${game.Id}, ${lang}, ${cell.Location}, [emgramDir], ${lastDirection}, ${distance})`;
-    funcs_1.logDebug(__filename, method, 'Entering');
+    funcs_1.logTrace(__filename, method, 'Entering');
     if (!!(cell.Tags & Enums_1.CELL_TAGS.START) && distance <= data.entities.lava.sound.intensity) {
         setSound(engramDir, {
             sound: data.entities.lava.sound.adjective,
@@ -114,7 +114,7 @@ function doListenDirected(game, lang, cell, engramDir, lastDirection, distance) 
                     }
                 }
                 catch (err) {
-                    funcs_1.logDebug(__filename, method, err);
+                    funcs_1.logTrace(__filename, method, err);
                 }
             } // end (!!(cell.Traps & trapEnum))
         } // end for(pos<9)}
@@ -160,11 +160,11 @@ exports.doListenDirected = doListenDirected;
 function hearMonsters(game, lang, cell, engramDir, distance) {
     const data = GameLang_1.default.getInstance(lang);
     const method = `hearMonsters(${game.Id}, ${lang}, ${cell.Location}, [emgramDir], ${distance})`;
-    fns.logDebug(__filename, method, 'Entering');
+    fns.logTrace(__filename, method, 'Entering');
     if (!!(cell.Tags & Enums_1.CELL_TAGS.MONSTER)) {
         game.Monsters.forEach(monster => {
             const monsterType = Enums_1.MONSTER_TAGS[monster.getTag()];
-            fns.logDebug(__filename, 'smellMonsters(): ', `${monster.getTag()}`);
+            fns.logTrace(__filename, 'smellMonsters(): ', `${monster.getTag()}`);
             const adj = data.monsters[monsterType.toUpperCase()].sound.adjective;
             const int = data.monsters[monsterType.toUpperCase()].sound.intensity;
             if (monster.Location.equals(cell.Location) && int >= distance) {

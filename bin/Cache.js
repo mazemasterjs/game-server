@@ -165,7 +165,6 @@ class Cache {
             cache.splice(index, 1);
             // all done - log and return
             fns.logDebug(__filename, method, 'Item evicted.');
-            this.logCacheStatus();
             return Promise.resolve(1);
         });
     }

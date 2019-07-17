@@ -10,7 +10,7 @@ const GameLang_1 = __importDefault(require("../GameLang"));
 const MAX_TASTE_DISTANCE = 0;
 function doTasteLocal(game, lang) {
     const method = `doTasteLocal(${game.Id}, ${lang})`;
-    funcs_1.logDebug(__filename, method, 'Entering');
+    funcs_1.logTrace(__filename, method, 'Entering');
     const cell = game.Maze.getCell(game.Player.Location);
     const engram = game.Actions[game.Actions.length - 1].engram;
     // const data = GameLang.getInstance(lang);
@@ -69,7 +69,7 @@ exports.doTasteLocal = doTasteLocal;
 function doTasteDirected(game, lang, cell, engramDir, lastDirection, distance) {
     const data = GameLang_1.default.getInstance(lang);
     const method = `dotasteDirected(${game.Id}, ${lang}, ${cell.Location}, [emgramDir], ${lastDirection}, ${distance})`;
-    funcs_1.logDebug(__filename, method, 'Entering');
+    funcs_1.logTrace(__filename, method, 'Entering');
     if (!!(cell.Tags & Enums_1.CELL_TAGS.START) && distance <= data.entities.lava.taste.intensity) {
         setTaste(engramDir, {
             taste: data.entities.lava.taste.adjective,
@@ -95,7 +95,7 @@ function doTasteDirected(game, lang, cell, engramDir, lastDirection, distance) {
                     }
                 }
                 catch (err) {
-                    funcs_1.logDebug(__filename, method, err);
+                    funcs_1.logTrace(__filename, method, err);
                 }
             } // end (!!(cell.Traps & trapEnum))
         } // end for(pos<9)}

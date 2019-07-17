@@ -10,7 +10,7 @@ const funcs_1 = require("../funcs");
 const MAX_FEEL_DISTANCE = 3;
 function doFeelLocal(game, lang) {
     const method = `dofeelLocal(${game.Id}, ${lang})`;
-    funcs_1.logDebug(__filename, method, 'Entering');
+    funcs_1.logTrace(__filename, method, 'Entering');
     const cell = game.Maze.getCell(game.Player.Location);
     const engram = game.Actions[game.Actions.length - 1].engram;
     const data = GameLang_1.default.getInstance(lang);
@@ -75,7 +75,7 @@ exports.doFeelLocal = doFeelLocal;
 function doFeelDirected(game, lang, cell, engramDir, lastDirection, distance) {
     const data = GameLang_1.default.getInstance(lang);
     const method = `dofeelDirected(${game.Id}, ${lang}, ${cell.Location}, [emgramDir], ${lastDirection}, ${distance})`;
-    funcs_1.logDebug(__filename, method, 'Entering');
+    funcs_1.logTrace(__filename, method, 'Entering');
     if (!!(cell.Tags & Enums_1.CELL_TAGS.START) && data.entities.lava.touch.intensity >= distance) {
         setFeel(engramDir, {
             feeling: data.entities.lava.touch.adjective,
@@ -101,7 +101,7 @@ function doFeelDirected(game, lang, cell, engramDir, lastDirection, distance) {
                     }
                 }
                 catch (err) {
-                    funcs_1.logDebug(__filename, method, `For ${trapType}: ` + err);
+                    funcs_1.logTrace(__filename, method, `For ${trapType}: ` + err);
                 }
             } // end (!!(cell.Traps & trapEnum))
         } // end for(pos<9)}
