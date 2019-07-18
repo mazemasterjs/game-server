@@ -42,6 +42,10 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 
 ## Change Notes
 
+### v1.0.2
+
+- added awaits to finishGame - win-state trophies now return with final action
+
 ### v1.0.1
 
 - checkTraps() on jumpNext() was not ending game properly due to being out of sync.
