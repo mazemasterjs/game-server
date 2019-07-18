@@ -17,7 +17,7 @@ const GameLang_1 = __importDefault(require("../GameLang"));
 const MAX_SMELL_DISTANCE = 6;
 function doSmellLocal(game, lang) {
     const method = `doSmellLocal(${game.Id}, ${lang})`;
-    fns.logDebug(__filename, method, 'Entering');
+    fns.logTrace(__filename, method, 'Entering');
     const cell = game.Maze.getCell(game.Player.Location);
     const engram = game.Actions[game.Actions.length - 1].engram;
     const data = GameLang_1.default.getInstance(lang);
@@ -82,7 +82,7 @@ exports.doSmellLocal = doSmellLocal;
 function doSmellDirected(game, lang, cell, engramDir, lastDirection, distance) {
     const data = GameLang_1.default.getInstance(lang);
     const method = `doSmellDirected(${game.Id}, ${lang}, ${cell.Location}, [emgramDir], ${lastDirection}, ${distance})`;
-    fns.logDebug(__filename, method, 'Entering');
+    fns.logTrace(__filename, method, 'Entering');
     if (!!(cell.Tags & Enums_1.CELL_TAGS.START) && distance <= data.entities.lava.smell.intensity) {
         const intensity = data.entities.lava.smell.intensity;
         setSmell(engramDir, { scent: data.entities.lava.smell.adjective, strength: fns.calculateIntensity(intensity, distance + 1, MAX_SMELL_DISTANCE) * 10 });
@@ -121,7 +121,7 @@ function doSmellDirected(game, lang, cell, engramDir, lastDirection, distance) {
                     }
                 }
                 catch (err) {
-                    fns.logDebug(__filename, method, err);
+                    fns.logTrace(__filename, method, err);
                 }
             } // end (!!(cell.Traps & trapEnum))
         } // end for(pos<9)}
@@ -167,11 +167,11 @@ exports.doSmellDirected = doSmellDirected;
 function smellMonsters(game, lang, cell, engramDir, distance) {
     const data = GameLang_1.default.getInstance(lang);
     const method = `smellMonsters(${game.Id}, ${lang}, ${cell.Location}, [emgramDir], ${distance})`;
-    fns.logDebug(__filename, method, 'Entering');
+    fns.logTrace(__filename, method, 'Entering');
     if (!!(cell.Tags & Enums_1.CELL_TAGS.MONSTER)) {
         game.Monsters.forEach(monster => {
             const monsterType = Enums_1.MONSTER_TAGS[monster.getTag()];
-            fns.logDebug(__filename, 'smellMonsters(): ', `${monster.getTag()}`);
+            fns.logTrace(__filename, 'smellMonsters(): ', `${monster.getTag()}`);
             const adj = data.monsters[monsterType.toUpperCase()].smell.adjective;
             const int = data.monsters[monsterType.toUpperCase()].smell.intensity;
             if (monster.Location.equals(cell.Location) && int >= distance) {

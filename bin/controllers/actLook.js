@@ -11,11 +11,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const fns = __importStar(require("../funcs"));
-const Enums_1 = require("@mazemasterjs/shared-library/Enums");
 const GameLang_1 = __importDefault(require("../GameLang"));
+const Enums_1 = require("@mazemasterjs/shared-library/Enums");
 let MAX_SIGHT_DISTANCE = 3;
 function doLook(game, langCode) {
-    fns.logDebug(__filename, 'doLook()', 'Entering');
+    fns.logTrace(__filename, 'doLook()', 'Entering');
     const data = GameLang_1.default.getInstance(langCode);
     const startScore = game.Score.getTotalScore();
     game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.look);
@@ -29,7 +29,7 @@ exports.doLook = doLook;
  */
 function doLookLocal(game, langCode) {
     const method = `doLookLocal(${game.Id}, ${langCode})`;
-    fns.logDebug(__filename, method, 'Entering');
+    fns.logTrace(__filename, method, 'Entering');
     const cell = game.Maze.getCell(game.Player.Location);
     const engram = game.Actions[game.Actions.length - 1].engram;
     const data = GameLang_1.default.getInstance(langCode);
@@ -150,11 +150,11 @@ function setSee(see, sight) {
 function seeMonsters(game, lang, cell, engramDir, dist) {
     const data = GameLang_1.default.getInstance(lang);
     const method = `seeMonsters(${game.Id}, ${lang}, ${cell.Location}, [emgramDir], ${dist})`;
-    fns.logDebug(__filename, method, 'Entering');
+    fns.logTrace(__filename, method, 'Entering');
     if (!!(cell.Tags & Enums_1.CELL_TAGS.MONSTER)) {
         game.Monsters.forEach(monster => {
             const monsterType = Enums_1.MONSTER_TAGS[monster.getTag()];
-            fns.logDebug(__filename, 'seeMonsters(): ', `${monster.getTag()}`);
+            fns.logTrace(__filename, 'seeMonsters(): ', `${monster.getTag()}`);
             const adj = data.monsters[monsterType.toUpperCase()].sight.adjective;
             const int = data.monsters[monsterType.toUpperCase()].sight.intensity;
             if (monster.Location.equals(cell.Location) && int >= dist) {
@@ -179,7 +179,7 @@ function seeTraps(game, lang, cell, engram, dist) {
                     }
                 }
                 catch (err) {
-                    fns.logDebug(__filename, method, err);
+                    fns.logTrace(__filename, method, err);
                 }
             } // end (!!(cell.Traps & trapEnum))
         } // end for(pos<9)}

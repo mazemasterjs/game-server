@@ -1,5 +1,5 @@
 import { Game } from '@mazemasterjs/shared-library/Game';
-import { calculateIntensity, logDebug } from '../funcs';
+import { calculateIntensity, logTrace } from '../funcs';
 import { CELL_TAGS, CELL_TRAPS, DIRS } from '@mazemasterjs/shared-library/Enums';
 import MazeLoc from '@mazemasterjs/shared-library/MazeLoc';
 import CellBase from '@mazemasterjs/shared-library/CellBase';
@@ -10,7 +10,7 @@ const MAX_TASTE_DISTANCE = 0;
 
 export function doTasteLocal(game: Game, lang: string) {
   const method = `doTasteLocal(${game.Id}, ${lang})`;
-  logDebug(__filename, method, 'Entering');
+  logTrace(__filename, method, 'Entering');
   const cell = game.Maze.getCell(game.Player.Location);
   const engram = game.Actions[game.Actions.length - 1].engram;
 
@@ -70,7 +70,7 @@ export function doTasteLocal(game: Game, lang: string) {
 export function doTasteDirected(game: Game, lang: string, cell: CellBase, engramDir: ITaste[], lastDirection: DIRS, distance: number) {
   const data = GameLang.getInstance(lang);
   const method = `dotasteDirected(${game.Id}, ${lang}, ${cell.Location}, [emgramDir], ${lastDirection}, ${distance})`;
-  logDebug(__filename, method, 'Entering');
+  logTrace(__filename, method, 'Entering');
   if (!!(cell.Tags & CELL_TAGS.START) && distance <= data.entities.lava.taste.intensity) {
     setTaste(engramDir, {
       taste: data.entities.lava.taste.adjective,
@@ -96,7 +96,7 @@ export function doTasteDirected(game: Game, lang: string, cell: CellBase, engram
             setTaste(engramDir, { taste: adjective, strength: calculateIntensity(intensity, distance, MAX_TASTE_DISTANCE) * 10 });
           }
         } catch (err) {
-          logDebug(__filename, method, err);
+          logTrace(__filename, method, err);
         }
       } // end (!!(cell.Traps & trapEnum))
     } // end for(pos<9)}

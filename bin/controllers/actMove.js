@@ -75,7 +75,7 @@ function doMove(game, langCode, sneaking = false) {
                 if (fns.monsterInCell(game, langCode)) {
                     game.Player.addState(Enums_1.PLAYER_STATES.DEAD);
                     game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.monster.deathCat);
-                    finishGame(game, Enums_1.GAME_RESULTS.DEATH_MONSTER);
+                    yield finishGame(game, Enums_1.GAME_RESULTS.DEATH_MONSTER);
                 }
             }
             if (sneaking && fns.monsterInCell(game, langCode)) {
@@ -86,17 +86,17 @@ function doMove(game, langCode, sneaking = false) {
                 if (dir === Enums_1.DIRS.NORTH && pLoc.equals(game.Maze.StartCell)) {
                     fns.logDebug(__filename, method, 'Player moved north into the entrance (lava).');
                     game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.lava);
-                    finishGame(game, Enums_1.GAME_RESULTS.DEATH_LAVA);
+                    yield finishGame(game, Enums_1.GAME_RESULTS.DEATH_LAVA);
                 }
                 else if (dir === Enums_1.DIRS.SOUTH && pLoc.equals(game.Maze.FinishCell)) {
                     fns.logDebug(__filename, method, 'Player moved south into the exit (cheese).');
                     game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.win);
                     // game over: WINNER or WIN_FLAWLESS
                     if (game.Score.MoveCount <= game.Maze.ShortestPathLength) {
-                        finishGame(game, Enums_1.GAME_RESULTS.WIN_FLAWLESS);
+                        yield finishGame(game, Enums_1.GAME_RESULTS.WIN_FLAWLESS);
                     }
                     else {
-                        finishGame(game, Enums_1.GAME_RESULTS.WIN);
+                        yield finishGame(game, Enums_1.GAME_RESULTS.WIN);
                     }
                 }
                 else {
@@ -116,9 +116,9 @@ function doMove(game, langCode, sneaking = false) {
                 }
             }
         }
-        funcs_1.logDebug(__filename, method, `Players location 2nd pre-trap check ${game.Player.Location}`);
+        fns.logTrace(__filename, method, `Players location 2nd pre-trap check ${game.Player.Location}`);
         yield fns.trapCheck(game, langCode);
-        funcs_1.logDebug(__filename, method, `Players location 2nd post-trap check ${game.Player.Location}`);
+        fns.logTrace(__filename, method, `Players location 2nd post-trap check ${game.Player.Location}`);
         // game continues - return the action (with outcomes and engram)
         return Promise.resolve(fns.finalizeAction(game, moveCost, startScore, langCode));
     });

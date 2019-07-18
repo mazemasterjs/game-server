@@ -554,6 +554,7 @@ export function getLocal(game: Game, lang: string) {
   } // end for (pos<4)
 
   if (cell.Notes.length > 0) {
+    engram.messages.pop();
     cell.Notes.forEach(element => {
       engram.messages.push(element);
     });

@@ -1,5 +1,5 @@
 import { Game } from '@mazemasterjs/shared-library/Game';
-import { calculateIntensity, logDebug } from '../funcs';
+import { calculateIntensity, logTrace } from '../funcs';
 import { CELL_TAGS, CELL_TRAPS, DIRS, MONSTER_TAGS } from '@mazemasterjs/shared-library/Enums';
 import MazeLoc from '@mazemasterjs/shared-library/MazeLoc';
 import CellBase from '@mazemasterjs/shared-library/CellBase';
@@ -11,7 +11,7 @@ const MAX_HEARING_DISTANCE = 10;
 
 export function doListenLocal(game: Game, lang: string) {
   const method = `doListenLocal(${game.Id}, ${lang})`;
-  logDebug(__filename, method, 'Entering');
+  logTrace(__filename, method, 'Entering');
   const cell = game.Maze.getCell(game.Player.Location);
   const engram = game.Actions[game.Actions.length - 1].engram;
   const data = GameLang.getInstance(lang);
@@ -77,7 +77,7 @@ export function doListenLocal(game: Game, lang: string) {
 export function doListenDirected(game: Game, lang: string, cell: CellBase, engramDir: ISound[], lastDirection: DIRS, distance: number) {
   const data = GameLang.getInstance(lang);
   const method = `doListenDirected(${game.Id}, ${lang}, ${cell.Location}, [emgramDir], ${lastDirection}, ${distance})`;
-  logDebug(__filename, method, 'Entering');
+  logTrace(__filename, method, 'Entering');
   if (!!(cell.Tags & CELL_TAGS.START) && distance <= data.entities.lava.sound.intensity) {
     setSound(engramDir, {
       sound: data.entities.lava.sound.adjective,
@@ -109,7 +109,7 @@ export function doListenDirected(game: Game, lang: string, cell: CellBase, engra
             setSound(engramDir, { sound: adjective, volume: calculateIntensity(intensity, distance, MAX_HEARING_DISTANCE) });
           }
         } catch (err) {
-          logDebug(__filename, method, err);
+          logTrace(__filename, method, err);
         }
       } // end (!!(cell.Traps & trapEnum))
     } // end for(pos<9)}
@@ -155,11 +155,11 @@ export function doListenDirected(game: Game, lang: string, cell: CellBase, engra
 function hearMonsters(game: Game, lang: string, cell: CellBase, engramDir: ISound[], distance: number) {
   const data = GameLang.getInstance(lang);
   const method = `hearMonsters(${game.Id}, ${lang}, ${cell.Location}, [emgramDir], ${distance})`;
-  fns.logDebug(__filename, method, 'Entering');
+  fns.logTrace(__filename, method, 'Entering');
   if (!!(cell.Tags & CELL_TAGS.MONSTER)) {
     game.Monsters.forEach(monster => {
       const monsterType = MONSTER_TAGS[monster.getTag()];
-      fns.logDebug(__filename, 'smellMonsters(): ', `${monster.getTag()}`);
+      fns.logTrace(__filename, 'smellMonsters(): ', `${monster.getTag()}`);
       const adj = data.monsters[monsterType.toUpperCase()].sound.adjective;
       const int = data.monsters[monsterType.toUpperCase()].sound.intensity;
       if (monster.Location.equals(cell.Location) && int >= distance) {

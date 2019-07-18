@@ -52,7 +52,7 @@ function doJump(game, lang) {
                     game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.monster.deathCat);
                     actMove_1.finishGame(game, Enums_1.GAME_RESULTS.DEATH_TRAP);
                 }
-                jumpNext(game, lang, 0);
+                yield jumpNext(game, lang, 0);
             }
         }
         const startScore = game.Score.getTotalScore();
@@ -108,7 +108,7 @@ function jumpNext(game, lang, distance, maxDistance = 1) {
                     game = yield fns.grantTrophy(game, Enums_1.TROPHY_IDS.MIGHTY_MOUSE);
                 }
                 if (!!(pCell.Traps & Enums_1.CELL_TRAPS.FLAMETHROWER)) {
-                    fns.trapCheck(game, lang, true);
+                    yield fns.trapCheck(game, lang, true);
                 }
                 jumpNext(game, lang, distance + 1);
             }
@@ -123,7 +123,7 @@ function jumpNext(game, lang, distance, maxDistance = 1) {
         else {
             outcomes.push(util_1.format(data.outcomes.jump.jumping, data.directions[Enums_1.DIRS[dir]]));
             outcomes.push(data.outcomes.jump.land);
-            fns.trapCheck(game, lang);
+            yield fns.trapCheck(game, lang);
             if (fns.monsterInCell(game, lang)) {
                 game.Player.addState(Enums_1.PLAYER_STATES.DEAD);
                 game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.monster.deathCat);

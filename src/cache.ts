@@ -163,7 +163,6 @@ export class Cache {
 
     // all done - log and return
     fns.logDebug(__filename, method, 'Item evicted.');
-    this.logCacheStatus();
     return Promise.resolve(1);
   }
 

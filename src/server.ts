@@ -135,6 +135,7 @@ async function authUser(userName: string, password: string, callback: any) {
   if (userCreds !== null) {
     if (userCreds.pwHash !== hash(password)) {
       log.debug(__filename, method, 'Authentication Failed: Invalid password: ' + userCreds.userName);
+      security.evictCredentials(userCreds);
       callback(null, false);
       return;
     } else {
