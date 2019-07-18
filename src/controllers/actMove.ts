@@ -67,7 +67,7 @@ export async function doMove(game: Game, langCode: string, sneaking: boolean = f
       if (fns.monsterInCell(game, langCode)) {
         game.Player.addState(PLAYER_STATES.DEAD);
         game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.monster.deathCat);
-        finishGame(game, GAME_RESULTS.DEATH_MONSTER);
+        await finishGame(game, GAME_RESULTS.DEATH_MONSTER);
       }
     }
 
@@ -79,7 +79,7 @@ export async function doMove(game: Game, langCode: string, sneaking: boolean = f
       if (dir === DIRS.NORTH && pLoc.equals(game.Maze.StartCell)) {
         fns.logDebug(__filename, method, 'Player moved north into the entrance (lava).');
         game.Actions[game.Actions.length - 1].outcomes.push(data.outcomes.lava);
-        finishGame(game, GAME_RESULTS.DEATH_LAVA);
+        await finishGame(game, GAME_RESULTS.DEATH_LAVA);
       } else if (dir === DIRS.SOUTH && pLoc.equals(game.Maze.FinishCell)) {
         fns.logDebug(__filename, method, 'Player moved south into the exit (cheese).');
 
@@ -87,9 +87,9 @@ export async function doMove(game: Game, langCode: string, sneaking: boolean = f
 
         // game over: WINNER or WIN_FLAWLESS
         if (game.Score.MoveCount <= game.Maze.ShortestPathLength) {
-          finishGame(game, GAME_RESULTS.WIN_FLAWLESS);
+          await finishGame(game, GAME_RESULTS.WIN_FLAWLESS);
         } else {
-          finishGame(game, GAME_RESULTS.WIN);
+          await finishGame(game, GAME_RESULTS.WIN);
         }
       } else {
         // Changes the facing of the player and looks in that direction
