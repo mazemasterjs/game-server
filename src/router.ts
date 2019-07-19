@@ -7,6 +7,7 @@ export const router = express.Router();
 router.get('/get', routes.listGames);
 
 router.get('/get/:gameId', routes.getGame);
+router.get('/getFull/:gameId', routes.getFullGame);
 
 // new games
 router.put('/new/:mazeId/:teamId/:botId', routes.createGame); // single-player

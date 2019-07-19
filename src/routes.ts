@@ -1,23 +1,22 @@
-import { Action } from '@mazemasterjs/shared-library/Action';
-import { doMove } from './controllers/actMove';
-import { Cache, CACHE_TYPES } from './Cache';
-import { COMMANDS, DIRS, GAME_RESULTS, GAME_STATES, PLAYER_STATES, USER_ROLES, CELL_TAGS, TROPHY_IDS } from '@mazemasterjs/shared-library/Enums';
-import { Config } from './Config';
-import { doLook } from './controllers/actLook';
 import * as fns from './funcs';
-import { doStand } from './controllers/actStand';
-import { Game } from '@mazemasterjs/shared-library/Game';
-import { LOG_LEVELS, Logger } from '@mazemasterjs/logger';
-import { Request, Response } from 'express';
-import { doTurn } from './controllers/actTurn';
-import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
-import { doJump } from './controllers/actJump';
 import GameLang from './GameLang';
 import Security from './Security';
-import MazeBase from '@mazemasterjs/shared-library/MazeBase';
+import { Action } from '@mazemasterjs/shared-library/Action';
+import { Cache, CACHE_TYPES } from './Cache';
+import { COMMANDS, DIRS, GAME_RESULTS, GAME_STATES, TROPHY_IDS, USER_ROLES } from '@mazemasterjs/shared-library/Enums';
 import { cloneDeep } from 'lodash';
-import { doWait } from './controllers/actWait';
+import { Config } from './Config';
 import { doFace } from './controllers/actFace';
+import { doJump } from './controllers/actJump';
+import { doLook } from './controllers/actLook';
+import { doMove } from './controllers/actMove';
+import { doStand } from './controllers/actStand';
+import { doTurn } from './controllers/actTurn';
+import { doWait } from './controllers/actWait';
+import { Game } from '@mazemasterjs/shared-library/Game';
+import { IAction } from '@mazemasterjs/shared-library/Interfaces/IAction';
+import { LOG_LEVELS, Logger } from '@mazemasterjs/logger';
+import { Request, Response } from 'express';
 
 // set constant utility references
 const log = Logger.getInstance();
@@ -65,7 +64,8 @@ export const createGame = async (req: Request, res: Response) => {
         .then(team => {
           // if there's a bot id, it must be in the team
           if (botId && !fns.findBot(team, botId)) {
-            const botErr = new Error(`Bot not found in team`);
+            const botErr = new Error(`Bot not found in team - please try again.`);
+            Cache.use().evictItem(CACHE_TYPES.TEAM, teamId);
             log.warn(__filename, method, 'Unable to get Bot');
             return res.status(404).json({ status: 404, message: 'Invalid Request - Bot not found.', error: botErr.message });
           } else {
@@ -103,7 +103,9 @@ export const createGame = async (req: Request, res: Response) => {
               game.addAction(firstAction);
 
               // finalize the last action and capture as a result
-              const createResult: IAction = fns.finalizeAction(game, 0, game.Score.getTotalScore(), langCode);
+              let createResult: IAction = fns.finalizeAction(game, 0, game.Score.getTotalScore(), langCode);
+              createResult = cloneDeep(createResult);
+              createResult.outcomes.pop();
 
               // return the newly created game
               return res.status(200).json({
@@ -151,7 +153,9 @@ export const getGame = (req: Request, res: Response) => {
       game.addAction(resumeAction);
 
       // finalize the last action and capture as a result
-      const getResult = fns.finalizeAction(game, 0, game.Score.getTotalScore(), langCode);
+      let getResult = fns.finalizeAction(game, 0, game.Score.getTotalScore(), langCode);
+      getResult = cloneDeep(getResult);
+      getResult.outcomes.pop();
 
       // add the new game outcome
       return res.status(200).json({
@@ -161,6 +165,32 @@ export const getGame = (req: Request, res: Response) => {
         playerState: game.Player.State,
         playerFacing: game.Player.Facing,
       });
+    })
+    .catch(fetchError => {
+      return res.status(404).json({ status: 404, message: 'Game Not Found', error: fetchError.message });
+    });
+};
+
+/**
+ * Returns game data for the requested Game.Id
+ */
+export const getFullGame = (req: Request, res: Response) => {
+  const minRole = USER_ROLES.USER;
+  if (!security.userHasRole(req.header('Authorization'), minRole)) {
+    log.debug(__filename, req.path, 'User is not authorized.');
+    return res.status(401).send(`Unauthorized Access - You must have at least the ${USER_ROLES[minRole]} role to ride this ride.`);
+  }
+  logRequest('getFullGame', req);
+
+  return Cache.use()
+    .fetchItem(CACHE_TYPES.GAME, req.params.gameId)
+    .then(game => {
+      game.actions.forEach((action: any) => {
+        action.outcomes[action.outcomes.length - 2] = '';
+      });
+
+      // add the new game outcome
+      return res.status(200).json({ game });
     })
     .catch(fetchError => {
       return res.status(404).json({ status: 404, message: 'Game Not Found', error: fetchError.message });
@@ -328,62 +358,81 @@ export const processAction = async (req: Request, res: Response) => {
 
   switch (action.command) {
     case COMMANDS.LOOK: {
-      const lookResult = doLook(game, langCode);
+      let lookResult = doLook(game, langCode);
+      lookResult = cloneDeep(lookResult);
+      lookResult.outcomes.pop();
       return res
         .status(200)
         .json({ action: lookResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
     }
     case COMMANDS.MOVE: {
-      const moveResult = await doMove(game, langCode);
+      let moveResult = await doMove(game, langCode);
+      moveResult = cloneDeep(moveResult);
+      moveResult.outcomes.pop();
       return res
         .status(200)
         .json({ action: moveResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
     }
     case COMMANDS.STAND: {
-      const standResult = await doStand(game, langCode);
+      let standResult = await doStand(game, langCode);
+      standResult = cloneDeep(standResult);
+      standResult.outcomes.pop();
       return res
         .status(200)
         .json({ action: standResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
     }
     case COMMANDS.TURN: {
-      const turnResult = await doTurn(game, langCode);
+      let turnResult = await doTurn(game, langCode);
+      turnResult = cloneDeep(turnResult);
+      turnResult.outcomes.pop();
       return res
         .status(200)
         .json({ action: turnResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
     }
     case COMMANDS.FACE: {
-      const faceResult = await doFace(game, langCode);
+      let faceResult = await doFace(game, langCode);
+      faceResult = cloneDeep(faceResult);
+      faceResult.outcomes.pop();
       return res
         .status(200)
         .json({ action: faceResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
     }
-    case COMMANDS.LISTEN:
-    case COMMANDS.SNIFF:
-    case COMMANDS.JUMP:
-      const jumpResult = await doJump(game, langCode);
+    case COMMANDS.JUMP: {
+      let jumpResult = await doJump(game, langCode);
+      jumpResult = cloneDeep(jumpResult);
+      jumpResult.outcomes.pop();
       return res
         .status(200)
         .json({ action: jumpResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
-    case COMMANDS.QUIT:
-    case COMMANDS.SIT:
+    }
     case COMMANDS.WAIT: {
-      const waitResult = await doWait(game, langCode);
+      let waitResult = await doWait(game, langCode);
+      waitResult = cloneDeep(waitResult);
+      waitResult.outcomes.pop();
       return res
         .status(200)
         .json({ action: waitResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
     }
     case COMMANDS.WRITE: {
-      const writeResult = await fns.doWrite(game, langCode, msg);
+      let writeResult = await fns.doWrite(game, langCode, msg);
+      writeResult = cloneDeep(writeResult);
+      writeResult.outcomes.pop();
       return res
         .status(200)
         .json({ action: writeResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
     }
     case COMMANDS.SNEAK: {
-      const moveResult = await doMove(game, langCode, true);
+      let moveResult = await doMove(game, langCode, true);
+      moveResult = cloneDeep(moveResult);
+      moveResult.outcomes.pop();
       return res
         .status(200)
         .json({ action: moveResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
     }
+    case COMMANDS.LISTEN:
+    case COMMANDS.SNIFF:
+    case COMMANDS.QUIT:
+    case COMMANDS.SIT:
     default: {
       const err = new Error(`${COMMANDS[action.command]} is not recognized. Valid commands are LOOK, MOVE, JUMP, SIT, STAND, and WRITE.`);
       log.error(__filename, req.path, 'Unrecognized Command', err);
