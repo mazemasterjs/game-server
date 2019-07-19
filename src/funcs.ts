@@ -459,7 +459,7 @@ export function getLanguage(req: Request) {
  * @param finishScore
  */
 export function finalizeAction(game: Game, actionMoveCount: number, startScore: number, langCode: string): IAction {
-  // increment move counters unless freeAction is set (new / resume game)
+  // increment move counters
   game.Score.addMoves(actionMoveCount);
   game.Actions[game.Actions.length - 1].moveCount += actionMoveCount;
 
@@ -496,6 +496,7 @@ export function finalizeAction(game: Game, actionMoveCount: number, startScore: 
   try {
     const textRender = game.Maze.generateTextRender(true, game.Player.Location);
     game.Actions[game.Actions.length - 1].outcomes.push(textRender);
+    game.Actions[game.Actions.length - 1].outcomes.push(JSON.stringify(game.Player.Location));
     logDebug(__filename, 'finalizeAction(...)', '\r\n' + textRender);
   } catch (renderError) {
     logError(__filename, 'finalizeAction(...)', 'Unable to generate text render of maze ->', renderError);

@@ -18,23 +18,23 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const Action_1 = require("@mazemasterjs/shared-library/Action");
-const actMove_1 = require("./controllers/actMove");
-const Cache_1 = require("./Cache");
-const Enums_1 = require("@mazemasterjs/shared-library/Enums");
-const Config_1 = require("./Config");
-const actLook_1 = require("./controllers/actLook");
 const fns = __importStar(require("./funcs"));
-const actStand_1 = require("./controllers/actStand");
-const Game_1 = require("@mazemasterjs/shared-library/Game");
-const logger_1 = require("@mazemasterjs/logger");
-const actTurn_1 = require("./controllers/actTurn");
-const actJump_1 = require("./controllers/actJump");
 const GameLang_1 = __importDefault(require("./GameLang"));
 const Security_1 = __importDefault(require("./Security"));
+const Action_1 = require("@mazemasterjs/shared-library/Action");
+const Cache_1 = require("./Cache");
+const Enums_1 = require("@mazemasterjs/shared-library/Enums");
 const lodash_1 = require("lodash");
-const actWait_1 = require("./controllers/actWait");
+const Config_1 = require("./Config");
 const actFace_1 = require("./controllers/actFace");
+const actJump_1 = require("./controllers/actJump");
+const actLook_1 = require("./controllers/actLook");
+const actMove_1 = require("./controllers/actMove");
+const actStand_1 = require("./controllers/actStand");
+const actTurn_1 = require("./controllers/actTurn");
+const actWait_1 = require("./controllers/actWait");
+const Game_1 = require("@mazemasterjs/shared-library/Game");
+const logger_1 = require("@mazemasterjs/logger");
 // set constant utility references
 const log = logger_1.Logger.getInstance();
 const config = Config_1.Config.getInstance();
@@ -77,7 +77,8 @@ exports.createGame = (req, res) => __awaiter(this, void 0, void 0, function* () 
             .then(team => {
             // if there's a bot id, it must be in the team
             if (botId && !fns.findBot(team, botId)) {
-                const botErr = new Error(`Bot not found in team`);
+                const botErr = new Error(`Bot not found in team - please try again.`);
+                Cache_1.Cache.use().evictItem(Cache_1.CACHE_TYPES.TEAM, teamId);
                 log.warn(__filename, method, 'Unable to get Bot');
                 return res.status(404).json({ status: 404, message: 'Invalid Request - Bot not found.', error: botErr.message });
             }
@@ -109,7 +110,9 @@ exports.createGame = (req, res) => __awaiter(this, void 0, void 0, function* () 
                     firstAction.outcomes.push(langData.outcomes.newGame);
                     game.addAction(firstAction);
                     // finalize the last action and capture as a result
-                    const createResult = fns.finalizeAction(game, 0, game.Score.getTotalScore(), langCode);
+                    let createResult = fns.finalizeAction(game, 0, game.Score.getTotalScore(), langCode);
+                    createResult = lodash_1.cloneDeep(createResult);
+                    createResult.outcomes.pop();
                     // return the newly created game
                     return res.status(200).json({
                         game: game.getStub(config.EXT_URL_GAME),
@@ -152,7 +155,9 @@ exports.getGame = (req, res) => {
         resumeAction.outcomes.push(langData.outcomes.resumeGame);
         game.addAction(resumeAction);
         // finalize the last action and capture as a result
-        const getResult = fns.finalizeAction(game, 0, game.Score.getTotalScore(), langCode);
+        let getResult = fns.finalizeAction(game, 0, game.Score.getTotalScore(), langCode);
+        getResult = lodash_1.cloneDeep(getResult);
+        getResult.outcomes.pop();
         // add the new game outcome
         return res.status(200).json({
             game: game.getStub(config.EXT_URL_GAME),
@@ -161,6 +166,29 @@ exports.getGame = (req, res) => {
             playerState: game.Player.State,
             playerFacing: game.Player.Facing,
         });
+    })
+        .catch(fetchError => {
+        return res.status(404).json({ status: 404, message: 'Game Not Found', error: fetchError.message });
+    });
+};
+/**
+ * Returns game data for the requested Game.Id
+ */
+exports.getFullGame = (req, res) => {
+    const minRole = Enums_1.USER_ROLES.USER;
+    if (!security.userHasRole(req.header('Authorization'), minRole)) {
+        log.debug(__filename, req.path, 'User is not authorized.');
+        return res.status(401).send(`Unauthorized Access - You must have at least the ${Enums_1.USER_ROLES[minRole]} role to ride this ride.`);
+    }
+    logRequest('getFullGame', req);
+    return Cache_1.Cache.use()
+        .fetchItem(Cache_1.CACHE_TYPES.GAME, req.params.gameId)
+        .then(game => {
+        game.actions.forEach((action) => {
+            action.outcomes[action.outcomes.length - 2] = '';
+        });
+        // add the new game outcome
+        return res.status(200).json({ game });
     })
         .catch(fetchError => {
         return res.status(404).json({ status: 404, message: 'Game Not Found', error: fetchError.message });
@@ -314,62 +342,81 @@ exports.processAction = (req, res) => __awaiter(this, void 0, void 0, function* 
     }
     switch (action.command) {
         case Enums_1.COMMANDS.LOOK: {
-            const lookResult = actLook_1.doLook(game, langCode);
+            let lookResult = actLook_1.doLook(game, langCode);
+            lookResult = lodash_1.cloneDeep(lookResult);
+            lookResult.outcomes.pop();
             return res
                 .status(200)
                 .json({ action: lookResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
         }
         case Enums_1.COMMANDS.MOVE: {
-            const moveResult = yield actMove_1.doMove(game, langCode);
+            let moveResult = yield actMove_1.doMove(game, langCode);
+            moveResult = lodash_1.cloneDeep(moveResult);
+            moveResult.outcomes.pop();
             return res
                 .status(200)
                 .json({ action: moveResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
         }
         case Enums_1.COMMANDS.STAND: {
-            const standResult = yield actStand_1.doStand(game, langCode);
+            let standResult = yield actStand_1.doStand(game, langCode);
+            standResult = lodash_1.cloneDeep(standResult);
+            standResult.outcomes.pop();
             return res
                 .status(200)
                 .json({ action: standResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
         }
         case Enums_1.COMMANDS.TURN: {
-            const turnResult = yield actTurn_1.doTurn(game, langCode);
+            let turnResult = yield actTurn_1.doTurn(game, langCode);
+            turnResult = lodash_1.cloneDeep(turnResult);
+            turnResult.outcomes.pop();
             return res
                 .status(200)
                 .json({ action: turnResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
         }
         case Enums_1.COMMANDS.FACE: {
-            const faceResult = yield actFace_1.doFace(game, langCode);
+            let faceResult = yield actFace_1.doFace(game, langCode);
+            faceResult = lodash_1.cloneDeep(faceResult);
+            faceResult.outcomes.pop();
             return res
                 .status(200)
                 .json({ action: faceResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
         }
-        case Enums_1.COMMANDS.LISTEN:
-        case Enums_1.COMMANDS.SNIFF:
-        case Enums_1.COMMANDS.JUMP:
-            const jumpResult = yield actJump_1.doJump(game, langCode);
+        case Enums_1.COMMANDS.JUMP: {
+            let jumpResult = yield actJump_1.doJump(game, langCode);
+            jumpResult = lodash_1.cloneDeep(jumpResult);
+            jumpResult.outcomes.pop();
             return res
                 .status(200)
                 .json({ action: jumpResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
-        case Enums_1.COMMANDS.QUIT:
-        case Enums_1.COMMANDS.SIT:
+        }
         case Enums_1.COMMANDS.WAIT: {
-            const waitResult = yield actWait_1.doWait(game, langCode);
+            let waitResult = yield actWait_1.doWait(game, langCode);
+            waitResult = lodash_1.cloneDeep(waitResult);
+            waitResult.outcomes.pop();
             return res
                 .status(200)
                 .json({ action: waitResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
         }
         case Enums_1.COMMANDS.WRITE: {
-            const writeResult = yield fns.doWrite(game, langCode, msg);
+            let writeResult = yield fns.doWrite(game, langCode, msg);
+            writeResult = lodash_1.cloneDeep(writeResult);
+            writeResult.outcomes.pop();
             return res
                 .status(200)
                 .json({ action: writeResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
         }
         case Enums_1.COMMANDS.SNEAK: {
-            const moveResult = yield actMove_1.doMove(game, langCode, true);
+            let moveResult = yield actMove_1.doMove(game, langCode, true);
+            moveResult = lodash_1.cloneDeep(moveResult);
+            moveResult.outcomes.pop();
             return res
                 .status(200)
                 .json({ action: moveResult, playerState: game.Player.State, playerFacing: game.Player.Facing, game: game.getStub(config.EXT_URL_GAME) });
         }
+        case Enums_1.COMMANDS.LISTEN:
+        case Enums_1.COMMANDS.SNIFF:
+        case Enums_1.COMMANDS.QUIT:
+        case Enums_1.COMMANDS.SIT:
         default: {
             const err = new Error(`${Enums_1.COMMANDS[action.command]} is not recognized. Valid commands are LOOK, MOVE, JUMP, SIT, STAND, and WRITE.`);
             log.error(__filename, req.path, 'Unrecognized Command', err);

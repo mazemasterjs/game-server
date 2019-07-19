@@ -16,6 +16,7 @@ exports.router = express_1.default.Router();
 // existing games
 exports.router.get('/get', routes.listGames);
 exports.router.get('/get/:gameId', routes.getGame);
+exports.router.get('/getFull/:gameId', routes.getFullGame);
 // new games
 exports.router.put('/new/:mazeId/:teamId/:botId', routes.createGame); // single-player
 exports.router.put('/new/:mazeId/:teamId/', routes.createGame); // multi-player

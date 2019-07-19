@@ -438,7 +438,7 @@ exports.getLanguage = getLanguage;
  * @param finishScore
  */
 function finalizeAction(game, actionMoveCount, startScore, langCode) {
-    // increment move counters unless freeAction is set (new / resume game)
+    // increment move counters
     game.Score.addMoves(actionMoveCount);
     game.Actions[game.Actions.length - 1].moveCount += actionMoveCount;
     // handle game out-of-moves ending
@@ -473,6 +473,7 @@ function finalizeAction(game, actionMoveCount, startScore, langCode) {
     try {
         const textRender = game.Maze.generateTextRender(true, game.Player.Location);
         game.Actions[game.Actions.length - 1].outcomes.push(textRender);
+        game.Actions[game.Actions.length - 1].outcomes.push(JSON.stringify(game.Player.Location));
         logDebug(__filename, 'finalizeAction(...)', '\r\n' + textRender);
     }
     catch (renderError) {

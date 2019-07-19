@@ -42,6 +42,11 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 
 ## Change Notes
 
+### v1.0.3
+
+- hacked playerLoc into return data to support playback
+- added /getFull endpoint that returns entire action list from completed game
+
 ### v1.0.2
 
 - added awaits to finishGame - win-state trophies now return with final action
