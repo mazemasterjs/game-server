@@ -42,6 +42,10 @@ The MazeMasterJS Game Server provides the API that creates and manages games.
 
 ## Change Notes
 
+### v1.0.4
+
+- cohesionScores now maps to action.botCohesion (when provided)
+
 ### v1.0.3
 
 - hacked playerLoc into return data to support playback
