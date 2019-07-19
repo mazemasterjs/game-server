@@ -324,6 +324,10 @@ exports.processAction = (req, res) => __awaiter(this, void 0, void 0, function* 
     }
     // the game is still active, so create and configure an Action item
     const action = new Action_1.Action(cmd, dir, msg);
+    // add cohesion scores if found
+    if (req.body.cohesionScores !== undefined) {
+        action.botCohesion = req.body.cohesionScores;
+    }
     // add the new action to the game
     game.addAction(action);
     game.Actions[game.Actions.length - 1].playerLife = game.Player.Life;
