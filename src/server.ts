@@ -89,7 +89,7 @@ function launchExpress() {
       verify: addReqBody,
     })(req, res, err => {
       if (err) {
-        log.error(__filename, 'app.bodyParser.json()', 'Error encountered while parsing json body.', err);
+        log.error(__filename, 'app.bodyParser.json()', 'Error encountered while parsing json body!!', err);
         res.status(500).json({ status: '400', message: `Unable to parse JSON Body : ${err.name} - ${err.message}` });
         return;
       } else {
